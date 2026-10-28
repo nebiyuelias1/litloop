@@ -42,6 +42,8 @@ set -euo pipefail
 #                 "none" skips the flag)
 #   NET_CHECK     1 to fail the run when the WebView logs network errors after
 #                 the warm-up launch (default: 1)
+#   CAPTURE_RETRIES  Attempts per route before failing on an empty capture
+#                    (default: 2)
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
@@ -454,33 +456,54 @@ capture_set() {
     name="${entry%%:*}"
     path="${entry#*:}"
     out="$(printf '%s/%02d-%s.png' "$dir" "$index" "$name")"
+    attempt=1
 
-    adb -e shell am force-stop "$PACKAGE" 2>/dev/null || true
-    sleep 1
-    log "   $name -> ${path:-home}"
-    launch_app "$path"
-    sleep "$WAIT_SECONDS"
-    wait_for_static_screen
+    while true; do
+      # Deep links route through onNewIntent, keeping the WebView and its
+      # cache warm between captures (cold starts load far too slowly on CI).
+      # A bare path must land on the home tab, so relaunch the app fresh.
+      if [[ -z "$path" ]]; then
+        adb -e shell am force-stop "$PACKAGE" 2>/dev/null || true
+        sleep 1
+        log "   $name -> home"
+        launch_app ""
+      elif [[ "$attempt" -gt 1 ]]; then
+        log "   retry $((attempt - 1)) for $name (content did not load)"
+        adb -e shell am force-stop "$PACKAGE" 2>/dev/null || true
+        sleep 2
+        launch_app "$path"
+      else
+        log "   $name -> ${path:-home}"
+        launch_app "$path"
+      fi
+      sleep "$WAIT_SECONDS"
+      wait_for_static_screen
 
-    if ! app_running; then
-      echo "warning: $PACKAGE does not appear to be running; recent logcat:" >&2
-      adb -e logcat -d -t 30 2>/dev/null | tail -30 >&2 || true
-    fi
+      if ! app_running; then
+        echo "warning: $PACKAGE does not appear to be running; recent logcat:" >&2
+        adb -e logcat -d -t 30 2>/dev/null | tail -30 >&2 || true
+      fi
 
-    adb -e exec-out screencap -p > "$out"
-    python3 "$ROOT_DIR/bin/png_rgb.py" "$out"
-    dims="$(png_dims "$out")"
-    if [[ -n "$EXPECTED" && "$dims" != "$EXPECTED" ]]; then
-      echo "   warning: expected ${EXPECTED// /x} (Play 9:16), got ${dims// /x}" >&2
-    fi
-    log "   wrote $out (${dims// /x}, RGB)"
-    # A uniform screen (error page / frozen spinner) compresses tiny; real
-    # app content never does. Keeps empty captures out of the artifact.
-    if [[ "$(wc -c < "$out")" -lt "${MIN_CAPTURE_BYTES:-40000}" ]]; then
-      echo "error: $out looks empty ($(wc -c < "$out") bytes; app content did not load?)" >&2
-      dump_webview_diagnostics
-      return 1
-    fi
+      adb -e exec-out screencap -p > "$out"
+      python3 "$ROOT_DIR/bin/png_rgb.py" "$out"
+      dims="$(png_dims "$out")"
+      if [[ -n "$EXPECTED" && "$dims" != "$EXPECTED" ]]; then
+        echo "   warning: expected ${EXPECTED// /x} (Play 9:16), got ${dims// /x}" >&2
+      fi
+      log "   wrote $out (${dims// /x}, RGB)"
+
+      # A uniform screen (error page / frozen spinner) compresses tiny; real
+      # app content never does. Keeps empty captures out of the artifact.
+      if [[ "$(wc -c < "$out")" -ge "${MIN_CAPTURE_BYTES:-40000}" ]]; then
+        break
+      fi
+      if [[ "$attempt" -ge "${CAPTURE_RETRIES:-2}" ]]; then
+        echo "error: $out looks empty ($(wc -c < "$out") bytes; app content did not load after $attempt attempt(s))" >&2
+        dump_webview_diagnostics
+        return 1
+      fi
+      attempt=$((attempt + 1))
+    done
   done
 
   if [[ "$VIDEO" == "1" ]]; then
