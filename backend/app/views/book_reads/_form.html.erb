@@ -84,7 +84,7 @@
               click->book-autocomplete#performSearch
               focus->book-autocomplete#performSearch
             "
-            placeholder="Type title..."
+            placeholder="<%= t("type_title") %>"
             value="<%= @book_read.book&.title %>"
             autocomplete="off"
             class="

@@ -150,6 +150,9 @@
 }
 
 /* Small helpers */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
 .brand-link:hover {
   color: var(--color-accent) !important;
 }

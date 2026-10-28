@@ -11,3 +11,18 @@
   --color-content-muted: #6b7280;
   --color-border: #e4ded6;
 }
+
+/* Brand tokens win over DaisyUI data-theme overrides. */
+:root,
+:root[data-theme] {
+  --color-primary: #22324a;
+  --color-primary-contrast: #ffffff;
+  --color-accent: #d39a3e;
+  --color-accent-contrast: #1a202c;
+  --color-background: #f7f3ee;
+  --color-surface: #ffffff;
+  --color-content: #1f2430;
+  --color-content-subtle: #4b5563;
+  --color-content-muted: #6b7280;
+  --color-border: #e4ded6;
+}

@@ -28,24 +28,24 @@ module ClubHelper
     days = (time.to_date - Time.zone.today).to_i
     phrase =
       if days.zero?
-        "Today"
+        t("today")
       elsif days == 1
-        "Tomorrow"
+        t("tomorrow")
       elsif days.positive?
-        "In #{pluralize(days, 'day')}"
+        t("in_days", count: days)
       else
-        "#{pluralize(days.abs, 'day')} ago"
+        t("days_ago", count: days.abs)
       end
 
     period = if time.hour < 12
-      "Morning"
+      t("morning")
     elsif time.hour < 17
-      "Afternoon"
+      t("afternoon")
     else
-      "Evening"
+      t("evening")
     end
 
-    "#{phrase} • #{time.strftime('%A')} #{period}"
+    "#{phrase} • #{I18n.t("date.day_names")[time.wday]} #{period}"
   end
 
   # URL for adding the book read meetup to Google Calendar.

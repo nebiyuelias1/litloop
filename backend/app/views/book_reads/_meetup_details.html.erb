@@ -2,6 +2,7 @@
   private_info_visible = local_assigns.fetch(:private_info_visible) { book_club.private_info_visible_to?(current_user) }
   rsvp_users ||= book_read.book_read_rsvps.going.includes(:user).map(&:user)
   waitlisted_count ||= book_read.book_read_rsvps.waitlisted.count
+  past_read = book_read.meetup_time.present? && book_read.meetup_time.past?
 %>
 
 <%# Meetup Details Inset Panel (The Circulating Library Stamped Well) %>
@@ -17,15 +18,15 @@
           </svg>
         </div>
         <div class="min-w-0">
-          <span class="text-xs font-medium text-content-muted block mb-0.5"><%= t("time_label", default: "When") %></span>
+          <span class="text-xs font-medium text-content-muted block mb-0.5"><%= t("time_label") %></span>
           <p class="font-bold text-content text-sm sm:text-base leading-snug">
-            <%= book_read.meetup_time&.strftime("%B %d, %Y at %H:%M") || t("not_set", default: "Not set") %>
+            <%= book_read.meetup_time ? l(book_read.meetup_time, format: :long) : t("not_set") %>
           </p>
           <% if book_read.meetup_time.present? %>
             <p class="text-xs text-content-subtle mt-1 font-medium">
               <%= relative_meetup_hint(book_read.meetup_time) %>
             </p>
-            <% if gcal_url = google_calendar_url(book_read, book_club) %>
+            <% if !past_read && (gcal_url = google_calendar_url(book_read, book_club)) %>
               <%= link_to gcal_url,
               target: "_blank",
               rel: "noopener noreferrer",
@@ -33,7 +34,7 @@
                 <svg class="w-3.5 h-3.5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
-                <span>Add to Calendar</span>
+                <span><%= t("add_to_calendar") %></span>
               <% end %>
             <% end %>
           <% end %>
@@ -49,23 +50,23 @@
           </svg>
         </div>
         <div class="min-w-0">
-          <span class="text-xs font-medium text-content-muted block mb-0.5"><%= t("location_label", default: "Where") %></span>
+          <span class="text-xs font-medium text-content-muted block mb-0.5"><%= t("location_label") %></span>
           <p class="font-bold text-content text-sm sm:text-base leading-snug break-words">
-            <%= book_read.meetup_location.presence || t("not_set", default: "Not set") %>
+            <%= book_read.meetup_location.presence || t("not_set") %>
           </p>
         </div>
       </div>
     </div>
 
     <%# Signature Gold Capacity Progress Bar %>
-    <% if book_read.max_capacity.present? %>
+    <% if book_read.max_capacity.present? && !past_read %>
       <% going_count = rsvp_users.size %>
       <% remaining_spots = [book_read.max_capacity - going_count, 0].max %>
       <% percent = [((going_count.to_f / book_read.max_capacity) * 100).round, 100].min %>
       <div class="mt-5 pt-4 border-t border-border/80">
         <div class="flex items-center justify-between text-xs mb-2">
           <p class="text-content-subtle font-medium">
-            <span class="font-bold text-content"><%= going_count %> of <%= book_read.max_capacity %></span> spots reserved
+            <%= t("spots_reserved_html", going: going_count, max: book_read.max_capacity) %>
           </p>
           <span class="text-content-muted font-medium"><%= t("spots_remaining", count: remaining_spots) %></span>
         </div>
@@ -87,9 +88,9 @@
         </svg>
       </div>
       <div>
-        <p class="font-bold text-content text-sm mb-1"><%= t("private_reading_session", default: "Private Reading Session") %></p>
-        <p class="text-content-subtle text-sm">This is a private club. Join to see meetup details.</p>
-        <%= link_to t("view_club", default: "View Book Club"),
+        <p class="font-bold text-content text-sm mb-1"><%= t("private_reading_session") %></p>
+        <p class="text-content-subtle text-sm"><%= t("private_club_join_meetup") %></p>
+        <%= link_to t("view_club"),
         book_club_path(book_club),
         class: "inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-accent transition-colors mt-2" %>
       </div>

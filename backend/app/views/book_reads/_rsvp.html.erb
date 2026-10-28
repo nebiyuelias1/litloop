@@ -12,23 +12,23 @@
     button_label = if is_active
       waitlisted ? t("leave_waitlist") : t("cancel_rsvp")
     else
-      full ? t("join_waitlist") : "RSVP"
+      full ? t("join_waitlist") : t("rsvp")
     end
     confirm_msg = is_active ? (waitlisted ? t("leave_waitlist_confirm") : t("cancel_rsvp_confirm")) : nil
     is_primary = !is_active
   %>
-  <div class="bg-surface/95 backdrop-blur-sm border border-border shadow-lg rounded-lg sticky bottom-0 z-10 mx-auto max-w-4xl mt-8 px-5 py-3 flex items-center justify-between gap-4">
-    <div class="flex items-center gap-3 text-sm">
+  <div class="bg-surface/95 backdrop-blur-sm border border-border shadow-lg rounded-lg sticky bottom-16 sm:bottom-0 hotwire-native:bottom-0 z-10 mx-auto max-w-4xl mt-8 px-5 py-3 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 text-sm min-w-0">
       <% if past %>
-        <span class="text-content-muted"><%= t("event_started") %></span>
+        <span class="text-content-muted whitespace-nowrap"><%= t("event_started") %></span>
       <% elsif is_active %>
-        <span class="font-semibold <%= waitlisted ? "text-violet-700 dark:text-violet-400" : "text-content" %>">
+        <span class="font-semibold whitespace-nowrap <%= waitlisted ? "text-violet-700 dark:text-violet-400" : "text-content" %>">
           <%= waitlisted ? t("you_are_waitlisted") : t("you_are_going") %>
         </span>
       <% end %>
       <% unless past %>
         <% if book_read.max_capacity.present? %>
-          <span class="<%= is_active ? "text-content-muted" : "font-semibold text-content" %>"><%= t("spots_remaining", count: remaining || 0) %></span>
+          <span class="truncate <%= is_active ? "hidden sm:inline text-content-muted" : "font-semibold text-content" %>"><%= t("spots_remaining", count: remaining || 0) %></span>
         <% elsif !is_active %>
           <span class="font-semibold text-content"><%= t("people_going", count: going_count) %></span>
         <% end %>

@@ -4,7 +4,7 @@
 
 ## Platform
 
-web
+web, delivered through Turbo Native mobile shells (Android, iOS) that wrap the same Rails web surface
 
 ## Users
 

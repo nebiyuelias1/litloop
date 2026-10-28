@@ -167,6 +167,15 @@ namespace :theme do
     colors.each { |name, hex| css << "  --color-#{name.tr('_', '-')}: #{hex};\n" }
     css << "}\n"
 
+    # DaisyUI themes (e.g. the pinned data-theme="silk") redeclare --color-primary and
+    # --color-accent on [data-theme=...], which out-cascades the bare :root @theme block.
+    # Re-declare every brand token at higher specificity so theme.toml stays the single
+    # source of truth regardless of which DaisyUI theme is active.
+    css << "\n/* Brand tokens win over DaisyUI data-theme overrides. */\n"
+    css << ":root,\n:root[data-theme] {\n"
+    colors.each { |name, hex| css << "  --color-#{name.tr('_', '-')}: #{hex};\n" }
+    css << "}\n"
+
     path = File.join(repo_root, "backend/app/assets/tailwind/theme.css")
     File.write(path, css)
   end
