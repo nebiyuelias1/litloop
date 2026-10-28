@@ -323,13 +323,20 @@ wait_for_static_screen() {
 check_webview_errors() {
   [[ "${NET_CHECK:-1}" == "1" ]] || return 0
   local errs
-  errs="$(adb -e logcat -d 2>/dev/null | grep -oE 'net::ERR_[A-Z_]+' | sort | uniq -c | sort -rn | head -5)"
-  if [[ -n "$errs" ]]; then
-    echo "error: WebView reported network errors; screenshots would show error pages:" >&2
-    echo "$errs" >&2
-    echo "hint: set EMU_DNS (default 8.8.8.8) if the guest cannot resolve hosts" >&2
-    return 1
-  fi
+  errs="$(adb -e logcat -d 2>/dev/null | grep -oE 'net::ERR_[A-Z_]+' | sort | uniq -c | sort -rn | head -5 || true)"
+  [[ -n "$errs" ]] || return 0
+
+  echo "error: WebView reported network errors; screenshots would show error pages:" >&2
+  echo "$errs" >&2
+  echo "--- guest probes ---" >&2
+  adb -e shell "nc -w 3 8.8.8.8 53 </dev/null >/dev/null 2>&1 && echo 'tcp 8.8.8.8:53 OK'" >&2 || echo "tcp 8.8.8.8:53 unreachable" >&2
+  adb -e shell "ping -c 1 -W 3 8.8.8.8 2>&1 | tail -1" >&2 || true
+  echo "--- host DNS ---" >&2
+  getent hosts litloop.club 2>&1 | head -2 >&2 || true
+  echo "--- relevant logcat ---" >&2
+  adb -e logcat -d 2>/dev/null | grep -iE "net::ERR|UnknownHost|Unable to resolve|ERR_CERT|dns_" | tail -15 >&2 || true
+  echo "hint: try EMU_DNS (default 8.8.8.8) or EMU_DNS=none" >&2
+  return 1
 }
 
 record_preview() {
