@@ -96,6 +96,7 @@ am:
     one: "1 ሰው በተጠባባቂ ላይ"
     other: "%{count} ሰዎች በተጠባባቂ ላይ"
   waitlisted_count: "(%{count} ተጠባባቂ)"
+  no_rsvps_yet: "እስካሁን ምንም ምዝገባዎች የሉም"
   spots_remaining:
     zero: "ቦታ የለም"
     one: "1 ቦታ ቀርቷል"
@@ -114,8 +115,52 @@ am:
   members_only: "ለአባላት ብቻ"
   view_reading_session: "የንባብ ክፍለ ጊዜን ይመልከቱ"
   rsvp: "ይመዝገቡ"
+  book_read: "የመጽሐፍ ንባብ"
+  reading_session: "የንባብ ክፍለ ጊዜ"
+  og_join_session: "የ%{club}ን የመጽሐፍ ንባብ ለመቀላቀል ይቀላቀሉን! ስብሰባ: %{time} በ%{location}።"
+  og_private_club: "የግል የመጽሐፍ ክለብ ነው፤ የስብሰባ ዝርዝሮችን ለማየት %{club} ይቀላቀሉ።"
+  no_cover_available: "የሽፋን ምስል የለም"
+  about_the_book: "ስለ መጽሐፉ"
+  more_actions: "ተጨማሪ እርምጃዎች"
+  view_book_details: "የመጽሐፍ ዝርዝሮችን ይመልከቱ"
+  edit_session: "ክፍለ ጊዜውን ያርትዕ"
+  finalized_book_selected: "ተጠናቋል - መጽሐፍ ተመርጧል"
+  finalize_poll: "የድምፅ አሰጣጡን ያጠናቅቁ"
+  share_poll: "የድምፅ አሰጣጥ ያጋሩ"
+  poll_chosen_hint: "መጽሐፉ በድምፅ አሰጣጥ ተመርጧል። ውጤቶቹን ለማየት ይንኩ።"
+  voting_concluded: "የድምፅ አሰጣጥ በ%{datetime} ተጠናቋል።"
+  voting_ends_on: "የድምፅ አሰጣጥ የሚያበቃው %{datetime} ላይ ነው።"
+  voting_ended_on: "የድምፅ አሰጣጥ የተዘጋው %{datetime} ላይ ነው።"
+  private_club_join_poll: "ይህ የግል ክለብ ነው። የድምፅ አሰጣጥ ዝርዝሮችን ለማየት ይቀላቀሉ።"
+  discussion_questions: "የውይይት ጥያቄዎች"
+  private_club_join_discussion: "ይህ የግል ክለብ ነው። የውይይት ጥያቄዎችን ለማየት እና ለመሳተፍ ይቀላቀሉ።"
+  add_to_calendar: "ቀን መቁጠሪያ ላይ ያክሉ"
+  spots_reserved_html: '<span class="font-bold text-content">%{going} ከ%{max} ቦታ ተይዟል</span>'
+  private_club_join_meetup: "ይህ የግል ክለብ ነው። የስብሰባ ዝርዝሮችን ለማየት ይቀላቀሉ።"
+  not_set: "አልተቀመጠም"
+  view_club: "ክለቡን ይመልከቱ"
+  no_discussions_yet: "ገና ውይይት የለም"
+  check_back_later: "ለውይይት ጥያቄዎች በኋላ ይመልሱ!"
+  today: "ዛሬ"
+  tomorrow: "ነገ"
+  in_days:
+    one: "በ%{count} ቀን ውስጥ"
+    other: "በ%{count} ቀናት ውስጥ"
+  days_ago:
+    one: "ከ%{count} ቀን በፊት"
+    other: "ከ%{count} ቀናት በፊት"
+  morning: "ጠዋት"
+  afternoon: "ከሰዓት"
+  evening: "ምሽት"
+  enter_book_title_or_search: "የመጽሐፍ አርዕስት ያስገቡ ወይም ይፈልጉ..."
+  remove_option: "ምርጫ ያስወግዱ"
+  type_title: "አርዕስት ይጻፉ..."
+
+  date:
+    day_names: [እሑድ, ሰኞ, ማክሰኞ, ረቡዕ, ሐሙስ, ዓርብ, ቅዳሜ]
 
   time:
     formats:
       flyer: "%b %d, %Y - %H:%M"
+      long: "%d/%m/%Y %H:%M"
   page_count: "የገጽ ብዛት"

@@ -1,13 +1,34 @@
 /* GENERATED from theme.toml by `bundle exec rake theme:generate` — do not edit. */
 @theme {
-  --color-primary: #22324a;
+  --color-primary: #134e4a;
   --color-primary-contrast: #ffffff;
-  --color-accent: #d39a3e;
-  --color-accent-contrast: #1a202c;
-  --color-background: #f7f3ee;
-  --color-surface: #ffffff;
-  --color-content: #1f2430;
-  --color-content-subtle: #4b5563;
-  --color-content-muted: #6b7280;
-  --color-border: #e4ded6;
+  --color-accent: #8c3130;
+  --color-accent-contrast: #ffffff;
+  --color-background: #f6f1e7;
+  --color-surface: #fdfbf6;
+  --color-content: #282219;
+  --color-content-subtle: #55483a;
+  --color-content-muted: #766854;
+  --color-border: #e3dbc9;
+}
+
+/* Brand tokens win over DaisyUI data-theme overrides. */
+:root,
+:root[data-theme] {
+  --color-primary: #134e4a;
+  --color-primary-contrast: #ffffff;
+  --color-accent: #8c3130;
+  --color-accent-contrast: #ffffff;
+  --color-background: #f6f1e7;
+  --color-surface: #fdfbf6;
+  --color-content: #282219;
+  --color-content-subtle: #55483a;
+  --color-content-muted: #766854;
+  --color-border: #e3dbc9;
+  --color-base-100: #fdfbf6;
+  --color-base-200: #f6f1e7;
+  --color-base-300: #e3dbc9;
+  --color-base-content: #282219;
+  --color-primary-content: #ffffff;
+  --color-accent-content: #ffffff;
 }

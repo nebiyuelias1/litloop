@@ -1,22 +1,22 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-20T12:00:00Z",
+  "generatedAt": "2026-10-28T14:30:00Z",
   "title": "Design System: LitLoop",
   "extensions": {
     "colorMeta": {
-      "ink-navy": {
+      "deep-spruce": {
         "role": "primary",
-        "displayName": "Ink Navy",
-        "canonical": "#22324a",
+        "displayName": "Deep Spruce",
+        "canonical": "#134e4a",
         "tonalRamp": [
-          "#010a1f",
-          "#132239",
-          "#2b3b54",
-          "#52647f",
-          "#7d90ad",
-          "#a5b9d7",
-          "#c4d9f8",
-          "#dbf0ff"
+          "#02100f",
+          "#0a2d2a",
+          "#134e4a",
+          "#2a6d68",
+          "#4f918b",
+          "#7db5af",
+          "#a8d8d3",
+          "#d2f5f0"
         ]
       },
       "primary-contrast": {
@@ -34,54 +34,24 @@
           "#eeeeee"
         ]
       },
-      "bookplate-gold": {
+      "oxblood": {
         "role": "accent",
-        "displayName": "Bookplate Gold",
-        "canonical": "#d39a3e",
+        "displayName": "Oxblood",
+        "canonical": "#8c3130",
         "tonalRamp": [
-          "#250000",
-          "#410f00",
-          "#5e2c00",
-          "#8b5600",
-          "#bb8320",
-          "#e5ac51",
-          "#ffcc72",
-          "#ffe38a"
+          "#100a0a",
+          "#231515",
+          "#673232",
+          "#8c3130",
+          "#944847",
+          "#ba6f6e",
+          "#d6a9a9",
+          "#eee3e2"
         ]
       },
       "accent-contrast": {
         "role": "accent",
         "displayName": "Accent Contrast",
-        "canonical": "#1a202c",
-        "tonalRamp": [
-          "#060b16",
-          "#1c222e",
-          "#343b48",
-          "#5c6372",
-          "#888f9f",
-          "#afb8c8",
-          "#cfd8e8",
-          "#e6efff"
-        ]
-      },
-      "parchment": {
-        "role": "neutral",
-        "displayName": "Parchment",
-        "canonical": "#f7f3ee",
-        "tonalRamp": [
-          "#0d0b08",
-          "#24211e",
-          "#3d3a36",
-          "#66635e",
-          "#928e8a",
-          "#bab7b2",
-          "#dbd7d2",
-          "#f2eee9"
-        ]
-      },
-      "paper-white": {
-        "role": "neutral",
-        "displayName": "Paper White",
         "canonical": "#ffffff",
         "tonalRamp": [
           "#0b0b0b",
@@ -94,87 +64,117 @@
           "#eeeeee"
         ]
       },
-      "iron-gall": {
+      "vellum": {
         "role": "neutral",
-        "displayName": "Iron Gall",
-        "canonical": "#1f2430",
+        "displayName": "Vellum",
+        "canonical": "#f6f1e7",
         "tonalRamp": [
-          "#070b15",
-          "#1c212d",
-          "#353a47",
-          "#5d6371",
-          "#898f9e",
-          "#b0b7c7",
-          "#d0d7e8",
-          "#e7eeff"
+          "#221e16",
+          "#514429",
+          "#7d693f",
+          "#a98d56",
+          "#c0ab82",
+          "#d6c8ae",
+          "#e7dfd0",
+          "#f6f1e7"
         ]
       },
-      "soft-graphite": {
+      "book-page": {
         "role": "neutral",
-        "displayName": "Soft Graphite",
-        "canonical": "#4b5563",
+        "displayName": "Book Page",
+        "canonical": "#fdfbf6",
         "tonalRamp": [
-          "#050b16",
-          "#19222e",
-          "#323b48",
-          "#5a6472",
-          "#8590a0",
-          "#adb8c9",
-          "#cdd9e9",
-          "#e4f0ff"
+          "#252013",
+          "#594921",
+          "#8a7133",
+          "#ba9945",
+          "#ccb375",
+          "#decea6",
+          "#ece2cb",
+          "#fdfbf6"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#282219",
+        "tonalRamp": [
+          "#0e0d0b",
+          "#1f1d19",
+          "#282219",
+          "#594f40",
+          "#80715b",
+          "#a69782",
+          "#cac1b5",
+          "#ebe9e5"
+        ]
+      },
+      "faded-ink": {
+        "role": "neutral",
+        "displayName": "Faded Ink",
+        "canonical": "#55483a",
+        "tonalRamp": [
+          "#0e0d0c",
+          "#1f1c19",
+          "#55483a",
+          "#574d42",
+          "#7d6e5f",
+          "#a29485",
+          "#c8c0b7",
+          "#eae8e6"
         ]
       },
       "faded-marginalia": {
         "role": "neutral",
         "displayName": "Faded Marginalia",
-        "canonical": "#6b7280",
+        "canonical": "#766854",
         "tonalRamp": [
-          "#070b15",
-          "#1c222d",
-          "#343b47",
-          "#5d6371",
-          "#888f9e",
-          "#b0b8c7",
-          "#d0d8e7",
-          "#e7efff"
+          "#0e0d0c",
+          "#1e1c1a",
+          "#564e43",
+          "#766854",
+          "#7b7060",
+          "#a19687",
+          "#c7c1b8",
+          "#eae8e6"
         ]
       },
       "deckle-edge": {
         "role": "neutral",
         "displayName": "Deckle Edge",
-        "canonical": "#e4ded6",
+        "canonical": "#e3dbc9",
         "tonalRamp": [
-          "#0e0a06",
-          "#25211b",
-          "#3e3a33",
-          "#68625b",
-          "#948e87",
-          "#bcb6af",
-          "#dcd6cf",
-          "#f4ede5"
+          "#201e18",
+          "#4b432f",
+          "#746749",
+          "#9d8b62",
+          "#b6a98b",
+          "#d0c7b4",
+          "#e3dbc9",
+          "#e7e0d0"
         ]
       }
     },
     "typographyMeta": {
       "display": {
         "displayName": "Display",
-        "purpose": "Editorial title pages and future display moments only; not yet applied in the product."
+        "purpose": "Editorial title pages and future display moments; same serif register as headings at a larger scale."
       },
       "headline": {
         "displayName": "Headline",
-        "purpose": "Page titles, club names, read titles, and dialog headings."
+        "purpose": "Page titles, club names, read titles, and dialog headings, set in the serif register via the title-lg utility."
       },
       "title": {
         "displayName": "Title",
-        "purpose": "Card titles, section headings, and reading-session names."
+        "purpose": "Card titles, section headings, and reading-session names, set in the serif register via the title/title-sm utilities."
       },
       "body": {
         "displayName": "Body",
-        "purpose": "Descriptions, questions, and long-form reading."
+        "purpose": "Descriptions, questions, and long-form reading in the Ethiopic-first sans."
       },
       "label": {
         "displayName": "Label",
-        "purpose": "Short uppercase micro-headings, status labels, and metadata labels."
+        "purpose": "Short uppercase micro-headings, status labels, and metadata labels in the Ethiopic-first sans."
       }
     },
     "shadows": [
@@ -295,18 +295,18 @@
       "name": "Bottom Navigation",
       "kind": "nav",
       "refersTo": "nav-bottom",
-      "description": "The mobile thumb nav: four equal destinations, solid icons when active, gold hover.",
+      "description": "The mobile thumb nav: four equal destinations, solid icons when active, oxblood hover.",
       "html": "<nav class=\"ds-bottom-nav\"> <a class=\"active\" href=\"#\"> <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"><path d=\"M3 10.5 12 3l9 7.5V21H3z\"/><path d=\"M9 21v-6h6v6\"/></svg> <span>Home</span> </a> <a href=\"#\"> <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"><path d=\"M4 4h7v16H4zM13 4h7v16h-7z\"/></svg> <span>Library</span> </a> <a href=\"#\"> <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"><circle cx=\"9\" cy=\"8\" r=\"3\"/><circle cx=\"17\" cy=\"9\" r=\"2.5\"/><path d=\"M3 20c0-3 2.5-5 6-5s6 2 6 5M14 20c0-2 1.5-3.5 4-3.5s4 1.5 4 3.5\"/></svg> <span>Clubs</span> </a> <a href=\"#\"> <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"><circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21c0-4 3.5-6.5 8-6.5s8 2.5 8 6.5\"/></svg> <span>Profile</span> </a> </nav>",
       "css": ".ds-bottom-nav { display: flex; align-items: stretch; justify-content: space-around; height: 64px; border-top: 1px solid var(--color-border); background: var(--color-surface); font-family: var(--font-sans); } .ds-bottom-nav a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 64px; color: var(--color-content-subtle); font-size: 11px; font-weight: 500; text-decoration: none; transition: color 200ms ease; } .ds-bottom-nav a:hover { color: var(--color-accent); } .ds-bottom-nav a.active { color: var(--color-primary); font-weight: 600; } .ds-bottom-nav svg { width: 24px; height: 24px; }"
     }
   ],
   "narrative": {
     "northStar": "The Circulating Library",
-    "overview": "LitLoop reads as a small circulating library that happens to run itself: a parchment ground, white catalogue cards, ink-navy structure, and a single gold stamp. The library metaphor is functional rather than decorative. Books are catalogued, clubs are registered, and every read is stamped with a date and a place. The mood is warm, literary, and quietly social; the interface never performs bookishness with props.\n\nDensity is moderate and task-led. An organizer should see the live read, its meetup, and its RSVP state without hunting, while a reader should feel invited into the next gathering rather than dropped into a feed. Warmth comes from the palette, the Ethiopic-first type, the humane rounding, and real covers. Navy carries structure. Gold marks the read that is currently alive.\n\nThis system is explicitly not a generic SaaS dashboard, not corporate library software, not sepia cosplay, and not a social feed. The scheduled read outranks the metric tile, the engagement badge, and the infinite scroll.",
+    "overview": "LitLoop reads as a small circulating library that happens to run itself: a vellum ground, warm book-page catalogue cards, deep-spruce structure, and a single oxblood stamp. The library metaphor is functional rather than decorative. Books are catalogued, clubs are registered, and every read is stamped with a date and a place. The mood is warm, papered, and quietly social; the interface never performs bookishness with props.\n\nDensity is moderate and task-led. An organizer should see the live read, its meetup, and its RSVP state without hunting, while a reader should feel invited into the next gathering rather than dropped into a feed. Freshness comes from the palette, the serif headings over an Ethiopic-first sans, the humane rounding, and real covers. Deep Spruce carries structure. Oxblood marks the read that is currently alive, like a wax seal on a fresh invitation.\n\nThis system is explicitly not a generic SaaS dashboard, not corporate library software, not sepia cosplay, and not a social feed. The scheduled read outranks the metric tile, the engagement badge, and the infinite scroll.",
     "keyCharacteristics": [
-      "Parchment page ground, Paper White sheet surfaces, Ink Navy structure.",
-      "One Bookplate Gold accent, used sparingly as a stamp and a live-read signal.",
-      "Ethiopic-first humanist sans; Playfair Display held in reserve for editorial display.",
+      "Vellum page ground, Book Page sheet surfaces, Deep Spruce structure.",
+      "One Oxblood accent, used sparingly as a stamp, a wax seal, and a live-read signal.",
+      "Serif headings in the Playfair Display/Georgia register over an Ethiopic-first humanist sans.",
       "Soft radius ladder (8/12/16/24px) with hairline Deckle Edge borders.",
       "Tonal depth, not shadow-based hierarchy; shadows belong to floating layers.",
       "Reading-first columns and a mobile bottom navigation built for thumbs.",
@@ -314,28 +314,28 @@
     ],
     "rules": [
       {
-        "name": "The One Gold Accent Rule",
-        "body": "Bookplate Gold is a stamp, not a surface. Keep it under roughly 10% of any screen. Use it for the live read, small emphasis, metadata icons, and hover; never as a large background fill.",
+        "name": "The One Oxblood Accent Rule",
+        "body": "Oxblood is a stamp, not a surface. Keep it under roughly 10% of any screen. Use it for the live read, small emphasis, metadata icons, and hover; never as a large background fill.",
         "section": "colors"
       },
       {
-        "name": "The Parchment Ground Rule",
-        "body": "Pages sit on Parchment. Sheets, cards, and inputs sit on Paper White. That contrast is the primary depth cue; do not flatten it by making the page white.",
+        "name": "The Vellum Ground Rule",
+        "body": "Pages sit on Vellum. Sheets, cards, and inputs sit on Book Page. That contrast is the primary depth cue; do not flatten it by making the page white.",
         "section": "colors"
       },
       {
-        "name": "The Navy Is Structure Rule",
-        "body": "Ink Navy carries navigation, primary actions, and links. Body copy stays Iron Gall so the page reads as text first and chrome second.",
+        "name": "The Spruce Is Structure Rule",
+        "body": "Deep Spruce carries navigation, primary actions, and links. Body copy stays Ink so the page reads as text first and chrome second.",
         "section": "colors"
       },
       {
         "name": "The Ethiopic-First Rule",
-        "body": "Every sans stack leads with Noto Sans Ethiopic, then Inter. Never reorder the stack or substitute a Latin-first fallback; the multilingual product depends on this order.",
+        "body": "Every sans stack leads with Noto Sans Ethiopic, then Inter. Never reorder the stack or substitute a Latin-first fallback; the multilingual product depends on this order. Ethiopic and CJK headings fall through the serif stack to the platform serif, which is an acceptable bookish register.",
         "section": "typography"
       },
       {
         "name": "The Two-Register Rule",
-        "body": "Interface text uses the humanist sans. Playfair Display is reserved for display and editorial moments. Never set body copy, controls, or metadata in the serif.",
+        "body": "Headings and card titles use the serif register (Playfair Display with Georgia fallback) via the title utilities. Body copy, controls, labels, and metadata stay in the Ethiopic-first sans. Never set body copy or controls in the serif.",
         "section": "typography"
       },
       {
@@ -350,7 +350,7 @@
       },
       {
         "name": "The Tonal Depth Rule",
-        "body": "Separate surfaces with parchment/surface contrast and hairline borders. Do not introduce shadow-based hierarchy.",
+        "body": "Separate surfaces with vellum/surface contrast and hairline borders. Do not introduce shadow-based hierarchy.",
         "section": "elevation"
       },
       {
@@ -375,24 +375,24 @@
       }
     ],
     "dos": [
-      "Do start pages on Parchment and place Paper White sheets on top.",
-      "Do keep Ink Navy for structure and actions, and Bookplate Gold for the live read and small emphasis.",
-      "Do set all interface text in the Ethiopic-first sans stack.",
+      "Do start pages on Vellum and place Book Page sheets on top.",
+      "Do keep Deep Spruce for structure and actions, and Oxblood for the live read and small emphasis.",
+      "Do set headings in the serif register and all interface text in the Ethiopic-first sans stack.",
       "Do use the radius ladder: 8px controls, 12px small cards, 16px cards, 24px panels and dialogs, full pills for search and avatars.",
       "Do use 1px Deckle Edge borders and tonal contrast for depth.",
       "Do preserve the 42-56rem reading column for club and read pages.",
-      "Do give every interactive element a visible Ink Navy focus ring.",
+      "Do give every interactive element a visible Deep Spruce focus ring.",
       "Do use real book covers and club images; keep placeholders quiet and icon-led.",
       "Do keep uppercase for short labels and micro-headings only."
     ],
     "donts": [
-      "Don't use pure white page backgrounds or pure black text.",
+      "Don't use pure white page backgrounds, pure black text, or cool slate text tones.",
       "Don't add shadow-based elevation to cards, panels, or sections.",
       "Don't use gradients beyond the hero fallback and the profile banner.",
       "Don't introduce new brand hues; success, error, and warning colors are semantic only.",
       "Don't use sepia paper textures, script fonts, leather-and-candle imagery, or faux-vintage props.",
       "Don't turn the product into a dashboard of metric tiles or an infinite social feed.",
-      "Don't set body copy, controls, or metadata in Playfair Display.",
+      "Don't set body copy, controls, or metadata in the serif.",
       "Don't pill every button; pills are for search, avatars, dots, and status chips.",
       "Don't nest a button inside a card anchor; use a stretched link with controls above it."
     ]

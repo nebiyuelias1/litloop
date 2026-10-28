@@ -43,7 +43,7 @@ LitLoop organizes the live club read as its central object. A neighboring catalo
 ## Brand Commitments
 
 - The product name "LitLoop" is durable and binding.
-- Visual identity is open to reconsideration; the current warm navy/gold palette and existing logo are evidence of the present look, not permanent constraints.
+- Visual identity is open to reconsideration; the prior navy/gold palette and existing logo are evidence of the previous look, not permanent constraints. The current palette is warm vellum/deep-spruce with a single oxblood accent.
 - Voice and tone guidelines are not established.
 
 ## Evidence on Hand

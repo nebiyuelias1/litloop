@@ -7,7 +7,7 @@
        data-book-autocomplete-url-value="<%= books_search_path(format: :json) %>">
 
     <%= form.text_field :content,
-        placeholder: "Enter book title or search...",
+        placeholder: t("enter_book_title_or_search"),
         data: {
           book_autocomplete_target: "input",
           action: "keyup->book-autocomplete#performSearch click->book-autocomplete#performSearch focus->book-autocomplete#performSearch"
@@ -27,7 +27,7 @@
   <button type="button"
           data-action="click->dynamic-nested-fields#remove"
           class="p-2 text-content-muted hover:text-red-500 transition-colors"
-          title="Remove option">
+          title="<%= t("remove_option") %>">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
       <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
     </svg>

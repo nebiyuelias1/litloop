@@ -1,4 +1,4 @@
-<h2 style="margin-top: 0; font-weight: 800; font-size: 24px;">RSVP Confirmed!</h2>
+<h2 style="margin-top: 0; font-weight: 700; font-size: 24px; font-family: Georgia, 'Times New Roman', serif;">RSVP Confirmed!</h2>
 <p>Hi <%= @user.name %>,</p>
 <p>You're all set! You have successfully RSVP'd for the upcoming reading session in <strong><%= @book_read.book_club.name %></strong>.</p>
 
@@ -9,15 +9,15 @@
         <% if @book_read.book&.cover_image.present? %>
           <img src="<%= @book_read.book.cover_image %>" style="width: 100px; height: 150px; object-fit: cover; border-radius: 8px;">
         <% else %>
-          <div style="width: 100px; height: 150px; background-color: #f7f3ee; border-radius: 8px; border: 1px solid #e4ded6; display: table;">
-            <div style="display: table-cell; vertical-align: middle; text-align: center; color: #6b7280; font-size: 11px; font-weight: 600; padding: 10px;">No Cover</div>
+          <div style="width: 100px; height: 150px; background-color: #f6f1e7; border-radius: 8px; border: 1px solid #e3dbc9; display: table;">
+            <div style="display: table-cell; vertical-align: middle; text-align: center; color: #766854; font-size: 12px; font-weight: 600; padding: 10px;">No Cover</div>
           </div>
         <% end %>
       </td>
       <td valign="top">
         <h3 class="book-title"><%= @book_read.book&.title || "Reading Session" %></h3>
         <p class="book-author">by <%= @book_read.book&.author || "Various Authors" %></p>
-        <p style="font-size: 14px; color: #6b7280; line-height: 1.5; margin: 0;">
+        <p style="font-size: 14px; color: #766854; line-height: 1.5; margin: 0;">
           <%= truncate(@book_read.book&.description, length: 140) %>
         </p>
       </td>
@@ -46,6 +46,6 @@
       class: "btn-primary" %>
 </div>
 
-<p style="margin-top: 40px; font-size: 13px; color: #6b7280; text-align: center; font-style: italic;">
+<p style="margin-top: 40px; font-size: 13px; color: #766854; text-align: center; font-style: italic;">
   A calendar invite has been attached to this email.
 </p>

@@ -14,13 +14,13 @@
 #   ios/App/Resources/Assets.xcassets/Icons/*.imageset   (from icons/*.svg)
 
 [light]
-primary = "#22324a"
+primary = "#134e4a"
 primary_contrast = "#ffffff"
-accent = "#d39a3e"
-accent_contrast = "#1a202c"
-background = "#f7f3ee"
-surface = "#ffffff"
-content = "#1f2430"
-content_subtle = "#4b5563"
-content_muted = "#6b7280"
-border = "#e4ded6"
+accent = "#8c3130"
+accent_contrast = "#ffffff"
+background = "#f6f1e7"
+surface = "#fdfbf6"
+content = "#282219"
+content_subtle = "#55483a"
+content_muted = "#766854"
+border = "#e3dbc9"

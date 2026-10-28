@@ -125,6 +125,7 @@ en:
     one: "1 person waitlisted"
     other: "%{count} people waitlisted"
   waitlisted_count: "(%{count} waitlisted)"
+  no_rsvps_yet: "No RSVPs yet"
   spots_remaining:
     zero: "No spots left"
     one: "1 spot left"
@@ -143,8 +144,52 @@ en:
   members_only: "Members only"
   view_reading_session: "View reading session"
   rsvp: "RSVP"
+  book_read: "Book Read"
+  reading_session: "Reading Session"
+  og_join_session: "Join %{club}'s book reading session! Meetup: %{time} at %{location}."
+  og_private_club: "Join %{club}'s private book club to see meetup details."
+  no_cover_available: "No cover available"
+  about_the_book: "About the Book"
+  more_actions: "More Actions"
+  view_book_details: "View Book Details"
+  edit_session: "Edit Session"
+  finalized_book_selected: "Finalized - Book Selected"
+  finalize_poll: "Finalize Poll"
+  share_poll: "Share poll"
+  poll_chosen_hint: "This book was chosen by poll. Click to view results."
+  voting_concluded: "Voting concluded on %{datetime}"
+  voting_ends_on: "Voting ends on %{datetime}"
+  voting_ended_on: "Voting ended on %{datetime}"
+  private_club_join_poll: "This is a private club. Join to see poll details."
+  discussion_questions: "Discussion Questions"
+  private_club_join_discussion: "This is a private club. Join to see and participate in discussion questions."
+  add_to_calendar: "Add to Calendar"
+  spots_reserved_html: '<span class="font-bold text-content">%{going} of %{max}</span> spots reserved'
+  private_club_join_meetup: "This is a private club. Join to see meetup details."
+  not_set: "Not set"
+  view_club: "View Book Club"
+  no_discussions_yet: "No discussion so far"
+  check_back_later: "Check back later for questions to discuss!"
+  today: "Today"
+  tomorrow: "Tomorrow"
+  in_days:
+    one: "In %{count} day"
+    other: "In %{count} days"
+  days_ago:
+    one: "%{count} day ago"
+    other: "%{count} days ago"
+  morning: "Morning"
+  afternoon: "Afternoon"
+  evening: "Evening"
+  enter_book_title_or_search: "Enter book title or search..."
+  remove_option: "Remove option"
+  type_title: "Type title..."
+
+  date:
+    day_names: [Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday]
 
   time:
     formats:
       flyer: "%b %d, %Y - %H:%M"
+      long: "%B %d, %Y at %I:%M %p"
   page_count: "Page count"
