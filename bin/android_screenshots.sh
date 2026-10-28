@@ -254,6 +254,7 @@ boot_emulator() {
   "$EMULATOR" "${emu_flags[@]}" > "$EMU_LOG" 2>&1 &
   EMU_PID=$!
   wait_for_boot
+  guest_probe
 }
 
 # SystemUI demo mode pins a clean status bar: 9:41, full battery, full wifi,
@@ -315,11 +316,43 @@ wait_for_static_screen() {
     waited=$((waited + 2))
   done
   echo "   warning: screen still animating after ${timeout}s; capturing anyway" >&2
+  adb -e logcat -d 2>/dev/null | grep -iE "chromium|cr_" | tail -10 >&2 || true
 }
 
 # The app is a WebView around litloop.club; if the guest network is broken
 # (e.g. DNS on CI runners) every capture would silently show Hotwire's error
 # page, so fail loudly instead of uploading garbage.
+# End-to-end guest probe: DNS resolution + TCP + HTTP in one shot (toybox nc
+# does getaddrinfo for the host name). Distinguishes "guest network broken"
+# from "WebView/chromium-specific" failures.
+guest_probe() {
+  local out
+  out="$(adb -e shell 'printf "GET / HTTP/1.0\r\n\r\n" | nc -w 10 litloop.club 80 2>&1 | head -2' 2>/dev/null || true)"
+  if [[ "$out" == *"HTTP/"* ]]; then
+    log "   guest probe: litloop.club reachable (HTTP ok)"
+  else
+    log "   guest probe: litloop.club NOT reachable: ${out:-<empty>}"
+  fi
+}
+
+# Everything useful when the app fails to load: guest state (default network,
+# interfaces, probes), host DNS, and the chromium/network logcat lines.
+dump_webview_diagnostics() {
+  echo "--- guest state ---" >&2
+  adb -e shell "dumpsys connectivity 2>/dev/null | grep -m1 'Active default network'" >&2 || true
+  adb -e shell "ip -4 addr show 2>/dev/null | grep -E '^[0-9]+:|inet '" >&2 || true
+  adb -e shell "nc -w 3 8.8.8.8 53 </dev/null >/dev/null 2>&1 && echo 'tcp 8.8.8.8:53 OK'" >&2 || echo "tcp 8.8.8.8:53 unreachable" >&2
+  adb -e shell 'printf "GET / HTTP/1.0\r\n\r\n" | nc -w 10 litloop.club 80 2>&1 | head -2' >&2 || true
+  echo "--- host DNS ---" >&2
+  getent hosts litloop.club 2>&1 | head -2 >&2 || true
+  echo "--- chromium/network logcat ---" >&2
+  adb -e logcat -d 2>/dev/null | grep -iE "net::ERR|UnknownHost|Unable to resolve|ERR_CERT|DnsConfig|dns_config|chromium.*(dns|network)" | tail -20 >&2 || true
+  echo "hint: try EMU_DNS (default 8.8.8.8) or EMU_DNS=none" >&2
+}
+
+# The app is a WebView around litloop.club; if the guest network is broken
+# every capture would silently show Hotwire's error page or a frozen loading
+# spinner, so fail loudly instead of uploading garbage.
 check_webview_errors() {
   [[ "${NET_CHECK:-1}" == "1" ]] || return 0
   local errs
@@ -328,16 +361,7 @@ check_webview_errors() {
 
   echo "error: WebView reported network errors; screenshots would show error pages:" >&2
   echo "$errs" >&2
-  echo "--- guest probes ---" >&2
-  adb -e shell "nc -w 3 8.8.8.8 53 </dev/null >/dev/null 2>&1 && echo 'tcp 8.8.8.8:53 OK'" >&2 || echo "tcp 8.8.8.8:53 unreachable" >&2
-  adb -e shell "dumpsys connectivity 2>/dev/null | grep -m1 'Active default network'" >&2
-  adb -e shell "ip -4 addr show 2>/dev/null | grep -E '^[0-9]+:|inet '" >&2
-  adb -e shell "ping -c 1 -W 3 8.8.8.8 2>&1 | tail -1" >&2 || true
-  echo "--- host DNS ---" >&2
-  getent hosts litloop.club 2>&1 | head -2 >&2 || true
-  echo "--- relevant logcat ---" >&2
-  adb -e logcat -d 2>/dev/null | grep -iE "net::ERR|UnknownHost|Unable to resolve|ERR_CERT|dns_" | tail -15 >&2 || true
-  echo "hint: try EMU_DNS (default 8.8.8.8) or EMU_DNS=none" >&2
+  dump_webview_diagnostics
   return 1
 }
 
@@ -406,6 +430,9 @@ capture_set() {
   fi
 
   log "   preparing status bar (demo mode)..."
+  # Private DNS (opportunistic DoT) against the emulator's internal resolver
+  # can hang resolution on CI runners; plain DNS via 10.0.2.3 is reliable.
+  adb -e shell settings put global private_dns_mode off
   adb -e shell settings put global window_animation_scale 0.0
   adb -e shell settings put global transition_animation_scale 0.0
   adb -e shell settings put global animator_duration_scale 0.0
@@ -447,6 +474,13 @@ capture_set() {
       echo "   warning: expected ${EXPECTED// /x} (Play 9:16), got ${dims// /x}" >&2
     fi
     log "   wrote $out (${dims// /x}, RGB)"
+    # A uniform screen (error page / frozen spinner) compresses tiny; real
+    # app content never does. Keeps empty captures out of the artifact.
+    if [[ "$(wc -c < "$out")" -lt "${MIN_CAPTURE_BYTES:-40000}" ]]; then
+      echo "error: $out looks empty ($(wc -c < "$out") bytes; app content did not load?)" >&2
+      dump_webview_diagnostics
+      return 1
+    fi
   done
 
   if [[ "$VIDEO" == "1" ]]; then
