@@ -37,6 +37,13 @@ set -euo pipefail
 #   EMU_FEATURES  Emulator -feature flags (default: GLDirectMem,
 #                 HasSharedSlotsHostMemoryAllocator; required by Android 16
 #                 images, see boot_emulator)
+#   EMU_DNS       DNS server for the emulator guest network (default: 8.8.8.8;
+#                 CI runners' host resolver is unreachable from the guest;
+#                 "none" skips the flag)
+#   NET_CHECK     1 to fail the run when the WebView logs network errors after
+#                 the warm-up launch (default: 1)
+#   CAPTURE_RETRIES  Attempts per route before failing on an empty capture
+#                    (default: 2)
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
@@ -51,6 +58,7 @@ WAIT_SECONDS="${WAIT_SECONDS:-6}"
 VIDEO="${VIDEO:-0}"
 HEADLESS="${HEADLESS:-0}"
 KEEP_EMULATOR="${KEEP_EMULATOR:-0}"
+EMU_DNS="${EMU_DNS:-8.8.8.8}"
 APK="$ROOT_DIR/android/app/build/outputs/apk/debug/app-debug.apk"
 EMU_LOG="$ROOT_DIR/build/android-screenshots/emulator.log"
 
@@ -227,7 +235,9 @@ boot_emulator() {
   # pixel_2 profile default (1536M) and system_server starts flapping.
   # GLDirectMem + HasSharedSlotsHostMemoryAllocator make the host advertise
   # ReadColorBufferDma, which Android 16 gralloc asserts on; without them
-  # surfaceflinger crash-loops and the system wedges.
+  # surfaceflinger crash-loops and the system wedges. An explicit DNS server
+  # is required on CI runners: the guest cannot reach the host resolver, and
+  # every page would load as an error page.
   local -a emu_flags=(
     "-avd" "$AVD_NAME"
     "-skin" "$SCREEN_SIZE"
@@ -235,6 +245,9 @@ boot_emulator() {
     "-feature" "${EMU_FEATURES:-GLDirectMem,HasSharedSlotsHostMemoryAllocator}"
     "-no-snapshot" "-no-audio" "-no-boot-anim"
   )
+  if [[ "$EMU_DNS" != "none" ]]; then
+    emu_flags+=("-dns-server" "$EMU_DNS")
+  fi
   mkdir -p "$(dirname "$EMU_LOG")"
   if [[ "$HEADLESS" == "1" ]]; then
     emu_flags+=("-no-window" "-gpu" "swiftshader_indirect")
@@ -243,6 +256,7 @@ boot_emulator() {
   "$EMULATOR" "${emu_flags[@]}" > "$EMU_LOG" 2>&1 &
   EMU_PID=$!
   wait_for_boot
+  guest_probe
 }
 
 # SystemUI demo mode pins a clean status bar: 9:41, full battery, full wifi,
@@ -304,6 +318,59 @@ wait_for_static_screen() {
     waited=$((waited + 2))
   done
   echo "   warning: screen still animating after ${timeout}s; capturing anyway" >&2
+  adb -e logcat -d 2>/dev/null | grep -iE "chromium|cr_" | tail -10 >&2 || true
+}
+
+# The app is a WebView around litloop.club; if the guest network is broken
+# (e.g. DNS on CI runners) every capture would silently show Hotwire's error
+# page, so fail loudly instead of uploading garbage.
+# End-to-end guest probe: DNS resolution + TCP + HTTP in one shot (toybox nc
+# does getaddrinfo for the host name). Distinguishes "guest network broken"
+# from "WebView/chromium-specific" failures.
+guest_probe() {
+  local out
+  out="$(adb -e shell 'printf "GET / HTTP/1.0\r\n\r\n" | nc -w 10 litloop.club 80 2>&1 | head -2' 2>/dev/null || true)"
+  if [[ "$out" == *"HTTP/"* ]]; then
+    log "   guest probe: litloop.club reachable (HTTP ok)"
+  else
+    log "   guest probe: litloop.club NOT reachable: ${out:-<empty>}"
+  fi
+}
+
+# Everything useful when the app fails to load: guest state (default network,
+# interfaces, probes), host DNS, and the chromium/network logcat lines.
+dump_webview_diagnostics() {
+  echo "--- guest state ---" >&2
+  adb -e shell "dumpsys connectivity 2>/dev/null | grep -m1 'Active default network'" >&2 || true
+  adb -e shell "ip -4 addr show 2>/dev/null | grep -E '^[0-9]+:|inet '" >&2 || true
+  adb -e shell "nc -w 3 8.8.8.8 53 </dev/null >/dev/null 2>&1 && echo 'tcp 8.8.8.8:53 OK'" >&2 || echo "tcp 8.8.8.8:53 unreachable" >&2
+  echo "--- guest resolver (getent) ---" >&2
+  for name in litloop.club example.com; do
+    printf '%-16s v4: %s\n' "$name" "$(adb -e shell "getent ahostsv4 $name 2>/dev/null | head -1" || true)" >&2
+    printf '%-16s v6: %s\n' "$name" "$(adb -e shell "getent ahostsv6 $name 2>/dev/null | head -1" || true)" >&2
+  done
+  echo "--- guest HTTP probe ---" >&2
+  adb -e shell 'printf "GET / HTTP/1.0\r\n\r\n" | nc -w 10 litloop.club 80 2>&1 | head -2' >&2 || true
+  echo "--- host DNS ---" >&2
+  getent hosts litloop.club 2>&1 | head -2 >&2 || true
+  echo "--- chromium/network logcat ---" >&2
+  adb -e logcat -d 2>/dev/null | grep -iE "net::ERR|UnknownHost|Unable to resolve|ERR_CERT|DnsConfig|dns_config|chromium.*(dns|network)" | tail -20 >&2 || true
+  echo "hint: try EMU_DNS (default 8.8.8.8) or EMU_DNS=none" >&2
+}
+
+# The app is a WebView around litloop.club; if the guest network is broken
+# every capture would silently show Hotwire's error page or a frozen loading
+# spinner, so fail loudly instead of uploading garbage.
+check_webview_errors() {
+  [[ "${NET_CHECK:-1}" == "1" ]] || return 0
+  local errs
+  errs="$(adb -e logcat -d 2>/dev/null | grep -oE 'net::ERR_[A-Z_]+' | sort | uniq -c | sort -rn | head -5 || true)"
+  [[ -n "$errs" ]] || return 0
+
+  echo "error: WebView reported network errors; screenshots would show error pages:" >&2
+  echo "$errs" >&2
+  dump_webview_diagnostics
+  return 1
 }
 
 record_preview() {
@@ -371,6 +438,9 @@ capture_set() {
   fi
 
   log "   preparing status bar (demo mode)..."
+  # Private DNS (opportunistic DoT) against the emulator's internal resolver
+  # can hang resolution on CI runners; plain DNS via 10.0.2.3 is reliable.
+  adb -e shell settings put global private_dns_mode off
   adb -e shell settings put global window_animation_scale 0.0
   adb -e shell settings put global transition_animation_scale 0.0
   adb -e shell settings put global animator_duration_scale 0.0
@@ -382,6 +452,7 @@ capture_set() {
   launch_app ""
   sleep "$WAIT_SECONDS"
   wait_for_static_screen
+  check_webview_errors
 
   IFS='|' read -ra route_list <<< "$ROUTES"
   index=0
@@ -391,26 +462,54 @@ capture_set() {
     name="${entry%%:*}"
     path="${entry#*:}"
     out="$(printf '%s/%02d-%s.png' "$dir" "$index" "$name")"
+    attempt=1
 
-    adb -e shell am force-stop "$PACKAGE" 2>/dev/null || true
-    sleep 1
-    log "   $name -> ${path:-home}"
-    launch_app "$path"
-    sleep "$WAIT_SECONDS"
-    wait_for_static_screen
+    while true; do
+      # Deep links route through onNewIntent, keeping the WebView and its
+      # cache warm between captures (cold starts load far too slowly on CI).
+      # A bare path must land on the home tab, so relaunch the app fresh.
+      if [[ -z "$path" ]]; then
+        adb -e shell am force-stop "$PACKAGE" 2>/dev/null || true
+        sleep 1
+        log "   $name -> home"
+        launch_app ""
+      elif [[ "$attempt" -gt 1 ]]; then
+        log "   retry $((attempt - 1)) for $name (content did not load)"
+        adb -e shell am force-stop "$PACKAGE" 2>/dev/null || true
+        sleep 2
+        launch_app "$path"
+      else
+        log "   $name -> ${path:-home}"
+        launch_app "$path"
+      fi
+      sleep "$WAIT_SECONDS"
+      wait_for_static_screen
 
-    if ! app_running; then
-      echo "warning: $PACKAGE does not appear to be running; recent logcat:" >&2
-      adb -e logcat -d -t 30 2>/dev/null | tail -30 >&2 || true
-    fi
+      if ! app_running; then
+        echo "warning: $PACKAGE does not appear to be running; recent logcat:" >&2
+        adb -e logcat -d -t 30 2>/dev/null | tail -30 >&2 || true
+      fi
 
-    adb -e exec-out screencap -p > "$out"
-    python3 "$ROOT_DIR/bin/png_rgb.py" "$out"
-    dims="$(png_dims "$out")"
-    if [[ -n "$EXPECTED" && "$dims" != "$EXPECTED" ]]; then
-      echo "   warning: expected ${EXPECTED// /x} (Play 9:16), got ${dims// /x}" >&2
-    fi
-    log "   wrote $out (${dims// /x}, RGB)"
+      adb -e exec-out screencap -p > "$out"
+      python3 "$ROOT_DIR/bin/png_rgb.py" "$out"
+      dims="$(png_dims "$out")"
+      if [[ -n "$EXPECTED" && "$dims" != "$EXPECTED" ]]; then
+        echo "   warning: expected ${EXPECTED// /x} (Play 9:16), got ${dims// /x}" >&2
+      fi
+      log "   wrote $out (${dims// /x}, RGB)"
+
+      # A uniform screen (error page / frozen spinner) compresses tiny; real
+      # app content never does. Keeps empty captures out of the artifact.
+      if [[ "$(wc -c < "$out")" -ge "${MIN_CAPTURE_BYTES:-40000}" ]]; then
+        break
+      fi
+      if [[ "$attempt" -ge "${CAPTURE_RETRIES:-2}" ]]; then
+        echo "error: $out looks empty ($(wc -c < "$out") bytes; app content did not load after $attempt attempt(s))" >&2
+        dump_webview_diagnostics
+        return 1
+      fi
+      attempt=$((attempt + 1))
+    done
   done
 
   if [[ "$VIDEO" == "1" ]]; then
