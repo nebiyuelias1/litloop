@@ -37,6 +37,11 @@ set -euo pipefail
 #   EMU_FEATURES  Emulator -feature flags (default: GLDirectMem,
 #                 HasSharedSlotsHostMemoryAllocator; required by Android 16
 #                 images, see boot_emulator)
+#   EMU_DNS       DNS server for the emulator guest network (default: 8.8.8.8;
+#                 CI runners' host resolver is unreachable from the guest;
+#                 "none" skips the flag)
+#   NET_CHECK     1 to fail the run when the WebView logs network errors after
+#                 the warm-up launch (default: 1)
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
@@ -51,6 +56,7 @@ WAIT_SECONDS="${WAIT_SECONDS:-6}"
 VIDEO="${VIDEO:-0}"
 HEADLESS="${HEADLESS:-0}"
 KEEP_EMULATOR="${KEEP_EMULATOR:-0}"
+EMU_DNS="${EMU_DNS:-8.8.8.8}"
 APK="$ROOT_DIR/android/app/build/outputs/apk/debug/app-debug.apk"
 EMU_LOG="$ROOT_DIR/build/android-screenshots/emulator.log"
 
@@ -227,7 +233,9 @@ boot_emulator() {
   # pixel_2 profile default (1536M) and system_server starts flapping.
   # GLDirectMem + HasSharedSlotsHostMemoryAllocator make the host advertise
   # ReadColorBufferDma, which Android 16 gralloc asserts on; without them
-  # surfaceflinger crash-loops and the system wedges.
+  # surfaceflinger crash-loops and the system wedges. An explicit DNS server
+  # is required on CI runners: the guest cannot reach the host resolver, and
+  # every page would load as an error page.
   local -a emu_flags=(
     "-avd" "$AVD_NAME"
     "-skin" "$SCREEN_SIZE"
@@ -235,6 +243,9 @@ boot_emulator() {
     "-feature" "${EMU_FEATURES:-GLDirectMem,HasSharedSlotsHostMemoryAllocator}"
     "-no-snapshot" "-no-audio" "-no-boot-anim"
   )
+  if [[ "$EMU_DNS" != "none" ]]; then
+    emu_flags+=("-dns-server" "$EMU_DNS")
+  fi
   mkdir -p "$(dirname "$EMU_LOG")"
   if [[ "$HEADLESS" == "1" ]]; then
     emu_flags+=("-no-window" "-gpu" "swiftshader_indirect")
@@ -304,6 +315,21 @@ wait_for_static_screen() {
     waited=$((waited + 2))
   done
   echo "   warning: screen still animating after ${timeout}s; capturing anyway" >&2
+}
+
+# The app is a WebView around litloop.club; if the guest network is broken
+# (e.g. DNS on CI runners) every capture would silently show Hotwire's error
+# page, so fail loudly instead of uploading garbage.
+check_webview_errors() {
+  [[ "${NET_CHECK:-1}" == "1" ]] || return 0
+  local errs
+  errs="$(adb -e logcat -d 2>/dev/null | grep -oE 'net::ERR_[A-Z_]+' | sort | uniq -c | sort -rn | head -5)"
+  if [[ -n "$errs" ]]; then
+    echo "error: WebView reported network errors; screenshots would show error pages:" >&2
+    echo "$errs" >&2
+    echo "hint: set EMU_DNS (default 8.8.8.8) if the guest cannot resolve hosts" >&2
+    return 1
+  fi
 }
 
 record_preview() {
@@ -382,6 +408,7 @@ capture_set() {
   launch_app ""
   sleep "$WAIT_SECONDS"
   wait_for_static_screen
+  check_webview_errors
 
   IFS='|' read -ra route_list <<< "$ROUTES"
   index=0
