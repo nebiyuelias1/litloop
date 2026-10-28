@@ -1,52 +1,67 @@
-<%= content_tag :div, id: (discussion_question.new_record? ? "new_discussion_question_form" : dom_id(discussion_question)), class: "mb-8" do %>
-  <div class="bg-background rounded-xl p-5 border border-border shadow-sm transition-all focus-within:shadow-md focus-within:border-primary">
-    <h3 class="text-sm font-semibold text-content mb-3 flex items-center">
-      <svg class="w-4 h-4 mr-1.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-      </svg>
-      <%= discussion_question.new_record? ? "New Discussion Question" : "Edit Discussion Question" %>
-    </h3>
-    <%
-      needs_confirm ||= false
-      form_data = if discussion_question.new_record?
-                    { controller: "reset-form", action: "turbo:submit-end->reset-form#reset" }
-                  elsif needs_confirm
-                    { action: "submit->discussion-question#confirmUpdate" }
-                  else
-                    {}
-                  end
-    %>
-    <%= form_with model: [book_club, book_read, discussion_question],
-        class: "flex flex-col gap-3",
-        data: form_data do |form| %>
-      <% if discussion_question.errors.any? %>
-        <div class="bg-red-50 text-red-700 p-3 rounded-lg border border-red-200 text-sm">
-          <ul class="list-disc list-inside ml-4">
-            <% discussion_question.errors.full_messages.each do |msg| %>
-              <li><%= msg %></li>
-            <% end %>
-          </ul>
-        </div>
-      <% end %>
-
-      <%= form.text_area :content, rows: 3, required: true, class: "w-full rounded-lg border-border shadow-inner bg-surface text-content text-sm focus:ring-2 focus:ring-primary focus:border-primary block p-3.5 placeholder:text-content-muted resize-y #{'border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50' if discussion_question.errors.any?}", placeholder: "What did you think about the main character's decision in chapter 3?" %>
-
-      <div class="flex justify-end gap-3">
-        <% if !discussion_question.new_record? %>
-          <button type="button"
-                  class="btn-secondary text-sm"
-                  data-action="click->discussion-question#cancel">
-            Cancel
-          </button>
-        <% end %>
-
-        <%= form.button class: "btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all transform active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed", data: { turbo_submits_with: (discussion_question.new_record? ? "Posting..." : "Updating...") } do %>
-          <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-          </svg>
-          <%= discussion_question.new_record? ? "Post Question" : "Update Question" %>
-        <% end %>
+<%= content_tag :div,
+id: (discussion_question.new_record? ? "new_discussion_question_form" : dom_id(discussion_question)),
+class: "rounded-xl border border-border bg-background p-4 transition-colors focus-within:border-primary",
+data: (discussion_question.new_record? ? { discussion_composer_target: "form" } : {}) do %>
+  <%
+    needs_confirm ||= false
+    form_data = if discussion_question.new_record?
+                  { controller: "reset-form", action: "turbo:submit-end->reset-form#reset" }
+                elsif needs_confirm
+                  { action: "submit->discussion-question#confirmUpdate" }
+                else
+                  {}
+                end
+  %>
+  <%= form_with model: [book_club, book_read, discussion_question],
+      class: "flex flex-col gap-3",
+      data: form_data do |form| %>
+    <% if discussion_question.errors.any? %>
+      <div class="bg-red-50 text-red-700 p-3 rounded-lg border border-red-200 text-sm">
+        <ul class="list-disc list-inside ml-4">
+          <% discussion_question.errors.full_messages.each do |msg| %>
+            <li><%= msg %></li>
+          <% end %>
+        </ul>
       </div>
     <% end %>
-  </div>
+
+    <%= form.text_area :content,
+    rows: 3,
+    required: true,
+    data: (discussion_question.new_record? ? { discussion_composer_target: "textarea" } : {}),
+    class:
+      "w-full rounded-lg border border-border bg-surface text-content text-sm leading-relaxed focus:ring-2 focus:ring-primary/20 focus:border-primary block p-3 placeholder:text-content-muted resize-y #{'border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50' if discussion_question.errors.any?}",
+    placeholder: t("ask_question") %>
+
+    <div class="flex justify-end gap-2">
+      <% if discussion_question.new_record? %>
+        <button
+          type="button"
+          data-action="discussion-composer#close"
+          class="
+            px-4 py-2 rounded-lg text-sm font-medium text-content-subtle
+            hover:text-content transition-colors cursor-pointer
+          ">
+          <%= t("cancel") %>
+        </button>
+      <% else %>
+        <button
+          type="button"
+          data-action="discussion-question#cancel"
+          class="
+            px-4 py-2 rounded-lg text-sm font-medium text-content-subtle
+            hover:text-content transition-colors cursor-pointer
+          ">
+          <%= t("cancel") %>
+        </button>
+      <% end %>
+
+      <%= form.button class: "inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-primary-contrast bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors disabled:opacity-60 disabled:cursor-not-allowed",
+      data: {
+        turbo_submits_with: (discussion_question.new_record? ? t("posting") : t("updating")),
+      } do %>
+        <%= discussion_question.new_record? ? t("post_question") : t("update_question") %>
+      <% end %>
+    </div>
+  <% end %>
 <% end %>

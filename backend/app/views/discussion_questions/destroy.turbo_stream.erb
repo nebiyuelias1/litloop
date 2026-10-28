@@ -7,5 +7,5 @@
 <% end %>
 
 <%= turbo_stream.append "toast_triggers" do %>
-  <div data-controller="flash-toast" data-flash-toast-message-value="Question deleted successfully." data-flash-toast-type-value="success"></div>
+  <div data-controller="flash-toast" data-flash-toast-message-value="<%= t("question_deleted") %>" data-flash-toast-type-value="success"></div>
 <% end %>

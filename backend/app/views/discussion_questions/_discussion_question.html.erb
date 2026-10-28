@@ -30,50 +30,82 @@
   <div data-visibility-target="item" data-allowed-ids="<%= card_allowed.to_json %>">
 
     <%# Display Mode %>
-    <div data-discussion-question-target="display" class="<%= 'hidden' if edit_mode %> p-5 sm:p-6 bg-surface rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow">
-      <div class="flex items-center justify-between gap-4">
+    <div data-discussion-question-target="display" class="<%= 'hidden' if edit_mode %> p-4 sm:p-5 bg-background rounded-2xl">
+      <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div class="flex items-center gap-3 min-w-0">
           <% if discussion_question.user.present? %>
             <%= render "shared/avatar", user: discussion_question.user, classes: "w-10 h-10 ring-2 ring-surface bg-primary text-primary-contrast text-sm font-semibold" %>
             <div class="min-w-0">
               <p class="text-sm font-semibold text-content truncate"><%= discussion_question.user.to_s %></p>
               <div class="flex items-center gap-1.5">
-                <p class="text-xs text-content-subtle"><%= time_ago_in_words(discussion_question.created_at) %> ago</p>
+                <p class="text-xs text-content-subtle"><%= time_ago_in_words(discussion_question.created_at) %> <%= t("ago") %></p>
                 <% if discussion_question.edited? %>
-                  <span class="text-[10px] font-medium text-content-muted bg-background px-1.5 py-0.5 rounded border border-border">Edited</span>
+                  <span class="text-[10px] font-medium text-content-muted bg-surface px-1.5 py-0.5 rounded border border-border"><%= t("edited") %></span>
                 <% end %>
               </div>
-              </div>
-              <% else %>
-              <div class="w-10 h-10 rounded-full bg-background flex items-center justify-center text-xs font-semibold text-content-subtle border border-border">
+            </div>
+          <% else %>
+            <div class="w-10 h-10 rounded-full bg-surface flex items-center justify-center text-xs font-semibold text-content-subtle border border-border">
               A
-              </div>
-              <div class="min-w-0">
-              <p class="text-sm font-semibold text-content-subtle">Anonymous</p>
+            </div>
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-content-subtle"><%= t("anonymous") %></p>
               <div class="flex items-center gap-1.5">
-                <p class="text-xs text-content-subtle"><%= time_ago_in_words(discussion_question.created_at) %> ago</p>
+                <p class="text-xs text-content-subtle"><%= time_ago_in_words(discussion_question.created_at) %> <%= t("ago") %></p>
                 <% if discussion_question.edited? %>
-                  <span class="text-[10px] font-medium text-content-muted bg-background px-1.5 py-0.5 rounded border border-border">Edited</span>
+                  <span class="text-[10px] font-medium text-content-muted bg-surface px-1.5 py-0.5 rounded border border-border"><%= t("edited") %></span>
                 <% end %>
               </div>
-              </div>
-              <% end %>
-
+            </div>
+          <% end %>
         </div>
 
-        <div class="flex items-center gap-2">
-          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-background text-content border border-border flex-shrink-0">
-            #<%= discussion_question.position %>
-          </span>
+        <div class="flex items-center gap-2 shrink-0">
+          <%# Status stamp: dashed = not ready, spruce = approved, oxblood = live %>
+          <% if discussion_question.draft? %>
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-surface border border-dashed border-content-muted text-content-muted">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              <%= t("draft") %>
+            </span>
+
+            <div class="hidden" data-controller="visibility" data-visibility-target="item" data-allowed-ids="<%= [owner_id].to_json %>">
+              <%= button_to book_club_book_read_discussion_question_path(discussion_question.book_read.book_club, discussion_question.book_read, discussion_question), method: :patch, params: { discussion_question: { status: :approved } }, class: "inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-surface border border-primary/40 text-primary hover:bg-primary hover:text-primary-contrast transition-colors cursor-pointer" do %>
+                <%= t("approve") %>
+              <% end %>
+            </div>
+          <% elsif discussion_question.approved? %>
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-surface border border-primary/40 text-primary">
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+              <%= t("approved") %>
+            </span>
+
+            <div class="hidden" data-controller="visibility" data-visibility-target="item" data-allowed-ids="<%= [owner_id].to_json %>">
+              <%= button_to book_club_book_read_discussion_question_path(discussion_question.book_read.book_club, discussion_question.book_read, discussion_question, discussion_question: { status: :revealed }), method: :patch, class: "inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-surface border border-accent/40 text-accent hover:bg-accent hover:text-accent-contrast transition-colors cursor-pointer" do %>
+                <%= t("reveal_live") %>
+              <% end %>
+            </div>
+          <% elsif discussion_question.revealed? %>
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-accent/15 border border-accent/40 text-accent">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <%= t("revealed") %>
+            </span>
+          <% end %>
 
           <div class="hidden relative text-left"
                data-controller="visibility dropdown">
             <button type="button"
-                    class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-background transition-colors text-content-subtle hover:text-content focus:outline-none"
+                    class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-surface transition-colors text-content-subtle hover:text-content focus:outline-none focus-visible:outline-2 focus-visible:outline-primary"
                     data-action="click->dropdown#toggle"
                     aria-expanded="false"
                     aria-haspopup="true">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                 <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
               </svg>
             </button>
@@ -88,10 +120,10 @@
                           class="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-content hover:bg-background transition-colors"
                           data-action="click->discussion-question#edit"
                           role="menuitem">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
-                    Edit
+                    <%= t("edit") %>
                   </button>
                 </div>
 
@@ -99,12 +131,12 @@
                   <%= button_to book_club_book_read_discussion_question_path(club, discussion_question.book_read, discussion_question),
                       method: :delete,
                       class: "w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors",
-                      data: { turbo_confirm: "Are you sure you want to delete this question?" },
+                      data: { turbo_confirm: t("delete_question_confirm") },
                       role: "menuitem" do %>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
-                    Delete
+                    <%= t("delete") %>
                   <% end %>
                 </div>
               </div>
@@ -113,11 +145,11 @@
         </div>
       </div>
 
-      <div class="mt-4 space-y-3">
+      <div class="mt-3 space-y-3">
         <p class="text-content text-base sm:text-lg font-medium leading-relaxed"><%= discussion_question.content_for_language(user_device_language) %></p>
 
         <% if discussion_question.question_translations.any? %>
-          <div class="border-l-2 border-border pl-4" data-controller="discussion-question-translation">
+          <div class="pl-4 border-l border-border" data-controller="discussion-question-translation">
             <p class="mt-2 text-sm text-content-subtle" data-discussion-question-translation-target="translationContent"></p>
             <div class="mt-3 flex flex-wrap gap-2">
               <% discussion_question.question_translations.each do |translation| %>
@@ -130,48 +162,6 @@
                 </button>
               <% end %>
             </div>
-          </div>
-        <% end %>
-
-        <% if discussion_question.draft? %>
-          <div class="mt-3 flex items-center gap-2">
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-background text-content border border-border">
-              <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
-              </svg>
-              Draft
-            </span>
-
-            <div class="hidden" data-controller="visibility" data-visibility-target="item" data-allowed-ids="<%= [owner_id].to_json %>">
-              <%= button_to book_club_book_read_discussion_question_path(discussion_question.book_read.book_club, discussion_question.book_read, discussion_question), method: :patch, params: { discussion_question: { status: :approved } }, class: "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-background text-primary border border-primary hover:bg-background transition-colors cursor-pointer" do %>
-                Approve
-              <% end %>
-            </div>
-          </div>
-        <% elsif discussion_question.approved? %>
-          <div class="mt-3 flex items-center gap-2">
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-background text-primary border border-border">
-              <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-              </svg>
-              Approved
-            </span>
-
-            <div class="hidden" data-controller="visibility" data-visibility-target="item" data-allowed-ids="<%= [owner_id].to_json %>">
-              <%= button_to book_club_book_read_discussion_question_path(discussion_question.book_read.book_club, discussion_question.book_read, discussion_question, discussion_question: { status: :revealed }), method: :patch, class: "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-background text-primary border border-primary hover:bg-background transition-colors cursor-pointer" do %>
-                Reveal Live
-              <% end %>
-            </div>
-          </div>
-        <% elsif discussion_question.revealed? %>
-          <div class="mt-3 flex items-center gap-2">
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-background text-primary border border-border">
-              <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              Revealed
-            </span>
           </div>
         <% end %>
       </div>

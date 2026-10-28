@@ -6,14 +6,15 @@
   <% poll.poll_options.includes(:poll_votes, :book).each do |option| %>
     <label
       class="
-        flex items-center justify-between p-4 rounded-lg border border-border
-        bg-background hover:bg-surface transition-all group cursor-pointer
+        flex items-center justify-between p-4 rounded-xl border border-border
+        bg-background hover:bg-surface has-[:checked]:border-primary
+        has-[:checked]:bg-surface transition-colors group cursor-pointer
       ">
       <div class="flex items-center gap-4 flex-1">
         <%= check_box_tag "poll_option_ids[]",
         option.id,
         false,
-        class: "w-4 h-4 text-primary focus:ring-primary border-border rounded",
+        class: "w-4 h-4 accent-primary focus:ring-2 focus:ring-primary/40 border-border rounded",
         data: { poll_vote_form_target: "option", action: "poll-vote-form#toggle" } %>
 
         <% if option.book.present? %>
@@ -30,7 +31,7 @@
             <div class="flex flex-col">
               <span class="font-bold text-content leading-tight"><%= option.book.title %></span>
               <span class="text-xs text-content-subtle"><%= option.book.author %></span>
-              <%= link_to "View details", book_path(option.book), class: "text-[10px] text-primary hover:underline mt-1", onclick: "event.stopPropagation();" %>
+              <%= link_to t("view_details"), book_path(option.book), class: "text-xs font-medium text-primary hover:text-accent transition-colors mt-1", onclick: "event.stopPropagation();" %>
             </div>
           </div>
         <% else %>
@@ -45,11 +46,11 @@
     data-poll-vote-form-target="submit"
     disabled
     class="
-      px-5 py-2 rounded-md text-xs font-bold transition-colors shadow-sm
-      text-primary-contrast bg-primary hover:bg-primary
+      px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors
+      text-primary-contrast bg-primary hover:bg-primary/90
       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary
       disabled:opacity-50 disabled:cursor-not-allowed
     ">
-    Vote
+    <%= t("vote") %>
   </button>
 <% end %>

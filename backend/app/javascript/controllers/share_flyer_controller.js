@@ -10,6 +10,7 @@ export default class extends Controller {
     host: String,
     coverUrl: String,
     rsvpUrl: String,
+    pollUrl: String,
     bookReadId: String,
     downloadSuccessMsg: String,
     downloadErrorMsg: String,
@@ -84,9 +85,17 @@ export default class extends Controller {
   }
 
   async shareLink() {
+    await this.shareUrl(this.rsvpUrlValue);
+  }
+
+  async sharePollLink() {
+    await this.shareUrl(this.pollUrlValue || this.rsvpUrlValue);
+  }
+
+  async shareUrl(url) {
     const shareData = {
       title: this.titleValue,
-      url: this.rsvpUrlValue,
+      url: url,
     };
 
     try {
@@ -96,7 +105,7 @@ export default class extends Controller {
         return;
       }
 
-      await navigator.clipboard.writeText(this.rsvpUrlValue);
+      await navigator.clipboard.writeText(url);
       this.notify(this.linkCopiedMsgValue || "Link copied to clipboard!");
     } catch (error) {
       if (error?.name === "AbortError") return;
@@ -255,7 +264,7 @@ export default class extends Controller {
     ctx.fillText(this.labelBookClubMeetupValue || "BOOK CLUB MEETUP", padding, 70);
 
       ctx.fillStyle = "#f6f1e7";
-      ctx.font = "bold 58px sans-serif";
+      ctx.font = "bold 58px Georgia, serif";
     ctx.fillText(this.clubNameValue, padding, 115);
 
     // Separator line below header (tightened gap)
@@ -310,7 +319,7 @@ export default class extends Controller {
       drawRoundedRect(coverX, coverY, coverWidth, coverHeight, 32);
       ctx.stroke();
     } else {
-      // Placeholder for Active Poll
+      // Placeholder icon: drawn ballot with a check (no emoji, matches the icon system)
       ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
       drawRoundedRect(coverX, coverY, coverWidth, coverHeight, 32);
       ctx.fill();
@@ -318,12 +327,23 @@ export default class extends Controller {
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      // Placeholder icon/text
-      ctx.fillStyle = "#e6dcc3";
-      ctx.font = "bold 100px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("📝", W / 2, coverY + 260);
+      const ballotW = 150;
+      const ballotH = 175;
+      const bx = (W - ballotW) / 2;
+      const by = coverY + 195;
+      ctx.strokeStyle = "#e6dcc3";
+      ctx.lineWidth = 6;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      drawRoundedRect(bx, by, ballotW, ballotH, 24);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(bx + 42, by + 100);
+      ctx.lineTo(bx + 70, by + 128);
+      ctx.lineTo(bx + 110, by + 62);
+      ctx.stroke();
 
+      ctx.textAlign = "center";
       ctx.font = "bold 32px sans-serif";
       ctx.fillStyle = "#e6dcc3";
       ctx.fillText(this.labelActivePollValue || "ACTIVE POLL", W / 2, coverY + 410);
@@ -393,14 +413,56 @@ export default class extends Controller {
       ? this.labelHostedByValue.replace("%{host}", this.hostValue)
       : `Host:  ${this.hostValue}`;
 
+    // Drawn row icons (clock, pin, person) in place of emoji glyphs
+    const drawRowIcon = (kind, x, cy, color = "#f6f1e7") => {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 3.5;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      const r = 17;
+      if (kind === "clock") {
+        ctx.beginPath();
+        ctx.arc(x + r, cy, r, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x + r, cy - 9);
+        ctx.lineTo(x + r, cy);
+        ctx.lineTo(x + r + 8, cy + 5);
+        ctx.stroke();
+      } else if (kind === "pin") {
+        ctx.beginPath();
+        ctx.arc(x + r, cy - 7, 10, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x + r - 6, cy - 1);
+        ctx.lineTo(x + r, cy + 14);
+        ctx.lineTo(x + r + 6, cy - 1);
+        ctx.closePath();
+        ctx.fill();
+      } else if (kind === "person") {
+        ctx.beginPath();
+        ctx.arc(x + r, cy - 10, 8, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x + r, cy + 16, 15, Math.PI, 2 * Math.PI);
+        ctx.stroke();
+      }
+      ctx.restore();
+    };
+
+    drawRowIcon("clock", boxX + 40, boxY + 119);
     ctx.fillStyle = "#f6f1e7";
     ctx.font = "bold 42px sans-serif";
-    ctx.fillText(`📅  ${timeLabel}:  ${this.timeValue}`, boxX + 40, boxY + 100);
-    ctx.fillText(`📍  ${locationLabel}:  ${this.locationValue}`, boxX + 40, boxY + 175);
+    ctx.fillText(`${timeLabel}:  ${this.timeValue}`, boxX + 94, boxY + 100);
+    drawRowIcon("pin", boxX + 40, boxY + 194);
+    ctx.fillText(`${locationLabel}:  ${this.locationValue}`, boxX + 94, boxY + 175);
 
+    drawRowIcon("person", boxX + 40, boxY + 267, "#cfc2a6");
     ctx.fillStyle = "#cfc2a6";
     ctx.font = "40px sans-serif";
-    ctx.fillText(`👤  ${hostedByText}`, boxX + 40, boxY + 250);
+    ctx.fillText(hostedByText, boxX + 94, boxY + 250);
 
     // 7. Footer Block (Positioned higher, y: 1650)
     const footerY = 1650;

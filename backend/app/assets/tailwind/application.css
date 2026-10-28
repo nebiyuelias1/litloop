@@ -154,3 +154,9 @@
 .brand-link:hover {
   color: var(--color-accent) !important;
 }
+
+/* Browser surfaces in brand ink */
+::selection {
+  background-color: color-mix(in srgb, var(--color-primary) 22%, transparent);
+  color: var(--color-content);
+}
