@@ -42,7 +42,7 @@ jobs:
             "platform-tools" \
             "emulator" \
             "cmdline-tools;latest" \
-            "system-images;android-35;google_apis;x86_64" > /dev/null
+            "system-images;android-36.1;google_apis_playstore;x86_64" > /dev/null
 
       - name: Enable KVM
         run: |
@@ -64,6 +64,14 @@ jobs:
           name: play-store-screenshots-${{ github.run_number }}
           path: build/play-store-screenshots
           if-no-files-found: error
+
+      - name: Upload emulator log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-screenshots-emulator-log-${{ github.run_number }}
+          path: build/android-screenshots/emulator.log
+          if-no-files-found: ignore
 
       - name: Show dimensions
         run: |

@@ -330,6 +330,8 @@ check_webview_errors() {
   echo "$errs" >&2
   echo "--- guest probes ---" >&2
   adb -e shell "nc -w 3 8.8.8.8 53 </dev/null >/dev/null 2>&1 && echo 'tcp 8.8.8.8:53 OK'" >&2 || echo "tcp 8.8.8.8:53 unreachable" >&2
+  adb -e shell "dumpsys connectivity 2>/dev/null | grep -m1 'Active default network'" >&2
+  adb -e shell "ip -4 addr show 2>/dev/null | grep -E '^[0-9]+:|inet '" >&2
   adb -e shell "ping -c 1 -W 3 8.8.8.8 2>&1 | tail -1" >&2 || true
   echo "--- host DNS ---" >&2
   getent hosts litloop.club 2>&1 | head -2 >&2 || true
