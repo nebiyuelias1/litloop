@@ -3,7 +3,7 @@
     <div class="bg-surface shadow-md rounded-lg p-6 sm:p-10">
       <div class="flex items-center space-x-4">
         <div class="flex-1">
-        <h1 class="title title-lg font-extrabold text-content">
+        <h1 class="title title-lg font-bold text-content">
             <% if defined?(current_user) && current_user.present? %>
             Hey <span class="text-primary"><%= current_user.name rescue current_user.to_s %></span>!
             <% else %>

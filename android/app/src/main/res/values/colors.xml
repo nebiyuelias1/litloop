@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- GENERATED from theme.toml by `bundle exec rake theme:generate` — do not edit. -->
 <resources>
-    <color name="primary">#FF22324A</color>
+    <color name="primary">#FF134E4A</color>
     <color name="primary_contrast">#FFFFFFFF</color>
-    <color name="accent">#FFD39A3E</color>
-    <color name="accent_contrast">#FF1A202C</color>
-    <color name="background">#FFF7F3EE</color>
-    <color name="surface">#FFFFFFFF</color>
-    <color name="content">#FF1F2430</color>
-    <color name="content_subtle">#FF4B5563</color>
-    <color name="content_muted">#FF6B7280</color>
-    <color name="border">#FFE4DED6</color>
+    <color name="accent">#FF8C3130</color>
+    <color name="accent_contrast">#FFFFFFFF</color>
+    <color name="background">#FFF6F1E7</color>
+    <color name="surface">#FFFDFBF6</color>
+    <color name="content">#FF282219</color>
+    <color name="content_subtle">#FF55483A</color>
+    <color name="content_muted">#FF766854</color>
+    <color name="border">#FFE3DBC9</color>
 </resources>

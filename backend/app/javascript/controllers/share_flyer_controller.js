@@ -116,18 +116,18 @@ export default class extends Controller {
     const W = canvas.width;
     const H = canvas.height;
 
-    // 1. Background (Deep space gradient)
+    // 1. Background (Deep spruce shelf gradient)
     const bgGradient = ctx.createLinearGradient(0, 0, 0, H);
-    bgGradient.addColorStop(0, "#090d16");
-    bgGradient.addColorStop(0.5, "#020617");
-    bgGradient.addColorStop(1, "#12102e");
+    bgGradient.addColorStop(0, "#0a1b19");
+    bgGradient.addColorStop(0.5, "#06110f");
+    bgGradient.addColorStop(1, "#0f2422");
     ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, W, H);
 
-    // Glowing atmospheric lights (Top Indigo, Bottom Purple)
+    // Glowing atmospheric lights (Top Spruce, Bottom Oxblood)
     const glow1 = ctx.createRadialGradient(W / 2, 250, 100, W / 2, 250, 600);
-    glow1.addColorStop(0, "rgba(99, 102, 241, 0.3)"); // Indigo
-    glow1.addColorStop(1, "rgba(99, 102, 241, 0)");
+    glow1.addColorStop(0, "rgba(19, 78, 74, 0.4)"); // Spruce
+    glow1.addColorStop(1, "rgba(19, 78, 74, 0)");
     ctx.fillStyle = glow1;
     ctx.fillRect(0, 0, W, H);
 
@@ -139,8 +139,8 @@ export default class extends Controller {
       H - 400,
       600,
     );
-    glow2.addColorStop(0, "rgba(168, 85, 247, 0.24)"); // Purple
-    glow2.addColorStop(1, "rgba(168, 85, 247, 0)");
+    glow2.addColorStop(0, "rgba(140, 49, 48, 0.28)"); // Oxblood
+    glow2.addColorStop(1, "rgba(140, 49, 48, 0)");
     ctx.fillStyle = glow2;
     ctx.fillRect(0, 0, W, H);
 
@@ -250,12 +250,12 @@ export default class extends Controller {
     ctx.textBaseline = "top";
 
     // Subtitle & Club Name (Enlarged and positioned higher)
-    ctx.fillStyle = "#a5b4fc";
+    ctx.fillStyle = "#e6dcc3";
     ctx.font = "bold 30px sans-serif";
     ctx.fillText(this.labelBookClubMeetupValue || "BOOK CLUB MEETUP", padding, 70);
 
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 58px sans-serif";
+      ctx.fillStyle = "#f6f1e7";
+      ctx.font = "bold 58px sans-serif";
     ctx.fillText(this.clubNameValue, padding, 115);
 
     // Separator line below header (tightened gap)
@@ -293,7 +293,7 @@ export default class extends Controller {
       ctx.shadowOffsetY = 22;
 
       drawRoundedRect(coverX, coverY, coverWidth, coverHeight, 32);
-      ctx.fillStyle = "#020617";
+      ctx.fillStyle = "#04100e";
       ctx.fill();
       ctx.restore();
 
@@ -319,16 +319,16 @@ export default class extends Controller {
       ctx.stroke();
 
       // Placeholder icon/text
-      ctx.fillStyle = "#a5b4fc";
+      ctx.fillStyle = "#e6dcc3";
       ctx.font = "bold 100px sans-serif";
       ctx.textAlign = "center";
       ctx.fillText("📝", W / 2, coverY + 260);
 
       ctx.font = "bold 32px sans-serif";
-      ctx.fillStyle = "#a5b4fc";
+      ctx.fillStyle = "#e6dcc3";
       ctx.fillText(this.labelActivePollValue || "ACTIVE POLL", W / 2, coverY + 410);
       ctx.font = "24px sans-serif";
-      ctx.fillStyle = "#64748b";
+      ctx.fillStyle = "#8a7c66";
       ctx.fillText(this.labelVotingInProgressValue || "Voting in Progress", W / 2, coverY + 468);
     }
 
@@ -337,7 +337,7 @@ export default class extends Controller {
     const bodyWidth = W - padding * 2; // 920
 
     // Title (Centered, maximum font size)
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = "#f6f1e7";
     ctx.font = "bold 64px sans-serif";
     const titleLastY = wrapText(
       this.titleValue,
@@ -352,7 +352,7 @@ export default class extends Controller {
 
     // Author (Centered, maximum font size)
     if (this.authorValue) {
-      ctx.fillStyle = "#c7d2fe"; // Indigo-200
+      ctx.fillStyle = "#d8ccb2"; // Parchment
       ctx.font = "italic 42px sans-serif";
       ctx.textAlign = "center";
       const byText = this.labelByAuthorValue
@@ -382,7 +382,7 @@ export default class extends Controller {
 
     // Box Title
     ctx.textAlign = "left";
-    ctx.fillStyle = "#a5b4fc";
+    ctx.fillStyle = "#e6dcc3";
     ctx.font = "bold 26px sans-serif";
     ctx.fillText(this.labelMeetupDetailsValue || "MEETUP DETAILS", boxX + 40, boxY + 36);
 
@@ -393,12 +393,12 @@ export default class extends Controller {
       ? this.labelHostedByValue.replace("%{host}", this.hostValue)
       : `Host:  ${this.hostValue}`;
 
-    ctx.fillStyle = "#f1f5f9";
+    ctx.fillStyle = "#f6f1e7";
     ctx.font = "bold 42px sans-serif";
     ctx.fillText(`📅  ${timeLabel}:  ${this.timeValue}`, boxX + 40, boxY + 100);
     ctx.fillText(`📍  ${locationLabel}:  ${this.locationValue}`, boxX + 40, boxY + 175);
 
-    ctx.fillStyle = "#cbd5e1";
+    ctx.fillStyle = "#cfc2a6";
     ctx.font = "40px sans-serif";
     ctx.fillText(`👤  ${hostedByText}`, boxX + 40, boxY + 250);
 
@@ -412,11 +412,11 @@ export default class extends Controller {
     ctx.stroke();
 
     // Left Footer Text (Scaled up)
-    ctx.fillStyle = "#a5b4fc";
+    ctx.fillStyle = "#e6dcc3";
     ctx.font = "bold 32px sans-serif";
     ctx.fillText(this.labelScanToRsvpValue || "SCAN TO RSVP", padding, footerY + 35);
 
-    ctx.fillStyle = "#94a3b8";
+    ctx.fillStyle = "#a3957b";
     ctx.font = "26px sans-serif";
     wrapText(
       this.rsvpUrlValue,

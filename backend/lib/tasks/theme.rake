@@ -174,6 +174,18 @@ namespace :theme do
     css << "\n/* Brand tokens win over DaisyUI data-theme overrides. */\n"
     css << ":root,\n:root[data-theme] {\n"
     colors.each { |name, hex| css << "  --color-#{name.tr('_', '-')}: #{hex};\n" }
+
+    # DaisyUI's base/content palette (skeletons, card fills, component text) follows
+    # the brand tokens instead of the warm-tinted values shipped by the DaisyUI theme.
+    daisy_mapping = {
+      "base-100" => colors.fetch("surface"),
+      "base-200" => colors.fetch("background"),
+      "base-300" => colors.fetch("border"),
+      "base-content" => colors.fetch("content"),
+      "primary-content" => colors.fetch("primary_contrast"),
+      "accent-content" => colors.fetch("accent_contrast")
+    }
+    daisy_mapping.each { |name, hex| css << "  --color-#{name}: #{hex};\n" }
     css << "}\n"
 
     path = File.join(repo_root, "backend/app/assets/tailwind/theme.css")

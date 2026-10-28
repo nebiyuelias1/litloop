@@ -22,14 +22,14 @@
       <% if past %>
         <span class="text-content-muted whitespace-nowrap"><%= t("event_started") %></span>
       <% elsif is_active %>
-        <span class="font-semibold whitespace-nowrap <%= waitlisted ? "text-violet-700 dark:text-violet-400" : "text-content" %>">
+        <span class="font-semibold <%= waitlisted ? "text-violet-700 dark:text-violet-400" : "text-content" %>">
           <%= waitlisted ? t("you_are_waitlisted") : t("you_are_going") %>
         </span>
       <% end %>
       <% unless past %>
         <% if book_read.max_capacity.present? %>
           <span class="truncate <%= is_active ? "hidden sm:inline text-content-muted" : "font-semibold text-content" %>"><%= t("spots_remaining", count: remaining || 0) %></span>
-        <% elsif !is_active %>
+        <% elsif !is_active && !book_club.private_info_visible_to?(current_user) %>
           <span class="font-semibold text-content"><%= t("people_going", count: going_count) %></span>
         <% end %>
       <% end %>
