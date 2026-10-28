@@ -1,0 +1,50 @@
+name: Play Store Screenshots
+
+on:
+  workflow_dispatch:
+    inputs:
+      video:
+        description: 'Also record an app preview video'
+        type: boolean
+        default: false
+      routes:
+        description: 'Screens to capture, e.g. "home:|club:book_clubs/1|book:books/2453"'
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-screenshots-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    name: Capture screenshots
+    runs-on: self-hosted
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Capture screenshots
+        env:
+          VIDEO: ${{ inputs.video && '1' || '0' }}
+          ROUTES: ${{ inputs.routes }}
+        run: bin/android_screenshots.sh
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: play-store-screenshots-${{ github.run_number }}
+          path: build/play-store-screenshots
+          if-no-files-found: error
+
+      - name: Show dimensions
+        run: |
+          find build/play-store-screenshots -name '*.png' -print0 |
+            while IFS= read -r -d '' file; do
+              dims=$(python3 -c 'import struct,sys; f=open(sys.argv[1],"rb"); print("%dx%d" % struct.unpack(">II", f.read(24)[16:24]))' "$file")
+              echo "${file} (${dims})"
+            done
