@@ -22,16 +22,33 @@ concurrency:
 jobs:
   capture:
     name: Capture screenshots
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null
+          "$SDKMANAGER" --install \
+            "platform-tools" \
+            "emulator" \
+            "cmdline-tools;latest" \
+            "system-images;android-35;google_apis;x86_64" > /dev/null
+
       - name: Capture screenshots
         env:
           VIDEO: ${{ inputs.video && '1' || '0' }}
           ROUTES: ${{ inputs.routes }}
+          HEADLESS: '1'
         run: bin/android_screenshots.sh
 
       - name: Upload screenshots
