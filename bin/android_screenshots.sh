@@ -344,6 +344,12 @@ dump_webview_diagnostics() {
   adb -e shell "dumpsys connectivity 2>/dev/null | grep -m1 'Active default network'" >&2 || true
   adb -e shell "ip -4 addr show 2>/dev/null | grep -E '^[0-9]+:|inet '" >&2 || true
   adb -e shell "nc -w 3 8.8.8.8 53 </dev/null >/dev/null 2>&1 && echo 'tcp 8.8.8.8:53 OK'" >&2 || echo "tcp 8.8.8.8:53 unreachable" >&2
+  echo "--- guest resolver (getent) ---" >&2
+  for name in litloop.club example.com; do
+    printf '%-16s v4: %s\n' "$name" "$(adb -e shell "getent ahostsv4 $name 2>/dev/null | head -1" || true)" >&2
+    printf '%-16s v6: %s\n' "$name" "$(adb -e shell "getent ahostsv6 $name 2>/dev/null | head -1" || true)" >&2
+  done
+  echo "--- guest HTTP probe ---" >&2
   adb -e shell 'printf "GET / HTTP/1.0\r\n\r\n" | nc -w 10 litloop.club 80 2>&1 | head -2' >&2 || true
   echo "--- host DNS ---" >&2
   getent hosts litloop.club 2>&1 | head -2 >&2 || true
