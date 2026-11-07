@@ -34,7 +34,7 @@ INK = (40, 34, 25)          # #282219 — the mark
 VELLUM = (246, 241, 231)    # #f6f1e7 — feature graphic text / mark
 BOOKPAGE = (253, 251, 246)  # #fdfbf6 — app icon background
 SPRUCE = (19, 78, 74)       # #134e4a — feature graphic background
-TAGLINE = "A fresh, literary operating system for book clubs."
+LOOP_LINE = "People → choose a book → read → discuss → choose another book"
 
 # Liberation Serif is the closest installed match for the Playfair Display
 # used on the site; every Linux distro ships a serif fallback.
@@ -82,7 +82,9 @@ def app_icon(mark, size=512):
     icon = Image.new("RGB", (size, size), BOOKPAGE)
     width = int(size * 0.82)
     scaled = mark.resize((width, round(mark.height * width / mark.width)), Image.LANCZOS)
-    icon.paste(scaled, ((size - scaled.width) // 2, (size - scaled.height) // 2 - 16), scaled)
+    # The mark's raster is tightly cropped, so equal top/bottom margins are
+    # also the optical center.
+    icon.paste(scaled, ((size - scaled.width) // 2, (size - scaled.height) // 2), scaled)
     return icon
 
 
@@ -103,7 +105,7 @@ def feature_graphic(mark, width=1024, height=500):
         draw.text(((width - (bb[2] - bb[0])) / 2 - bb[0], y - bb[1]), text, font=font, fill=fill)
 
     center_text(300, "LitLoop", wordmark, VELLUM)
-    center_text(408, TAGLINE, tagline, (222, 214, 200))
+    center_text(408, LOOP_LINE, tagline, (222, 214, 200))
     return fg
 
 
