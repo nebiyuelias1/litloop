@@ -327,6 +327,15 @@ boot_emulator() {
   "$EMULATOR" "${emu_flags[@]}" > "$EMU_LOG" 2>&1 &
   EMU_PID=$!
   wait_for_boot
+  # A display-size override (wm size 1440x2560) persists in the AVD's guest
+  # userdata and silently beats the skin resolution on every boot, producing
+  # wrong-dimension captures. Reset so every set gets exactly its skin-defined
+  # physical resolution.
+  if adb -e shell wm size 2>/dev/null | grep -q "Override size"; then
+    log "   clearing stale display-size override"
+    adb -e shell wm size reset >/dev/null 2>&1 || true
+    sleep 2
+  fi
   guest_probe
 }
 
