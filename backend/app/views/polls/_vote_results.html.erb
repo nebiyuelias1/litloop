@@ -1,7 +1,11 @@
-<% total_votes = poll.poll_options.sum { |option| option.poll_votes.size } %>
-<% max_votes = poll.poll_options.map { |option| option.poll_votes.size }.max %>
+<%# Load the options with their votes ONCE: totals, rendering, and the winner
+    all read from the same in-memory set, so a vote committed mid-request can
+    never push a bar past 100% or skew the winner %>
+<% options = poll.poll_options.includes(:poll_votes, :book).to_a %>
+<% total_votes = options.sum { |option| option.poll_votes.size } %>
+<% max_votes = options.map { |option| option.poll_votes.size }.max %>
 <div class="divide-y divide-border">
-  <% poll.poll_options.includes(:poll_votes, :book).each do |option| %>
+  <% options.each do |option| %>
     <% votes = option.poll_votes.size %>
     <% percent = total_votes.positive? ? ((votes.to_f / total_votes) * 100).round : 0 %>
     <% user_voted = current_user.present? && option.poll_votes.any? { |vote| vote.user_id == current_user.id } %>

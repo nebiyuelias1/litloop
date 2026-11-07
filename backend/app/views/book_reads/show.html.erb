@@ -134,7 +134,7 @@
 
           <% has_more_actions = @book_read.book.present? || (user_signed_in? && @book_club.owner == current_user) %>
           <% if has_more_actions %>
-            <div class="dropdown dropdown-end">
+            <div class="dropdown dropdown-end" data-controller="dropdown">
             <button
               tabindex="0"
               role="button"
@@ -332,11 +332,13 @@
 
       <% if finalized %>
         <%# The poll's payoff: the chosen book is promoted, the vote breakdown folds quietly below %>
-        <% winner_book = @book_read.book.presence %>
-        <% winner_label =
-          winner_book&.title.presence ||
-          poll.poll_options.includes(:poll_votes, :book).max_by { |option| option.poll_votes.size }&.book&.title.presence ||
-          poll.poll_options.includes(:poll_votes, :book).max_by { |option| option.poll_votes.size }&.content %>
+        <% chosen_option =
+          poll.selected_poll_option ||
+          (@book_read.book_id && poll.poll_options.find_by(book_id: @book_read.book_id)) %>
+        <% winner_book = chosen_option&.book || @book_read.book %>
+        <% winner_label = chosen_option&.book&.title.presence ||
+          chosen_option&.content.presence ||
+          @book_read.book&.title.presence %>
         <p class="text-lg text-content"><%= poll.text %></p>
         <p class="mt-1 mb-6 flex items-center gap-1.5 text-xs font-medium text-content-muted">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" class="w-3.5 h-3.5 shrink-0" aria-hidden="true">
@@ -368,7 +370,7 @@
             </div>
           </div>
         <% end %>
-        <details class="group mt-6 pt-5 border-t border-border">
+        <details id="poll_voting" class="group mt-6 pt-5 border-t border-border scroll-mt-28">
           <summary
             class="
               flex items-center justify-between cursor-pointer list-none text-content-subtle

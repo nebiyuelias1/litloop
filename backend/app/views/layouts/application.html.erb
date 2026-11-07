@@ -48,6 +48,12 @@
       <script>
         window.showToast = function(message, options) {
           var attempts = 0;
+          // A navigation abandons this page's pending queue: without this, a
+          // retry that hasn't fired yet would toast the old page's message on
+          // the destination page.
+          document.addEventListener("turbo:before-visit", function cancel() {
+            attempts = Number.MAX_SAFE_INTEGER;
+          }, { once: true });
           (function fire() {
             if (typeof window.toast === "function") {
               window.toast(message, options);

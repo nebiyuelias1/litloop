@@ -191,7 +191,7 @@ am:
   question_added: "ጥያቄው በተሳካ ሁኔታ ታክሏል።"
   question_updated: "ጥያቄው በተሳካ ሁኔታ ተስተካክሏል።"
   question_update_failed: "ጥያቄው ማስተካከል አልተቻለም።"
-  question_blank: "ጥያቄ ማስገባት አይቻልም።"
+  question_blank: "እባኮትን የጥያቄውን ይዘት ያስገቡ።"
   poll_chosen_stamp: "በድምፅ መመረጥ ተመርጧል"
   vote_breakdown: "የድምፅ መለያ"
   book_read_created: "የንባብ መርሃ ግብር በተሳካ ሁኔታ ተፈጥሯል።"

@@ -30,7 +30,13 @@ export default class extends Controller {
     // Tall sections overlap the observer band, so recomputation during the
     // smooth scroll would snap the highlight back; trust the click instead.
     this.suppressUntil = Date.now() + 800;
-    section.scrollIntoView({ behavior: "smooth", block: "start" });
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    section.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "start",
+    });
     history.replaceState(null, "", link.getAttribute("href"));
     this.select(section);
   }

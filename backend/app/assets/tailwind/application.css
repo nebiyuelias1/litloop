@@ -167,6 +167,6 @@
 
 /* Browser surfaces in brand ink */
 ::selection {
-  background-color: color-mix(in srgb, var(--color-primary) 22%, transparent);
-  color: var(--color-content);
+  background-color: var(--color-accent);
+  color: var(--color-accent-contrast);
 }

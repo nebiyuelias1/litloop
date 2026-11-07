@@ -6,6 +6,14 @@ export default class extends Controller {
   connect() {
     this.boundHide = this.hide.bind(this)
     this.boundKeydown = this.handleKeydown.bind(this)
+
+    // DaisyUI CSS dropdowns open on focus/hover with no Stimulus action, so the
+    // trigger's aria-expanded must be kept in sync by observing focus movement.
+    if (this.element.classList.contains("dropdown")) {
+      this.boundFocusSync = () => this.setExpanded(this.element.contains(document.activeElement))
+      this.element.addEventListener("focusin", this.boundFocusSync)
+      this.element.addEventListener("focusout", this.boundFocusSync)
+    }
   }
 
   toggle(event) {
@@ -29,7 +37,12 @@ export default class extends Controller {
   }
 
   handleKeydown(event) {
-    if (event.key === "Escape") this.close()
+    if (event.key === "Escape") {
+      this.close()
+      // Keyboard users don't lose their place: focus returns to the trigger.
+      const trigger = this.element.querySelector("[aria-expanded]")
+      if (trigger && trigger !== event.target) trigger.focus()
+    }
   }
 
   close() {
@@ -47,5 +60,9 @@ export default class extends Controller {
   disconnect() {
     document.removeEventListener("click", this.boundHide)
     document.removeEventListener("keydown", this.boundKeydown)
+    if (this.boundFocusSync) {
+      this.element.removeEventListener("focusin", this.boundFocusSync)
+      this.element.removeEventListener("focusout", this.boundFocusSync)
+    }
   }
 }

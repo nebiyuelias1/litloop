@@ -97,7 +97,7 @@ zh-TW:
   rsvp_readers_two: "%{name1} 和 %{name2}"
   rsvp_readers_more:
     one: "%{name1}、%{name2} 以及另 1 人"
-    other: "%{name1}、%{name2} 等 %{count} 人"
+    other: "%{name1}、%{name2} 以及其他 %{count} 人"
   spots_remaining: "剩 %{count} 個名額"
   member_count: "%{count} 個成員"
   show_more: "顯示更多"
@@ -198,4 +198,4 @@ zh-TW:
   your_vote: "你的一票"
   votes_count:
     other: "%{count} 票"
-  jump_to_section: "跳至章節"
+  jump_to_section: "跳至本頁區域"

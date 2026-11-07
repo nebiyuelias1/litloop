@@ -452,16 +452,31 @@ export default class extends Controller {
       ctx.restore();
     };
 
+    // Long meetup details stay inside the info box: shrink the row font until
+    // the text fits, never below a readable floor.
+    const maxDetailWidth = W - (boxX + 94) - (padding + 40);
+    const fitDetail = (type, base, text) => {
+      let size = base;
+      ctx.font = `${type} ${size}px sans-serif`;
+      while (ctx.measureText(text).width > maxDetailWidth && size > 22) {
+        size -= 2;
+        ctx.font = `${type} ${size}px sans-serif`;
+      }
+      return size;
+    };
+
     drawRowIcon("clock", boxX + 40, boxY + 119);
+    fitDetail("bold", 42, `${timeLabel}:  ${this.timeValue}`);
     ctx.fillStyle = "#f6f1e7";
-    ctx.font = "bold 42px sans-serif";
     ctx.fillText(`${timeLabel}:  ${this.timeValue}`, boxX + 94, boxY + 100);
     drawRowIcon("pin", boxX + 40, boxY + 194);
+    fitDetail("bold", 42, `${locationLabel}:  ${this.locationValue}`);
     ctx.fillText(`${locationLabel}:  ${this.locationValue}`, boxX + 94, boxY + 175);
 
     drawRowIcon("person", boxX + 40, boxY + 267, "#cfc2a6");
+    const hostSize = fitDetail("", 40, hostedByText);
     ctx.fillStyle = "#cfc2a6";
-    ctx.font = "40px sans-serif";
+    ctx.font = `${hostSize}px sans-serif`;
     ctx.fillText(hostedByText, boxX + 94, boxY + 250);
 
     // 7. Footer Block (Positioned higher, y: 1650)

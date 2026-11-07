@@ -122,7 +122,7 @@ class BookReadsController < ApplicationController
     poll_option = @poll.poll_options.find(params[:poll_option_id])
 
     if @book_read.update(book: poll_option.book)
-      @poll.update(finalized_at: Time.current)
+      @poll.update(finalized_at: Time.current, selected_poll_option: poll_option)
       redirect_to book_club_book_read_path(@book_club, @book_read), notice: t("book_read_finalized")
     else
       @winning_options = @poll.winning_options
