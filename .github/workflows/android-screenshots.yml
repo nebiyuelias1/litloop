@@ -11,6 +11,11 @@ on:
         description: 'Screens to capture, e.g. "home:|club:book_clubs/1|book:books/2453"'
         type: string
         required: false
+      sets:
+        description: 'Device sets to capture: phone, tablet-7, tablet-10'
+        type: string
+        required: false
+        default: 'phone,tablet-7,tablet-10'
 
 permissions:
   contents: read
@@ -23,7 +28,7 @@ jobs:
   capture:
     name: Capture screenshots
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 75
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -55,9 +60,56 @@ jobs:
         env:
           VIDEO: ${{ inputs.video && '1' || '0' }}
           ROUTES: ${{ inputs.routes }}
+          SETS: ${{ inputs.sets }}
           HEADLESS: '1'
           LOAD_TIMEOUT: '90'
         run: bin/android_screenshots.sh
+
+      - name: List screenshots
+        run: |
+          find build/play-store-screenshots -name '*.png' -print0 |
+            while IFS= read -r -d '' file; do
+              dims=$(python3 -c 'import struct,sys; f=open(sys.argv[1],"rb"); print("%dx%d" % struct.unpack(">II", f.read(24)[16:24]))' "$file")
+              echo "${file} (${dims})"
+            done
+
+      - name: Verify Play requirements
+        # Each set must be 16:9 or 9:16; 7-inch tablets need every side between
+        # 320 and 3840px, 10-inch tablets between 1080 and 7680px; phone
+        # screenshots are 9:16 at 320-3840px.
+        env:
+          SETS: ${{ inputs.sets }}
+        run: |
+          python3 - <<'PY'
+          import glob, os, struct, sys
+
+          limits = {
+              "phone": (320, 3840),
+              "tablet-7": (320, 3840),
+              "tablet-10": (1080, 7680),
+          }
+          requested = os.environ.get("SETS", ",".join(limits)).split(",")
+          failures = []
+          for directory in requested:
+              lo, hi = limits[directory]
+              paths = sorted(glob.glob(f"build/play-store-screenshots/{directory}/*.png"))
+              if not paths:
+                  failures.append(f"no screenshots in {directory}/")
+                  continue
+              for path in paths:
+                  with open(path, "rb") as f:
+                      w, h = struct.unpack(">II", f.read(24)[16:24])
+                  label = f"{path} {w}x{h}"
+                  side = lambda n: lo <= n <= hi
+                  if side(w) and side(h) and w in (9 * h / 16, 16 * h / 9, h * 9 // 16, h * 16 // 9):
+                      print(f"ok {label}")
+                  else:
+                      failures.append(f"bad dimensions: {label} (need 16:9 or 9:16, sides {lo}-{hi})")
+          if failures:
+              print("\n".join(failures), file=sys.stderr)
+              sys.exit(1)
+          print("all screenshot sets satisfy the Play Store requirements")
+          PY
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
@@ -73,11 +125,3 @@ jobs:
           name: android-screenshots-emulator-log-${{ github.run_number }}
           path: build/android-screenshots/emulator.log
           if-no-files-found: ignore
-
-      - name: Show dimensions
-        run: |
-          find build/play-store-screenshots -name '*.png' -print0 |
-            while IFS= read -r -d '' file; do
-              dims=$(python3 -c 'import struct,sys; f=open(sys.argv[1],"rb"); print("%dx%d" % struct.unpack(">II", f.read(24)[16:24]))' "$file")
-              echo "${file} (${dims})"
-            done

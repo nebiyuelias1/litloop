@@ -1,12 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Capture Google Play phone screenshots (and optionally app preview videos)
-# from the Android Emulator. Routes are passed to the app as litloop:// deep
-# links (handled by MainActivity's onNewIntent routing), which avoids stale
-# navigation state between captures. Captures are rewritten as clean RGB PNGs
-# (no alpha, no metadata), as Play Console requires a 9:16 aspect ratio
-# (1080x1920, each side 320-3840px) and 24-bit PNG without alpha.
+# Capture Google Play screenshots (phone, 7-inch tablet, and 10-inch tablet
+# sets) from the Android Emulator. Routes are passed to the app as litloop://
+# deep links (handled by MainActivity's onNewIntent routing), which avoids
+# stale navigation state between captures. Captures are rewritten as clean
+# RGB PNGs (no alpha, no metadata), as Play Console requires 24-bit PNG
+# without alpha in a 16:9 or 9:16 aspect ratio for every screenshot set:
+#
+#   phone      1080x1920 (9:16); each side 320-3840px
+#   tablet-7   1080x1920 (9:16); each side 320-3840px
+#   tablet-10  1440x2560 (9:16); each side 1080-7680px
+#
+# All sets use the pixel_2 device profile; the tablets get their resolution
+# from the skin override and their width in dp from a hw.lcd.density patch in
+# the AVD config (the WebView/website picks its layout from CSS pixel width,
+# so a low enough density is what makes the tablet layout show up):
+#
+#   tablet-7   1080x1920 @ 240dpi  (720dp wide viewport)
+#   tablet-10  1440x2560 @ 280dpi  (823dp wide viewport)
+#
+# Each set boots its own emulator and writes its captures into
+# OUTPUT_DIR/<set>/ (phone/, tablet-7/, tablet-10/).
 #
 # Requirements: Android SDK (adb, emulator, avdmanager + a system image) and a
 # JDK for the Gradle wrapper. Run from anywhere; paths are resolved from the
@@ -15,14 +30,19 @@ set -euo pipefail
 # Usage:
 #   bin/android_screenshots.sh
 #   ROUTES="home:|club:book_clubs/1|book:books/2453" bin/android_screenshots.sh
+#   SETS=phone,tablet-7 bin/android_screenshots.sh
 #   VIDEO=1 bin/android_screenshots.sh
 #
 # Environment:
-#   AVD_NAME      Emulator AVD for the capture set; created from the pixel_2
+#   SETS          Comma-separated capture sets from phone, tablet-7,
+#                 tablet-10 (default: all three)
+#   AVD_NAME      Emulator AVD for the phone set; created from the pixel_2
 #                 device profile (420dpi) when missing
 #                 (default: litloop-pixel-2)
-#   SCREEN_SIZE   Emulator skin override, WxH (default: 1080x1920, Play's 9:16).
-#                 "auto" keeps the AVD's own resolution (dims are not verified)
+#   SCREEN_SIZE   Phone-set emulator skin override, WxH (default: 1080x1920,
+#                 Play's 9:16). "auto" keeps the AVD's own resolution (dims
+#                 are not verified). Tablet sets always use their fixed skin,
+#                 so AVD_NAME/SCREEN_SIZE only affect the phone set.
 #   ROUTES        "name:path|name:path"; an empty path launches the home tab.
 #                 A path may be a full https:// URL; prefer bare paths
 #                 (litloop:// is more reliable than App Links on the emulator)
@@ -52,7 +72,52 @@ PACKAGE="${PACKAGE:-et.netale.litloop}"
 ACTIVITY="${ACTIVITY:-.activities.MainActivity}"
 AVD_NAME="${AVD_NAME:-litloop-pixel-2}"
 SCREEN_SIZE="${SCREEN_SIZE:-1080x1920}"
+SETS="${SETS:-phone,tablet-7,tablet-10}"
 OUTPUT_DIR="${OUTPUT_DIR:-build/play-store-screenshots}"
+
+# Per-set emulator parameters (set by device_config before each capture run).
+DEVICE_PROFILE="pixel_2"
+LCD_DENSITY=""
+PHONE_AVD_NAME="$AVD_NAME"
+PHONE_SCREEN_SIZE="$SCREEN_SIZE"
+
+IFS=',' read -ra SET_LIST <<< "$SETS"
+for set_name in "${SET_LIST[@]}"; do
+  case "$set_name" in
+    phone | tablet-7 | tablet-10) ;;
+    *) echo "error: unknown capture set '$set_name' (expected phone, tablet-7 or tablet-10)" >&2; exit 1 ;;
+  esac
+done
+
+# Map a capture set onto the emulator parameters used by ensure_avd and
+# boot_emulator. Phone keeps its env-overridable AVD_NAME/SCREEN_SIZE; the
+# tablet sets use fixed AVDs (skin resolution + patched density for the
+# tablet layout).
+device_config() {
+  LCD_DENSITY=""
+  case "$1" in
+    phone)
+      AVD_NAME="$PHONE_AVD_NAME"
+      SCREEN_SIZE="$PHONE_SCREEN_SIZE"
+      ;;
+    tablet-7)
+      AVD_NAME="litloop-tablet-7"
+      SCREEN_SIZE="1080x1920"
+      LCD_DENSITY=240
+      ;;
+    tablet-10)
+      AVD_NAME="litloop-tablet-10"
+      SCREEN_SIZE="1440x2560"
+      LCD_DENSITY=280
+      ;;
+  esac
+  if [[ "$SCREEN_SIZE" == "auto" ]]; then
+    EXPECTED=""
+  else
+    EXPECTED="${SCREEN_SIZE/x/ }"
+  fi
+}
+
 ROUTES="${ROUTES:-club:book_clubs/1|home:|book_read:book_clubs/1/book_reads/6|clubs:book_clubs|book:books/2453}"
 WAIT_SECONDS="${WAIT_SECONDS:-6}"
 VIDEO="${VIDEO:-0}"
@@ -61,12 +126,6 @@ KEEP_EMULATOR="${KEEP_EMULATOR:-0}"
 EMU_DNS="${EMU_DNS:-8.8.8.8}"
 APK="$ROOT_DIR/android/app/build/outputs/apk/debug/app-debug.apk"
 EMU_LOG="$ROOT_DIR/build/android-screenshots/emulator.log"
-
-if [[ "$SCREEN_SIZE" == "auto" ]]; then
-  EXPECTED=""
-else
-  EXPECTED="${SCREEN_SIZE/x/ }"
-fi
 
 # Locate the SDK (ANDROID_HOME, ANDROID_SDK_ROOT, then common install paths).
 if [[ -z "${ANDROID_HOME:-}" && -z "${ANDROID_SDK_ROOT:-}" ]]; then
@@ -176,19 +235,19 @@ ensure_avd() {
   avds="$("$EMULATOR" -list-avds 2>/dev/null || true)"
   if grep -Fxq "$AVD_NAME" <<< "$avds"; then
     log "   AVD $AVD_NAME already exists"
-    return 0
+  else
+    image="$(find_system_image)"
+    [[ -n "$AVDMANAGER" ]] || {
+      echo 'error: avdmanager not found; install cmdline-tools, e.g. sdkmanager "cmdline-tools;latest"' >&2
+      exit 1
+    }
+    log "   creating AVD $AVD_NAME ($image, $DEVICE_PROFILE profile)"
+    printf 'no\n' | "$AVDMANAGER" create avd \
+      -n "$AVD_NAME" \
+      -k "$image" \
+      -d "$DEVICE_PROFILE" \
+      --force >/dev/null
   fi
-  image="$(find_system_image)"
-  [[ -n "$AVDMANAGER" ]] || {
-    echo 'error: avdmanager not found; install cmdline-tools, e.g. sdkmanager "cmdline-tools;latest"' >&2
-    exit 1
-  }
-  log "   creating AVD $AVD_NAME ($image, pixel_2 profile)"
-  printf 'no\n' | "$AVDMANAGER" create avd \
-    -n "$AVD_NAME" \
-    -k "$image" \
-    -d pixel_2 \
-    --force >/dev/null
   if [[ -z "${ANDROID_AVD_HOME:-}" ]]; then
     for candidate in "$HOME/.android/avd" "$HOME/.config/.android/avd" "${XDG_CONFIG_HOME:-$HOME/.config}/.android/avd"; do
       if [[ -f "$candidate/$AVD_NAME.ini" ]]; then
@@ -200,6 +259,18 @@ ensure_avd() {
   if [[ -z "${ANDROID_AVD_HOME:-}" ]]; then
     echo "error: AVD $AVD_NAME not found after creation" >&2
     exit 1
+  fi
+  # The tablet sets only differ from the phone set in the skin resolution and
+  # this density: at ~420dpi a 1080px-wide screen is a 410dp phone viewport,
+  # while the patched densities below give the WebView a 720-823dp tablet
+  # viewport. Applied on every run so pre-existing AVDs are fixed up too.
+  if [[ -n "$LCD_DENSITY" ]]; then
+    local cfg="$ANDROID_AVD_HOME/$AVD_NAME.avd/config.ini"
+    if [[ -f "$cfg" ]] && grep -q '^hw.lcd.density=' "$cfg"; then
+      sed -i "s/^hw.lcd.density=.*/hw.lcd.density=$LCD_DENSITY/" "$cfg"
+    elif [[ -f "$cfg" ]]; then
+      printf 'hw.lcd.density=%s\n' "$LCD_DENSITY" >> "$cfg"
+    fi
   fi
 }
 
@@ -414,10 +485,12 @@ record_preview() {
 }
 
 capture_set() {
-  local dir="$OUTPUT_DIR/phone"
+  local set_name="$1"
+  local dir="$OUTPUT_DIR/$set_name"
   local out entry name path dims index
   local -a route_list
 
+  log "   captures will go to $dir"
   rm -rf "$dir"
   mkdir -p "$dir"
 
@@ -512,16 +585,16 @@ capture_set() {
     done
   done
 
-  if [[ "$VIDEO" == "1" ]]; then
+  if [[ "$VIDEO" == "1" ]] && [[ "$set_name" == "phone" ]]; then
     record_preview "$dir"
+  elif [[ "$VIDEO" == "1" ]]; then
+    echo "   skipping preview recording (phone set only)"
   fi
 
   reset_status_bar
 }
 
-cleanup() {
-  [[ "${CLEANED:-0}" == "1" ]] && return
-  CLEANED=1
+stop_emulator() {
   if [[ -n "${EMU_PID:-}" ]] && kill -0 "$EMU_PID" 2>/dev/null; then
     if [[ "$KEEP_EMULATOR" != "1" ]]; then
       log "stopping emulator..."
@@ -533,6 +606,13 @@ cleanup() {
       log "leaving emulator $EMU_PID running (KEEP_EMULATOR=1)"
     fi
   fi
+  EMU_PID=""
+}
+
+cleanup() {
+  [[ "${CLEANED:-0}" == "1" ]] && return
+  CLEANED=1
+  stop_emulator
 }
 trap cleanup EXIT
 
@@ -543,9 +623,16 @@ log "Building LitLoop debug APK..."
 )
 [[ -f "$APK" ]] || { echo "error: built APK not found at $APK" >&2; exit 1; }
 
-ensure_avd
-boot_emulator
-capture_set
+# Each set needs its own emulator boot: the skin resolution cannot change on a
+# running instance.
+for set_name in "${SET_LIST[@]}"; do
+  log "== capture set: $set_name"
+  device_config "$set_name"
+  ensure_avd
+  boot_emulator
+  capture_set "$set_name"
+  stop_emulator
+done
 
 echo
 echo "Screenshots ready in $OUTPUT_DIR"
