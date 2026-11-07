@@ -1,12 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Capture Google Play phone screenshots (and optionally app preview videos)
-# from the Android Emulator. Routes are passed to the app as litloop:// deep
-# links (handled by MainActivity's onNewIntent routing), which avoids stale
-# navigation state between captures. Captures are rewritten as clean RGB PNGs
-# (no alpha, no metadata), as Play Console requires a 9:16 aspect ratio
-# (1080x1920, each side 320-3840px) and 24-bit PNG without alpha.
+# Capture Google Play screenshots (phone, 7-inch tablet, and 10-inch tablet
+# sets) from the Android Emulator. Routes are passed to the app as litloop://
+# deep links (handled by MainActivity's onNewIntent routing), which avoids
+# stale navigation state between captures. Captures are rewritten as clean
+# RGB PNGs (no alpha, no metadata), as Play Console requires 24-bit PNG
+# without alpha in a 16:9 or 9:16 aspect ratio for every screenshot set:
+#
+#   phone      1080x1920 (9:16); each side 320-3840px
+#   tablet-7   1080x1920 (9:16); each side 320-3840px
+#   tablet-10  1440x2560 (9:16); each side 1080-7680px
+#
+# All sets use the pixel_2 device profile; the tablets get their resolution
+# from the skin override and their width in dp from a hw.lcd.density patch in
+# the AVD config (the WebView/website picks its layout from CSS pixel width,
+# so a low enough density is what makes the tablet layout show up):
+#
+#   tablet-7   1080x1920 @ 240dpi  (720dp wide viewport)
+#   tablet-10  1440x2560 @ 280dpi  (823dp wide viewport)
+#
+# Each set boots its own emulator and writes its captures into
+# OUTPUT_DIR/<set>/ (phone/, tablet-7/, tablet-10/).
 #
 # Requirements: Android SDK (adb, emulator, avdmanager + a system image) and a
 # JDK for the Gradle wrapper. Run from anywhere; paths are resolved from the
@@ -15,14 +30,19 @@ set -euo pipefail
 # Usage:
 #   bin/android_screenshots.sh
 #   ROUTES="home:|club:book_clubs/1|book:books/2453" bin/android_screenshots.sh
+#   SETS=phone,tablet-7 bin/android_screenshots.sh
 #   VIDEO=1 bin/android_screenshots.sh
 #
 # Environment:
-#   AVD_NAME      Emulator AVD for the capture set; created from the pixel_2
+#   SETS          Comma-separated capture sets from phone, tablet-7,
+#                 tablet-10 (default: all three)
+#   AVD_NAME      Emulator AVD for the phone set; created from the pixel_2
 #                 device profile (420dpi) when missing
 #                 (default: litloop-pixel-2)
-#   SCREEN_SIZE   Emulator skin override, WxH (default: 1080x1920, Play's 9:16).
-#                 "auto" keeps the AVD's own resolution (dims are not verified)
+#   SCREEN_SIZE   Phone-set emulator skin override, WxH (default: 1080x1920,
+#                 Play's 9:16). "auto" keeps the AVD's own resolution (dims
+#                 are not verified). Tablet sets always use their fixed skin,
+#                 so AVD_NAME/SCREEN_SIZE only affect the phone set.
 #   ROUTES        "name:path|name:path"; an empty path launches the home tab.
 #                 A path may be a full https:// URL; prefer bare paths
 #                 (litloop:// is more reliable than App Links on the emulator)
@@ -37,6 +57,13 @@ set -euo pipefail
 #   EMU_FEATURES  Emulator -feature flags (default: GLDirectMem,
 #                 HasSharedSlotsHostMemoryAllocator; required by Android 16
 #                 images, see boot_emulator)
+#   EMU_DNS       DNS server for the emulator guest network (default: 8.8.8.8;
+#                 CI runners' host resolver is unreachable from the guest;
+#                 "none" skips the flag)
+#   NET_CHECK     1 to fail the run when the WebView logs network errors after
+#                 the warm-up launch (default: 1)
+#   CAPTURE_RETRIES  Attempts per route before failing on an empty capture
+#                    (default: 2)
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
@@ -45,20 +72,60 @@ PACKAGE="${PACKAGE:-et.netale.litloop}"
 ACTIVITY="${ACTIVITY:-.activities.MainActivity}"
 AVD_NAME="${AVD_NAME:-litloop-pixel-2}"
 SCREEN_SIZE="${SCREEN_SIZE:-1080x1920}"
+SETS="${SETS:-phone,tablet-7,tablet-10}"
 OUTPUT_DIR="${OUTPUT_DIR:-build/play-store-screenshots}"
+
+# Per-set emulator parameters (set by device_config before each capture run).
+DEVICE_PROFILE="pixel_2"
+LCD_DENSITY=""
+PHONE_AVD_NAME="$AVD_NAME"
+PHONE_SCREEN_SIZE="$SCREEN_SIZE"
+
+IFS=',' read -ra SET_LIST <<< "$SETS"
+for set_name in "${SET_LIST[@]}"; do
+  case "$set_name" in
+    phone | tablet-7 | tablet-10) ;;
+    *) echo "error: unknown capture set '$set_name' (expected phone, tablet-7 or tablet-10)" >&2; exit 1 ;;
+  esac
+done
+
+# Map a capture set onto the emulator parameters used by ensure_avd and
+# boot_emulator. Phone keeps its env-overridable AVD_NAME/SCREEN_SIZE; the
+# tablet sets use fixed AVDs (skin resolution + patched density for the
+# tablet layout).
+device_config() {
+  LCD_DENSITY=""
+  case "$1" in
+    phone)
+      AVD_NAME="$PHONE_AVD_NAME"
+      SCREEN_SIZE="$PHONE_SCREEN_SIZE"
+      ;;
+    tablet-7)
+      AVD_NAME="litloop-tablet-7"
+      SCREEN_SIZE="1080x1920"
+      LCD_DENSITY=240
+      ;;
+    tablet-10)
+      AVD_NAME="litloop-tablet-10"
+      SCREEN_SIZE="1440x2560"
+      LCD_DENSITY=280
+      ;;
+  esac
+  if [[ "$SCREEN_SIZE" == "auto" ]]; then
+    EXPECTED=""
+  else
+    EXPECTED="${SCREEN_SIZE/x/ }"
+  fi
+}
+
 ROUTES="${ROUTES:-club:book_clubs/1|home:|book_read:book_clubs/1/book_reads/6|clubs:book_clubs|book:books/2453}"
 WAIT_SECONDS="${WAIT_SECONDS:-6}"
 VIDEO="${VIDEO:-0}"
 HEADLESS="${HEADLESS:-0}"
 KEEP_EMULATOR="${KEEP_EMULATOR:-0}"
+EMU_DNS="${EMU_DNS:-8.8.8.8}"
 APK="$ROOT_DIR/android/app/build/outputs/apk/debug/app-debug.apk"
 EMU_LOG="$ROOT_DIR/build/android-screenshots/emulator.log"
-
-if [[ "$SCREEN_SIZE" == "auto" ]]; then
-  EXPECTED=""
-else
-  EXPECTED="${SCREEN_SIZE/x/ }"
-fi
 
 # Locate the SDK (ANDROID_HOME, ANDROID_SDK_ROOT, then common install paths).
 if [[ -z "${ANDROID_HOME:-}" && -z "${ANDROID_SDK_ROOT:-}" ]]; then
@@ -168,19 +235,19 @@ ensure_avd() {
   avds="$("$EMULATOR" -list-avds 2>/dev/null || true)"
   if grep -Fxq "$AVD_NAME" <<< "$avds"; then
     log "   AVD $AVD_NAME already exists"
-    return 0
+  else
+    image="$(find_system_image)"
+    [[ -n "$AVDMANAGER" ]] || {
+      echo 'error: avdmanager not found; install cmdline-tools, e.g. sdkmanager "cmdline-tools;latest"' >&2
+      exit 1
+    }
+    log "   creating AVD $AVD_NAME ($image, $DEVICE_PROFILE profile)"
+    printf 'no\n' | "$AVDMANAGER" create avd \
+      -n "$AVD_NAME" \
+      -k "$image" \
+      -d "$DEVICE_PROFILE" \
+      --force >/dev/null
   fi
-  image="$(find_system_image)"
-  [[ -n "$AVDMANAGER" ]] || {
-    echo 'error: avdmanager not found; install cmdline-tools, e.g. sdkmanager "cmdline-tools;latest"' >&2
-    exit 1
-  }
-  log "   creating AVD $AVD_NAME ($image, pixel_2 profile)"
-  printf 'no\n' | "$AVDMANAGER" create avd \
-    -n "$AVD_NAME" \
-    -k "$image" \
-    -d pixel_2 \
-    --force >/dev/null
   if [[ -z "${ANDROID_AVD_HOME:-}" ]]; then
     for candidate in "$HOME/.android/avd" "$HOME/.config/.android/avd" "${XDG_CONFIG_HOME:-$HOME/.config}/.android/avd"; do
       if [[ -f "$candidate/$AVD_NAME.ini" ]]; then
@@ -192,6 +259,18 @@ ensure_avd() {
   if [[ -z "${ANDROID_AVD_HOME:-}" ]]; then
     echo "error: AVD $AVD_NAME not found after creation" >&2
     exit 1
+  fi
+  # The tablet sets only differ from the phone set in the skin resolution and
+  # this density: at ~420dpi a 1080px-wide screen is a 410dp phone viewport,
+  # while the patched densities below give the WebView a 720-823dp tablet
+  # viewport. Applied on every run so pre-existing AVDs are fixed up too.
+  if [[ -n "$LCD_DENSITY" ]]; then
+    local cfg="$ANDROID_AVD_HOME/$AVD_NAME.avd/config.ini"
+    if [[ -f "$cfg" ]] && grep -q '^hw.lcd.density=' "$cfg"; then
+      sed -i "s/^hw.lcd.density=.*/hw.lcd.density=$LCD_DENSITY/" "$cfg"
+    elif [[ -f "$cfg" ]]; then
+      printf 'hw.lcd.density=%s\n' "$LCD_DENSITY" >> "$cfg"
+    fi
   fi
 }
 
@@ -227,7 +306,9 @@ boot_emulator() {
   # pixel_2 profile default (1536M) and system_server starts flapping.
   # GLDirectMem + HasSharedSlotsHostMemoryAllocator make the host advertise
   # ReadColorBufferDma, which Android 16 gralloc asserts on; without them
-  # surfaceflinger crash-loops and the system wedges.
+  # surfaceflinger crash-loops and the system wedges. An explicit DNS server
+  # is required on CI runners: the guest cannot reach the host resolver, and
+  # every page would load as an error page.
   local -a emu_flags=(
     "-avd" "$AVD_NAME"
     "-skin" "$SCREEN_SIZE"
@@ -235,6 +316,9 @@ boot_emulator() {
     "-feature" "${EMU_FEATURES:-GLDirectMem,HasSharedSlotsHostMemoryAllocator}"
     "-no-snapshot" "-no-audio" "-no-boot-anim"
   )
+  if [[ "$EMU_DNS" != "none" ]]; then
+    emu_flags+=("-dns-server" "$EMU_DNS")
+  fi
   mkdir -p "$(dirname "$EMU_LOG")"
   if [[ "$HEADLESS" == "1" ]]; then
     emu_flags+=("-no-window" "-gpu" "swiftshader_indirect")
@@ -243,6 +327,7 @@ boot_emulator() {
   "$EMULATOR" "${emu_flags[@]}" > "$EMU_LOG" 2>&1 &
   EMU_PID=$!
   wait_for_boot
+  guest_probe
 }
 
 # SystemUI demo mode pins a clean status bar: 9:41, full battery, full wifi,
@@ -304,6 +389,59 @@ wait_for_static_screen() {
     waited=$((waited + 2))
   done
   echo "   warning: screen still animating after ${timeout}s; capturing anyway" >&2
+  adb -e logcat -d 2>/dev/null | grep -iE "chromium|cr_" | tail -10 >&2 || true
+}
+
+# The app is a WebView around litloop.club; if the guest network is broken
+# (e.g. DNS on CI runners) every capture would silently show Hotwire's error
+# page, so fail loudly instead of uploading garbage.
+# End-to-end guest probe: DNS resolution + TCP + HTTP in one shot (toybox nc
+# does getaddrinfo for the host name). Distinguishes "guest network broken"
+# from "WebView/chromium-specific" failures.
+guest_probe() {
+  local out
+  out="$(adb -e shell 'printf "GET / HTTP/1.0\r\n\r\n" | nc -w 10 litloop.club 80 2>&1 | head -2' 2>/dev/null || true)"
+  if [[ "$out" == *"HTTP/"* ]]; then
+    log "   guest probe: litloop.club reachable (HTTP ok)"
+  else
+    log "   guest probe: litloop.club NOT reachable: ${out:-<empty>}"
+  fi
+}
+
+# Everything useful when the app fails to load: guest state (default network,
+# interfaces, probes), host DNS, and the chromium/network logcat lines.
+dump_webview_diagnostics() {
+  echo "--- guest state ---" >&2
+  adb -e shell "dumpsys connectivity 2>/dev/null | grep -m1 'Active default network'" >&2 || true
+  adb -e shell "ip -4 addr show 2>/dev/null | grep -E '^[0-9]+:|inet '" >&2 || true
+  adb -e shell "nc -w 3 8.8.8.8 53 </dev/null >/dev/null 2>&1 && echo 'tcp 8.8.8.8:53 OK'" >&2 || echo "tcp 8.8.8.8:53 unreachable" >&2
+  echo "--- guest resolver (getent) ---" >&2
+  for name in litloop.club example.com; do
+    printf '%-16s v4: %s\n' "$name" "$(adb -e shell "getent ahostsv4 $name 2>/dev/null | head -1" || true)" >&2
+    printf '%-16s v6: %s\n' "$name" "$(adb -e shell "getent ahostsv6 $name 2>/dev/null | head -1" || true)" >&2
+  done
+  echo "--- guest HTTP probe ---" >&2
+  adb -e shell 'printf "GET / HTTP/1.0\r\n\r\n" | nc -w 10 litloop.club 80 2>&1 | head -2' >&2 || true
+  echo "--- host DNS ---" >&2
+  getent hosts litloop.club 2>&1 | head -2 >&2 || true
+  echo "--- chromium/network logcat ---" >&2
+  adb -e logcat -d 2>/dev/null | grep -iE "net::ERR|UnknownHost|Unable to resolve|ERR_CERT|DnsConfig|dns_config|chromium.*(dns|network)" | tail -20 >&2 || true
+  echo "hint: try EMU_DNS (default 8.8.8.8) or EMU_DNS=none" >&2
+}
+
+# The app is a WebView around litloop.club; if the guest network is broken
+# every capture would silently show Hotwire's error page or a frozen loading
+# spinner, so fail loudly instead of uploading garbage.
+check_webview_errors() {
+  [[ "${NET_CHECK:-1}" == "1" ]] || return 0
+  local errs
+  errs="$(adb -e logcat -d 2>/dev/null | grep -oE 'net::ERR_[A-Z_]+' | sort | uniq -c | sort -rn | head -5 || true)"
+  [[ -n "$errs" ]] || return 0
+
+  echo "error: WebView reported network errors; screenshots would show error pages:" >&2
+  echo "$errs" >&2
+  dump_webview_diagnostics
+  return 1
 }
 
 record_preview() {
@@ -347,10 +485,12 @@ record_preview() {
 }
 
 capture_set() {
-  local dir="$OUTPUT_DIR/phone"
+  local set_name="$1"
+  local dir="$OUTPUT_DIR/$set_name"
   local out entry name path dims index
   local -a route_list
 
+  log "   captures will go to $dir"
   rm -rf "$dir"
   mkdir -p "$dir"
 
@@ -371,6 +511,9 @@ capture_set() {
   fi
 
   log "   preparing status bar (demo mode)..."
+  # Private DNS (opportunistic DoT) against the emulator's internal resolver
+  # can hang resolution on CI runners; plain DNS via 10.0.2.3 is reliable.
+  adb -e shell settings put global private_dns_mode off
   adb -e shell settings put global window_animation_scale 0.0
   adb -e shell settings put global transition_animation_scale 0.0
   adb -e shell settings put global animator_duration_scale 0.0
@@ -382,6 +525,7 @@ capture_set() {
   launch_app ""
   sleep "$WAIT_SECONDS"
   wait_for_static_screen
+  check_webview_errors
 
   IFS='|' read -ra route_list <<< "$ROUTES"
   index=0
@@ -391,38 +535,66 @@ capture_set() {
     name="${entry%%:*}"
     path="${entry#*:}"
     out="$(printf '%s/%02d-%s.png' "$dir" "$index" "$name")"
+    attempt=1
 
-    adb -e shell am force-stop "$PACKAGE" 2>/dev/null || true
-    sleep 1
-    log "   $name -> ${path:-home}"
-    launch_app "$path"
-    sleep "$WAIT_SECONDS"
-    wait_for_static_screen
+    while true; do
+      # Deep links route through onNewIntent, keeping the WebView and its
+      # cache warm between captures (cold starts load far too slowly on CI).
+      # A bare path must land on the home tab, so relaunch the app fresh.
+      if [[ -z "$path" ]]; then
+        adb -e shell am force-stop "$PACKAGE" 2>/dev/null || true
+        sleep 1
+        log "   $name -> home"
+        launch_app ""
+      elif [[ "$attempt" -gt 1 ]]; then
+        log "   retry $((attempt - 1)) for $name (content did not load)"
+        adb -e shell am force-stop "$PACKAGE" 2>/dev/null || true
+        sleep 2
+        launch_app "$path"
+      else
+        log "   $name -> ${path:-home}"
+        launch_app "$path"
+      fi
+      sleep "$WAIT_SECONDS"
+      wait_for_static_screen
 
-    if ! app_running; then
-      echo "warning: $PACKAGE does not appear to be running; recent logcat:" >&2
-      adb -e logcat -d -t 30 2>/dev/null | tail -30 >&2 || true
-    fi
+      if ! app_running; then
+        echo "warning: $PACKAGE does not appear to be running; recent logcat:" >&2
+        adb -e logcat -d -t 30 2>/dev/null | tail -30 >&2 || true
+      fi
 
-    adb -e exec-out screencap -p > "$out"
-    python3 "$ROOT_DIR/bin/png_rgb.py" "$out"
-    dims="$(png_dims "$out")"
-    if [[ -n "$EXPECTED" && "$dims" != "$EXPECTED" ]]; then
-      echo "   warning: expected ${EXPECTED// /x} (Play 9:16), got ${dims// /x}" >&2
-    fi
-    log "   wrote $out (${dims// /x}, RGB)"
+      adb -e exec-out screencap -p > "$out"
+      python3 "$ROOT_DIR/bin/png_rgb.py" "$out"
+      dims="$(png_dims "$out")"
+      if [[ -n "$EXPECTED" && "$dims" != "$EXPECTED" ]]; then
+        echo "   warning: expected ${EXPECTED// /x} (Play 9:16), got ${dims// /x}" >&2
+      fi
+      log "   wrote $out (${dims// /x}, RGB)"
+
+      # A uniform screen (error page / frozen spinner) compresses tiny; real
+      # app content never does. Keeps empty captures out of the artifact.
+      if [[ "$(wc -c < "$out")" -ge "${MIN_CAPTURE_BYTES:-40000}" ]]; then
+        break
+      fi
+      if [[ "$attempt" -ge "${CAPTURE_RETRIES:-2}" ]]; then
+        echo "error: $out looks empty ($(wc -c < "$out") bytes; app content did not load after $attempt attempt(s))" >&2
+        dump_webview_diagnostics
+        return 1
+      fi
+      attempt=$((attempt + 1))
+    done
   done
 
-  if [[ "$VIDEO" == "1" ]]; then
+  if [[ "$VIDEO" == "1" ]] && [[ "$set_name" == "phone" ]]; then
     record_preview "$dir"
+  elif [[ "$VIDEO" == "1" ]]; then
+    echo "   skipping preview recording (phone set only)"
   fi
 
   reset_status_bar
 }
 
-cleanup() {
-  [[ "${CLEANED:-0}" == "1" ]] && return
-  CLEANED=1
+stop_emulator() {
   if [[ -n "${EMU_PID:-}" ]] && kill -0 "$EMU_PID" 2>/dev/null; then
     if [[ "$KEEP_EMULATOR" != "1" ]]; then
       log "stopping emulator..."
@@ -434,6 +606,13 @@ cleanup() {
       log "leaving emulator $EMU_PID running (KEEP_EMULATOR=1)"
     fi
   fi
+  EMU_PID=""
+}
+
+cleanup() {
+  [[ "${CLEANED:-0}" == "1" ]] && return
+  CLEANED=1
+  stop_emulator
 }
 trap cleanup EXIT
 
@@ -444,9 +623,16 @@ log "Building LitLoop debug APK..."
 )
 [[ -f "$APK" ]] || { echo "error: built APK not found at $APK" >&2; exit 1; }
 
-ensure_avd
-boot_emulator
-capture_set
+# Each set needs its own emulator boot: the skin resolution cannot change on a
+# running instance.
+for set_name in "${SET_LIST[@]}"; do
+  log "== capture set: $set_name"
+  device_config "$set_name"
+  ensure_avd
+  boot_emulator
+  capture_set "$set_name"
+  stop_emulator
+done
 
 echo
 echo "Screenshots ready in $OUTPUT_DIR"
