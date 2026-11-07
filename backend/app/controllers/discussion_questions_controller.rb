@@ -12,12 +12,12 @@ class DiscussionQuestionsController < ApplicationController
     respond_to do |format|
       if @discussion_question.save
         session.delete(:discussion_question_draft)
-        flash.now[:notice] = "Question added successfully."
+        flash.now[:notice] = t("question_added")
         format.turbo_stream
-        format.html { redirect_to book_club_book_read_path(@book_club, @book_read), notice: "Question added successfully." }
+        format.html { redirect_to book_club_book_read_path(@book_club, @book_read), notice: t("question_added") }
       else
         format.turbo_stream { render turbo_stream: turbo_stream.replace("new_discussion_question_form", partial: "discussion_questions/form", locals: { book_club: @book_club, book_read: @book_read, discussion_question: @discussion_question }), status: :unprocessable_content }
-        format.html { redirect_to book_club_book_read_path(@book_club, @book_read), alert: "Question cannot be blank." }
+        format.html { redirect_to book_club_book_read_path(@book_club, @book_read), alert: t("question_blank") }
       end
     end
   end
@@ -34,12 +34,12 @@ class DiscussionQuestionsController < ApplicationController
     if @discussion_question.update(update_params)
       respond_to do |format|
         format.turbo_stream { render turbo_stream: turbo_stream.replace(@discussion_question, partial: "discussion_questions/discussion_question", locals: { discussion_question: @discussion_question }) }
-        format.html { redirect_to book_club_book_read_path(@book_club, @book_read), notice: "Question updated successfully." }
+        format.html { redirect_to book_club_book_read_path(@book_club, @book_read), notice: t("question_updated") }
       end
     else
       respond_to do |format|
         format.turbo_stream { render turbo_stream: turbo_stream.replace(@discussion_question, partial: "discussion_questions/discussion_question", locals: { discussion_question: @discussion_question, edit_mode: true }), status: :unprocessable_content }
-        format.html { redirect_to book_club_book_read_path(@book_club, @book_read), alert: "Failed to update question." }
+        format.html { redirect_to book_club_book_read_path(@book_club, @book_read), alert: t("question_update_failed") }
       end
     end
   end
@@ -57,7 +57,7 @@ class DiscussionQuestionsController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream
-      format.html { redirect_to book_club_book_read_path(@book_club, @book_read), notice: "Question deleted successfully." }
+      format.html { redirect_to book_club_book_read_path(@book_club, @book_read), notice: t("question_deleted") }
     end
   end
 

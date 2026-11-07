@@ -1,0 +1,36 @@
+<%# Shared share / copy-link button built on the share Stimulus controller.
+    Required locals: url, title. Optional: label, rounded ("full" or "lg"). %>
+<%
+  label = local_assigns.fetch(:label, t("share", default: "Share"))
+  rounded = local_assigns.fetch(:rounded, "full")
+%>
+<button
+  type="button"
+  aria-label="<%= label %>"
+  title="<%= label %>"
+  data-controller="share"
+  data-action="click->share#share:prevent:stop"
+  data-share-url-value="<%= url %>"
+  data-share-title-value="<%= title %>"
+  class="
+    inline-flex items-center justify-center h-9 w-9 shrink-0 cursor-pointer
+    border border-border bg-surface text-content transition-colors
+    hover:bg-background hover:text-accent hover:border-accent
+    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary
+    <%= rounded == "lg" ? "rounded-lg" : "rounded-full" %>
+  ">
+  <span class="sr-only" data-share-target="label"><%= label %></span>
+  <svg
+    class="h-4 w-4"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true">
+    <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
+    <path d="M16 6l-4-4-4 4" />
+    <path d="M12 2v14" />
+  </svg>
+</button>

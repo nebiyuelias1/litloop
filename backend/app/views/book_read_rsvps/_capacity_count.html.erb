@@ -1,6 +1,6 @@
 <p id="book_read_capacity_count" class="font-semibold text-content">
   <% if book_read.max_capacity.present? %>
-    <%= rsvp_users.size %> / <%= book_read.max_capacity %><% if waitlisted_count&.positive? %><span class="text-violet-700 dark:text-violet-400 font-normal text-sm"> <%= t("waitlisted_count", count: waitlisted_count) %></span><% end %>
+    <%= rsvp_users.size %> / <%= book_read.max_capacity %><% if waitlisted_count&.positive? %><span class="text-accent font-normal text-sm"> <%= t("waitlisted_count", count: waitlisted_count) %></span><% end %>
   <% else %>
     Not set
   <% end %>

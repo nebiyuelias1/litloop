@@ -2,6 +2,14 @@
   <%= render partial: "discussion_questions/discussion_question", locals: { discussion_question: @discussion_question } %>
 <% end %>
 
+<%# Counts follow the acting user's visible set, not the unfiltered total —
+    otherwise a member's badge can exceed the questions they can see. Flagged
+    by CodeRabbit; see NEB-94 for the full privacy pass %>
+<% count = @book_read.visible_discussion_questions_for(current_user).count %>
+<% %w[discussion_questions_count discussion_questions_nav_count].each do |dom_id| %>
+  <%= turbo_stream.replace dom_id, partial: "discussion_questions/count", locals: { id: dom_id, count: count } %>
+<% end %>
+
 <%= turbo_stream.update "no_discussion_questions_wrapper", "" %>
 
 <%= turbo_stream.replace "new_discussion_question_form" do %>

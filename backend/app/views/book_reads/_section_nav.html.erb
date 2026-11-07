@@ -1,0 +1,52 @@
+<%#
+  Anchor section bar for the book-read page.
+  Underline tabs (same language as book_clubs/_tabs) that smooth-scroll to
+  page sections instead of hiding them. Rendered only when a poll and the
+  private member info are both visible.
+  Locals:
+    - poll_active: Boolean
+    - question_count: Integer
+%>
+<div
+  data-controller="section-nav"
+  class="
+    sticky top-16 z-30 bg-background pb-px
+  ">
+  <nav
+    aria-label="<%= t("jump_to_section") %>"
+    class="-mb-px flex gap-6 overflow-x-auto">
+    <a
+      href="#poll_section"
+      data-section-nav-target="link"
+      data-action="section-nav#scroll"
+      class="
+        inline-flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2
+        border-transparent pb-3 pt-3 text-sm font-medium text-content-subtle
+        transition-colors hover:text-content focus:outline-none
+        aria-current:border-content aria-current:font-semibold
+        aria-current:text-content
+      ">
+      <%= t("poll") %>
+      <% if poll_active %>
+        <span class="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true"></span>
+        <span class="sr-only"><%= t("active_poll") %></span>
+      <% end %>
+    </a>
+    <a
+      href="#discussion_section"
+      data-section-nav-target="link"
+      data-action="section-nav#scroll"
+      class="
+        inline-flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2
+        border-transparent pb-3 pt-3 text-sm font-medium text-content-subtle
+        transition-colors hover:text-content focus:outline-none
+        aria-current:border-content aria-current:font-semibold
+        aria-current:text-content
+      ">
+      <%= t("discussion_questions") %>
+      <%= render "discussion_questions/count",
+      id: "discussion_questions_nav_count",
+      count: question_count %>
+    </a>
+  </nav>
+</div>

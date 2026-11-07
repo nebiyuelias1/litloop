@@ -1,6 +1,10 @@
 class Poll < ApplicationRecord
   belongs_to :book_read
 
+  # The option the organizer selected when finalizing; set from finalize → select_book.
+  # Legacy polls finalized before this column exist get away with none.
+  belongs_to :selected_poll_option, class_name: "PollOption", optional: true
+
   has_many :poll_options, dependent: :destroy
   has_many :poll_votes, through: :poll_options
 

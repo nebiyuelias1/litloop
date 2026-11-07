@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_29_042005) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_07_080000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -178,7 +178,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_29_042005) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "finalized_at"
+    t.integer "selected_poll_option_id"
     t.index ["book_read_id"], name: "index_polls_on_book_read_id"
+    t.index ["selected_poll_option_id"], name: "index_polls_on_selected_poll_option_id"
   end
 
   create_table "question_translations", force: :cascade do |t|
@@ -398,6 +400,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_29_042005) do
   add_foreign_key "poll_votes", "poll_options"
   add_foreign_key "poll_votes", "users"
   add_foreign_key "polls", "book_reads"
+  add_foreign_key "polls", "poll_options", column: "selected_poll_option_id"
   add_foreign_key "question_translations", "discussion_questions"
   add_foreign_key "ratings", "books"
   add_foreign_key "ratings", "users"

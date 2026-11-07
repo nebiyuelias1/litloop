@@ -1,4 +1,4 @@
-<%= turbo_stream.replace "book_read_rsvp", partial: "book_reads/rsvp", locals: { book_club: @book_club, book_read: @book_read, rsvp: @rsvp, going_count: @rsvp_users.size, waitlisted_count: @waitlisted_count } %>
+<%= turbo_stream.replace "book_read_rsvp", partial: "book_reads/rsvp", locals: { book_club: @book_club, book_read: @book_read, rsvp: @rsvp, going_count: @rsvp_users.size, waitlisted_count: @waitlisted_count, rsvp_users: @rsvp_users } %>
 <%= turbo_stream.replace dom_id(@book_read, :card_rsvp), partial: "shared/book_read_card_rsvp", locals: { club: @book_club, book_read: @book_read, rsvp: @rsvp } %>
 <%= turbo_stream.replace "book_read_rsvp_users", partial: "book_read_rsvps/rsvp_users", locals: { rsvp_users: @rsvp_users, waitlisted_count: @waitlisted_count } %>
 <%= turbo_stream.replace "book_read_meetup_details", partial: "book_reads/meetup_details", locals: { book_club: @book_club, book_read: @book_read, private_info_visible: @book_club.private_info_visible_to?(current_user), rsvp_users: @rsvp_users, waitlisted_count: @waitlisted_count } %>
