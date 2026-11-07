@@ -47,16 +47,16 @@ class BookReadRsvpsController < ApplicationController
   def ensure_membership!
     if @book_club.is_private && !@book_club.has_member?(current_user)
       redirect_to book_club_book_read_path(@book_club, @book_read),
-        alert: "This is a private club. Join the club first to RSVP."
+        alert: t("private_club_join_rsvp")
     else
       @book_club.book_club_members.find_or_create_by!(user: current_user)
     end
   end
 
   def rsvp_notice(rsvp)
-    return "You are waitlisted for this read." if rsvp.waitlisted?
-    return "Your RSVP was updated." if rsvp.cancelled?
+    return t("rsvp_waitlist_notice") if rsvp.waitlisted?
+    return t("rsvp_updated_notice") if rsvp.cancelled?
 
-    "You are going to this read."
+    t("rsvp_going_notice")
   end
 end

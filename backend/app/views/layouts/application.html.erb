@@ -43,13 +43,29 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
+    <%# Queue flash toasts until the toast controller defines window.toast %>
+    <% if flash[:toast].present? || notice.present? || alert.present? %>
+      <script>
+        window.showToast = function(message, options) {
+          var attempts = 0;
+          (function fire() {
+            if (typeof window.toast === "function") {
+              window.toast(message, options);
+            } else if (attempts++ < 100) {
+              setTimeout(fire, 50);
+            }
+          })();
+        };
+      </script>
+    <% end %>
+
     <%# Automatically trigger toast notifications from Rails flash messages %>
     <% if flash[:toast].present? %>
       <% toast_data =
         flash[:toast].is_a?(Hash) ? flash[:toast].with_indifferent_access : {} %>
       <script>
         document.addEventListener('turbo:load', function() {
-          toast('<%= j toast_data[:message] %>', {
+          showToast('<%= j toast_data[:message] %>', {
             type: '<%= toast_data[:type] || "default" %>',
             description: '<%= j toast_data[:description].to_s %>'
           });
@@ -60,7 +76,7 @@
     <% if notice.present? %>
       <script>
         document.addEventListener('turbo:load', function() {
-          toast('<%= j notice %>', {
+          showToast('<%= j notice %>', {
             type: 'success'
           });
         }, { once: true });
@@ -70,7 +86,7 @@
     <% if alert.present? %>
       <script>
         document.addEventListener('turbo:load', function() {
-          toast('<%= j alert %>', {
+          showToast('<%= j alert %>', {
             type: 'error'
           });
         }, { once: true });

@@ -5,27 +5,47 @@ export default class extends Controller {
 
   connect() {
     this.boundHide = this.hide.bind(this)
+    this.boundKeydown = this.handleKeydown.bind(this)
   }
 
   toggle(event) {
     event.stopPropagation()
-    this.menuTarget.classList.toggle("hidden")
-    
-    if (!this.menuTarget.classList.contains("hidden")) {
+    const hidden = this.menuTarget.classList.toggle("hidden")
+    this.setExpanded(!hidden)
+
+    if (!hidden) {
       document.addEventListener("click", this.boundHide)
+      document.addEventListener("keydown", this.boundKeydown)
     } else {
       document.removeEventListener("click", this.boundHide)
+      document.removeEventListener("keydown", this.boundKeydown)
     }
   }
 
   hide(event) {
     if (!this.element.contains(event.target)) {
-      this.menuTarget.classList.add("hidden")
-      document.removeEventListener("click", this.boundHide)
+      this.close()
     }
+  }
+
+  handleKeydown(event) {
+    if (event.key === "Escape") this.close()
+  }
+
+  close() {
+    this.menuTarget.classList.add("hidden")
+    this.setExpanded(false)
+    document.removeEventListener("click", this.boundHide)
+    document.removeEventListener("keydown", this.boundKeydown)
+  }
+
+  setExpanded(value) {
+    const trigger = this.element.querySelector("[aria-expanded]")
+    if (trigger) trigger.setAttribute("aria-expanded", String(value))
   }
 
   disconnect() {
     document.removeEventListener("click", this.boundHide)
+    document.removeEventListener("keydown", this.boundKeydown)
   }
 }

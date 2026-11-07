@@ -9,17 +9,11 @@ export default class extends Controller {
     this.sections = this.linkTargets
       .map((link) => document.querySelector(link.getAttribute("href")))
       .filter(Boolean);
-    this.visible = new Map();
+    this.suppressUntil = 0;
 
     this.observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => this.visible.set(entry.target.id, entry.isIntersecting));
-        // Several sections can cross the band at once; the topmost one in
-        // document order is the one the reader is in.
-        const current = this.sections.find((section) => this.visible.get(section.id));
-        if (current) this.select(current);
-      },
-      { rootMargin: "-8rem 0px -55% 0px" },
+      () => this.update(),
+      { rootMargin: "-128px 0px -55% 0px" },
     );
     this.sections.forEach((section) => this.observer.observe(section));
   }
@@ -33,9 +27,24 @@ export default class extends Controller {
     const section = document.querySelector(link.getAttribute("href"));
     if (!section) return;
     event.preventDefault();
+    // Tall sections overlap the observer band, so recomputation during the
+    // smooth scroll would snap the highlight back; trust the click instead.
+    this.suppressUntil = Date.now() + 800;
     section.scrollIntoView({ behavior: "smooth", block: "start" });
     history.replaceState(null, "", link.getAttribute("href"));
     this.select(section);
+  }
+
+  update() {
+    if (Date.now() < this.suppressUntil) return;
+    // The section the reader is in is the last one whose top has crossed the
+    // band floor; a previous tall section can still overlap the band without
+    // being the one in view.
+    const bandFloor = window.innerHeight * 0.45;
+    const current = this.sections
+      .filter((section) => section.getBoundingClientRect().top <= bandFloor)
+      .pop();
+    if (current) this.select(current);
   }
 
   select(section) {

@@ -1,3 +1,6 @@
+<%# Luma-style registration card: attendance count, the action, and status are stacked in one
+    bordered Book Page card, so alignment can never drift. The count faces open the attendee list. %>
+<% private_info_visible = local_assigns.fetch(:private_info_visible) { book_club.private_info_visible_to?(current_user) } %>
 <%= turbo_frame_tag "book_read_rsvp" do %>
   <% past = book_read.meetup_time&.past? %>
   <% going = rsvp&.going? %>
@@ -7,7 +10,6 @@
   <% full = book_read.full? %>
   <% going_count ||= book_read.book_read_rsvps.going.count %>
   <% waitlisted_count ||= book_read.book_read_rsvps.waitlisted.count %>
-  <% remaining = book_read.max_capacity.present? ? book_read.max_capacity - going_count : nil %>
   <%
     button_label = if is_active
       waitlisted ? t("leave_waitlist") : t("cancel_rsvp")
@@ -16,36 +18,91 @@
     end
     confirm_msg = is_active ? (waitlisted ? t("leave_waitlist_confirm") : t("cancel_rsvp_confirm")) : nil
     is_primary = !is_active
-    action_classes = "btn #{is_primary ? "btn-primary" : "btn-outline"} cursor-pointer shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 transition-all duration-200 active:scale-[0.98]"
+    action_classes = "btn #{is_primary ? "btn-primary" : "btn-secondary"} btn-block cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 transition-all duration-200 active:scale-[0.98]"
   %>
-  <% if past %>
-    <div class="mx-auto max-w-4xl mt-8 bg-background/70 border border-border rounded-xl px-5 py-3 text-sm text-content-muted">
-      <%= t("event_started") %>
-    </div>
-  <% else %>
-    <div class="bg-surface border border-border shadow-xl rounded-2xl sticky bottom-16 sm:bottom-0 hotwire-native:bottom-0 z-10 mx-auto max-w-4xl mt-8 px-5 py-2.5 flex items-center justify-between gap-4">
-      <div class="flex items-center gap-3 text-sm min-w-0">
-        <% if is_active %>
-          <span class="font-semibold <%= waitlisted ? "text-violet-700 dark:text-violet-400" : "text-content" %>">
-            <%= waitlisted ? t("you_are_waitlisted") : t("you_are_going") %>
-          </span>
+  <div class="bg-surface border border-border rounded-xl">
+    <% if past %>
+      <div class="px-4 sm:px-5 py-3.5">
+        <div class="flex items-center gap-2 text-sm text-content-muted">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" class="w-4 h-4 text-content-muted shrink-0" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path stroke-linecap="round" d="M12 8v4l2.5 2.5" />
+          </svg>
+          <%= t("event_started") %>
+        </div>
+        <%# Past reads still have somewhere to go: the kept book, the discussion they had, the votes they cast %>
+        <div class="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1">
+          <% if book_read.book.present? %>
+            <%= link_to t("view_book_details"), book_path(book_read.book), class: "text-xs font-semibold text-primary hover:text-accent transition-colors" %>
+          <% end %>
+          <% if book_read.poll.present? %>
+            <%= link_to t("vote_breakdown"), "#{book_club_book_read_path(book_club, book_read)}#poll_section", class: "text-xs font-semibold text-primary hover:text-accent transition-colors" %>
+          <% end %>
+          <%= link_to t("discussion_questions"), "#{book_club_book_read_path(book_club, book_read)}#discussion_section", class: "text-xs font-semibold text-primary hover:text-accent transition-colors" %>
+        </div>
+      </div>
+    <% else %>
+      <div class="px-4 sm:px-5 py-3.5">
+        <%# Attendance faces + count, opening the attendee list %>
+        <% if private_info_visible %>
+          <button
+            onclick="document.getElementById('rsvp_dialog').showModal()"
+            class="
+              group flex w-full items-center gap-2 cursor-pointer rounded-lg px-2 py-1.5
+              hover:bg-background transition-colors mb-2
+              focus:outline-none focus-visible:ring-2 focus-visible:ring-primary
+            ">
+            <span class="flex-1 min-w-0 text-left">
+              <%= render "book_read_rsvps/rsvp_users", rsvp_users: rsvp_users, waitlisted_count: waitlisted_count %>
+            </span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+              stroke="currentColor"
+              class="w-3.5 h-3.5 text-content-muted shrink-0 transition-transform group-hover:translate-x-0.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
         <% end %>
-        <% if book_read.max_capacity.present? && book_club.private_info_visible_to?(current_user) %>
-          <span class="truncate <%= is_active ? "hidden sm:inline text-content-muted" : "font-semibold text-content" %>"><%= t("spots_remaining", count: remaining || 0) %></span>
+
+        <%# The action, roomy and full width like Luma's registration button %>
+        <% if user_signed_in? && private_info_visible %>
+          <%= form_with url: book_club_book_read_rsvp_path(book_club, book_read), method: (rsvp ? :patch : :post), scope: :book_read_rsvp do |form| %>
+            <%= form.hidden_field :status, value: next_status %>
+            <%= form.submit button_label,
+                  class: action_classes,
+                  data: (confirm_msg ? { turbo_confirm: confirm_msg } : {}) %>
+          <% end %>
+        <% elsif private_info_visible %>
+          <%= link_to button_label, new_user_session_path,
+                class: action_classes,
+                data: { turbo_frame: "_top" } %>
+        <% else %>
+          <%# Private club, not a member: the server would silently reject this RSVP — send them to the club to join instead %>
+          <p class="text-xs text-content-muted leading-relaxed"><%= t("private_club_join_rsvp") %></p>
+          <%= link_to t("view_club"), book_club_path(book_club),
+                class: "btn btn-secondary btn-block cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 transition-all duration-200 active:scale-[0.98]",
+                data: { turbo_frame: "_top" } %>
+        <% end %>
+
+        <% if is_active %>
+          <p class="mt-2.5 flex items-center gap-1.5 text-xs font-semibold <%= waitlisted ? "text-accent" : "text-primary" %>">
+            <% if waitlisted %>
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="m9.5 12.5 2 2 3.5-4" />
+              </svg>
+            <% else %>
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+              </svg>
+            <% end %>
+            <%= waitlisted ? t("you_are_waitlisted") : t("you_are_going") %>
+          </p>
         <% end %>
       </div>
-      <% if user_signed_in? %>
-        <%= form_with url: book_club_book_read_rsvp_path(book_club, book_read), method: (rsvp ? :patch : :post), scope: :book_read_rsvp, class: "shrink-0" do |form| %>
-          <%= form.hidden_field :status, value: next_status %>
-          <%= form.submit button_label,
-                class: action_classes,
-                data: (confirm_msg ? { turbo_confirm: confirm_msg } : {}) %>
-        <% end %>
-      <% else %>
-        <%= link_to button_label, new_user_session_path,
-              class: action_classes,
-              data: { turbo_frame: "_top" } %>
-      <% end %>
-    </div>
-  <% end %>
+    <% end %>
+  </div>
 <% end %>

@@ -1,5 +1,10 @@
 <%= turbo_stream.remove @discussion_question %>
 
+<% count = @book_read.discussion_questions.reset.count %>
+<% %w[discussion_questions_count discussion_questions_nav_count].each do |dom_id| %>
+  <%= turbo_stream.replace dom_id, partial: "discussion_questions/count", locals: { id: dom_id, count: count } %>
+<% end %>
+
 <% if @visible_questions.empty? %>
   <%= turbo_stream.update "no_discussion_questions_wrapper" do %>
     <%= render partial: "discussion_questions/no_questions" %>

@@ -129,9 +129,9 @@
 
         <!-- Details (Centered & Enlarged) -->
         <div class="w-full flex flex-col gap-1.5 text-center shrink-0">
-          <h3 class="font-bold text-xl leading-tight text-[#f6f1e7] line-clamp-2 px-2">
+          <p class="font-bold text-xl leading-tight text-[#f6f1e7] line-clamp-2 px-2">
             <%= book_read.book&.title || book_read.poll&.text || t("discussion_session") %>
-          </h3>
+          </p>
           <% if book_read.book.present? %>
             <p class="text-sm text-[#d8ccb2] italic font-medium truncate"><%= t("by_author", author: book_read.book.author) %></p>
           <% end %>

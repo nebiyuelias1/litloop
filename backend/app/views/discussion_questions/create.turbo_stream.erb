@@ -2,6 +2,11 @@
   <%= render partial: "discussion_questions/discussion_question", locals: { discussion_question: @discussion_question } %>
 <% end %>
 
+<% count = @book_read.discussion_questions.reset.count %>
+<% %w[discussion_questions_count discussion_questions_nav_count].each do |dom_id| %>
+  <%= turbo_stream.replace dom_id, partial: "discussion_questions/count", locals: { id: dom_id, count: count } %>
+<% end %>
+
 <%= turbo_stream.update "no_discussion_questions_wrapper", "" %>
 
 <%= turbo_stream.replace "new_discussion_question_form" do %>

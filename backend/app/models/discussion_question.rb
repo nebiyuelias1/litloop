@@ -50,6 +50,7 @@ class DiscussionQuestion < ApplicationRecord
   def broadcast_create
     broadcast_append_to [ book_read, :discussion_questions ], target: "discussion_questions_list"
     broadcast_remove_to [ book_read, :discussion_questions ], target: "no_discussion_questions"
+    broadcast_counts
   end
 
   def broadcast_update
@@ -58,6 +59,17 @@ class DiscussionQuestion < ApplicationRecord
 
   def broadcast_destroy
     broadcast_remove_to [ book_read, :discussion_questions ]
+    broadcast_counts
+  end
+
+  def broadcast_counts
+    count = book_read.discussion_questions.count
+    %w[discussion_questions_count discussion_questions_nav_count].each do |dom_id|
+      broadcast_replace_to [ book_read, :discussion_questions ],
+        target: dom_id,
+        partial: "discussion_questions/count",
+        locals: { id: dom_id, count: count }
+    end
   end
 
   def set_position

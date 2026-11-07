@@ -1,55 +1,61 @@
+<%# Poll voting: hairline-ruled option rows on the ground; a circular control marks the selected book %>
 <%= form_with url: book_club_book_read_poll_votes_path(book_club, book_read),
   method: :post,
   data: { controller: "poll-vote-form" },
   id: "poll_vote_form",
   class: "space-y-3" do %>
-  <% poll.poll_options.includes(:poll_votes, :book).each do |option| %>
-    <label
-      class="
-        flex items-center justify-between p-4 rounded-xl border border-border
-        bg-background hover:bg-surface has-[:checked]:border-primary
-        has-[:checked]:bg-surface transition-colors group cursor-pointer
-      ">
-      <div class="flex items-center gap-4 flex-1">
-        <%= check_box_tag "poll_option_ids[]",
-        option.id,
-        false,
-        class: "w-4 h-4 accent-primary focus:ring-2 focus:ring-primary/40 border-border rounded",
-        data: { poll_vote_form_target: "option", action: "poll-vote-form#toggle" } %>
+  <div class="divide-y divide-border">
+    <% poll.poll_options.includes(:poll_votes, :book).each do |option| %>
+      <label
+        class="
+          flex items-center justify-between gap-4 py-3.5 group cursor-pointer
+          hover:bg-surface/60 transition-colors
+        ">
+        <div class="flex items-center gap-3.5 flex-1 min-w-0">
+          <%= check_box_tag "poll_option_ids[]",
+          option.id,
+          false,
+          class:
+            "w-5 h-5 rounded-full appearance-none bg-background border border-content-muted shrink-0" \
+            " checked:border-primary checked:bg-primary/15" \
+            " focus:ring-2 focus:ring-primary/40 group-has-[:checked]:border-primary",
+          data: { poll_vote_form_target: "option", action: "poll-vote-form#toggle" } %>
 
-        <% if option.book.present? %>
-          <div class="flex items-center gap-3">
-            <% if option.book.cover_image.present? %>
-              <%= image_tag option.book.cover_image, class: "w-10 h-14 object-cover rounded shadow-sm shrink-0" %>
-            <% else %>
-              <div class="w-10 h-14 bg-background border border-border rounded flex items-center justify-center shrink-0">
-                <svg class="w-6 h-6 text-content-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
+          <%# Round selection marker the checkbox sits behind; the checkbox keeps the form data %>
+          <% if option.book.present? %>
+            <div class="flex items-center gap-3 min-w-0">
+              <% if option.book.cover_image.present? %>
+                <%= image_tag option.book.cover_image, class: "w-10 h-14 object-cover rounded border border-border shrink-0" %>
+              <% else %>
+                <div class="w-10 h-14 bg-surface border border-border rounded flex items-center justify-center shrink-0">
+                  <svg class="w-6 h-6 text-content-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                </div>
+              <% end %>
+              <div class="flex flex-col min-w-0">
+                <span class="font-bold text-content leading-tight group-has-[:checked]:text-primary transition-colors"><%= option.book.title %></span>
+                <span class="text-xs text-content-subtle"><%= option.book.author %></span>
+                <%= link_to t("view_details"), book_path(option.book), class: "text-xs font-medium text-primary hover:text-accent transition-colors mt-1 w-fit", onclick: "event.stopPropagation();" %>
               </div>
-            <% end %>
-            <div class="flex flex-col">
-              <span class="font-bold text-content leading-tight"><%= option.book.title %></span>
-              <span class="text-xs text-content-subtle"><%= option.book.author %></span>
-              <%= link_to t("view_details"), book_path(option.book), class: "text-xs font-medium text-primary hover:text-accent transition-colors mt-1", onclick: "event.stopPropagation();" %>
             </div>
-          </div>
-        <% else %>
-          <span class="font-bold text-content"><%= option.content %></span>
-        <% end %>
-      </div>
-    </label>
-  <% end %>
+          <% else %>
+            <span class="font-bold text-content group-has-[:checked]:text-primary transition-colors"><%= option.content %></span>
+          <% end %>
+        </div>
+      </label>
+    <% end %>
+  </div>
 
   <button
     type="submit"
     data-poll-vote-form-target="submit"
     disabled
     class="
-      px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors
+      mt-4 px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors
       text-primary-contrast bg-primary hover:bg-primary/90
       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary
-      disabled:opacity-50 disabled:cursor-not-allowed
+      disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]
     ">
     <%= t("vote") %>
   </button>

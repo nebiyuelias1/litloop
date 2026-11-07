@@ -66,7 +66,7 @@ class BookReadsController < ApplicationController
 
     if @book_read.save
       @rsvp = BookReadRsvp.rsvp!(book_read: @book_read, user: current_user, status: :going)
-      redirect_to book_club_book_read_path(@book_club, @book_read), notice: "Book read scheduled successfully."
+      redirect_to book_club_book_read_path(@book_club, @book_read), notice: t("book_read_created")
     else
       render :new, status: :unprocessable_content
     end
@@ -101,7 +101,7 @@ class BookReadsController < ApplicationController
     end
 
     if success
-      redirect_to book_club_book_read_path(@book_club, @book_read), notice: "Book read was successfully updated."
+      redirect_to book_club_book_read_path(@book_club, @book_read), notice: t("book_read_updated")
     else
       @book_read.reload if @book_read.persisted?
       render :edit, status: :unprocessable_content
@@ -110,7 +110,7 @@ class BookReadsController < ApplicationController
 
   def finalize
     @poll = @book_read.poll
-    return redirect_to book_club_book_read_path(@book_club, @book_read), alert: "No poll to finalize." unless @poll
+    return redirect_to book_club_book_read_path(@book_club, @book_read), alert: t("poll_not_found") unless @poll
 
     @winning_options = @poll.winning_options
     @suggested_option = @winning_options.sample
@@ -118,12 +118,12 @@ class BookReadsController < ApplicationController
 
   def select_book
     @poll = @book_read.poll
-    return redirect_to(book_club_book_read_path(@book_club, @book_read), alert: "No poll to finalize.") unless @poll
+    return redirect_to(book_club_book_read_path(@book_club, @book_read), alert: t("poll_not_found")) unless @poll
     poll_option = @poll.poll_options.find(params[:poll_option_id])
 
     if @book_read.update(book: poll_option.book)
       @poll.update(finalized_at: Time.current)
-      redirect_to book_club_book_read_path(@book_club, @book_read), notice: "Book finalized successfully."
+      redirect_to book_club_book_read_path(@book_club, @book_read), notice: t("book_read_finalized")
     else
       @winning_options = @poll.winning_options
       @suggested_option = poll_option

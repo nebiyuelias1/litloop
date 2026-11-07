@@ -62,24 +62,32 @@
   /* --color-border — in theme.css (generated from theme.toml) */
 }
 /* Buttons (primary / secondary) - hierarchical */
+/* NOTE: DaisyUI's base .btn ships a 3px double drop shadow + noise texture + text
+   shadow. Both variants must redeclare the flat 1px softness from DESIGN.md, or the
+   un-overridden daisy treatment leaks through. */
 
 .btn-primary {
   @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white;
   background-color: var(--color-primary);
   color: var(--color-primary-contrast);
+  text-shadow: none;
+  background-image: none;
 }
 .btn-primary:hover {
   background-color: color-mix(in srgb, var(--color-primary) 85%, black 15%);
 }
 
 .btn-secondary {
-  @apply inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg border;
+  @apply inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg border shadow-sm;
   color: var(--color-primary);
   border-color: color-mix(in srgb, var(--color-primary) 12%, black 5%);
   background-color: transparent;
+  text-shadow: none;
+  background-image: none;
 }
 .btn-secondary:hover {
   color: var(--color-accent);
+  border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
 }
 
 /* Title utilities */
@@ -149,7 +157,9 @@
 
 /* Small helpers */
 .pb-safe {
-  padding-bottom: env(safe-area-inset-bottom);
+  /* Never below the 0.625rem (py-2.5) base, so devices without a safe-area
+     inset keep their normal bottom padding instead of collapsing to 0. */
+  padding-bottom: max(0.625rem, env(safe-area-inset-bottom));
 }
 .brand-link:hover {
   color: var(--color-accent) !important;

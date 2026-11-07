@@ -1,9 +1,18 @@
-<div id="book_read_rsvp_users" class="flex items-center gap-2">
+<div id="book_read_rsvp_users" class="flex items-center gap-2 min-w-0">
   <% if rsvp_users.any? %>
-    <%= render "shared/avatar_group", users: rsvp_users, limit: 5, size_classes: "w-6 h-6", text_size: "text-[9px]", container_classes: "" %>
-    <span class="text-xs text-content-subtle"><%= t("people_going", count: rsvp_users.size) %></span>
+    <%= render "shared/avatar_group", users: rsvp_users, limit: 5, size_classes: "w-6 h-6", ring_class: "ring-1 ring-border", text_size: "text-[9px]", container_classes: "" %>
+    <% first_names = rsvp_users.first(2).map { |u| u.to_s.split(" ").first } %>
+    <span class="text-xs text-content-subtle truncate">
+      <% if rsvp_users.size == 1 %>
+        <%= t("rsvp_readers_one", name: first_names[0]) %>
+      <% elsif rsvp_users.size == 2 %>
+        <%= t("rsvp_readers_two", name1: first_names[0], name2: first_names[1]) %>
+      <% else %>
+        <%= t("rsvp_readers_more", name1: first_names[0], name2: first_names[1], count: rsvp_users.size - 2) %>
+      <% end %>
+    </span>
     <% if waitlisted_count&.positive? %>
-      <span class="text-xs text-violet-700 dark:text-violet-400">· <%= t("people_waitlisted", count: waitlisted_count) %></span>
+      <span class="text-xs text-accent shrink-0">· <%= t("people_waitlisted", count: waitlisted_count) %></span>
     <% end %>
   <% else %>
     <span class="text-xs text-content-muted"><%= t("no_rsvps_yet") %></span>

@@ -10,7 +10,7 @@
 <div
   data-controller="section-nav"
   class="
-    sticky top-16 z-30 mb-8 bg-background border-b border-border
+    sticky top-16 z-30 bg-background pb-px
   ">
   <nav
     aria-label="<%= t("jump_to_section") %>"
@@ -46,9 +46,9 @@
         aria-current:text-content
       ">
       <%= t("discussion_questions") %>
-      <span class="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold text-accent">
-        <%= question_count %>
-      </span>
+      <%= render "discussion_questions/count",
+      id: "discussion_questions_nav_count",
+      count: question_count %>
     </a>
   </nav>
 </div>
