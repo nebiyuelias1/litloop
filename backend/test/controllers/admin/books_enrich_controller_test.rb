@@ -34,9 +34,8 @@ class Admin::BooksEnrichControllerTest < ActionDispatch::IntegrationTest
       "tags" => [ "fiction", "colonialism" ],
       "country_of_origin" => "Nigeria",
       "country_evidence" => "The blurb references Igbo warriors of Umuofia.",
-      "country_confidence" => "high",
-      "page_count" => 226,
-      "page_count_confidence" => "high"
+      "country_confidence" => "high"
+
     }
 
     enricher = BookMetadataEnricher.new(book: @book)
@@ -49,9 +48,40 @@ class Admin::BooksEnrichControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to admin_book_url(@book)
     assert_match(/Enriched/, flash[:notice])
     assert_equal "NG", @book.reload.country_of_origin
-    assert_equal 226, @book.page_count
     assert_equal [ "colonialism", "fiction" ], @book.tags.order(:name).pluck(:name)
     assert_not_nil @book.enriched_at
+  end
+
+  test "also attempts the cover in the same enrich action" do
+    ENV["OTARI_API_KEY"] = "tk-test"
+    ENV["OTARI_BASE_URL"] = "https://gateway.test/v1"
+    sign_in @user
+
+    payload = {
+      "description" => "A richly detailed rebuilt description that is comfortably longer than the minimum length gate.",
+      "tags" => [ "fiction", "colonialism" ],
+      "country_of_origin" => "Nigeria",
+      "country_evidence" => "The blurb references Igbo warriors of Umuofia.",
+      "country_confidence" => "high"
+
+    }
+    enricher = BookMetadataEnricher.new(book: @book)
+    BookMetadataEnricher.stub(:new, ->(book:) { enricher }) do
+      enricher.stub(:propose, payload) do
+        improve_result = BookCoverImprover::Result.new(
+          improved: true, old_cover: "https://old.example/a.jpg", new_cover: "https://upload.wikimedia.org/new.jpg",
+          reason: "verified higher-quality cover found"
+        )
+        improver = Object.new
+        improver.define_singleton_method(:improve!) { |**_kw| improve_result }
+        BookCoverImprover.stub(:new, improver) do
+          post enrich_admin_book_url(@book)
+        end
+      end
+    end
+
+    assert_redirected_to admin_book_url(@book)
+    assert_match(/cover ⬆ upload\.wikimedia\.org/, flash[:notice])
   end
 
   test "surfaces gateway errors as flash alert" do

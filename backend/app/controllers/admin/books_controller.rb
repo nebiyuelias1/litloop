@@ -1,7 +1,8 @@
 module Admin
   class BooksController < Admin::ApplicationController
-    # Runs the Otari AI metadata enrichment synchronously so the admin can see
-    # the result immediately.
+    # Runs the Otari AI enrichment synchronously so the admin can see the
+    # result immediately: metadata (description, tags, country) first, then
+    # the cover image where a better one can be verified.
     def enrich
       book = find_resource(params[:id])
 
@@ -11,10 +12,13 @@ module Admin
       end
 
       result = BookMetadataEnricher.new(book: book).enrich!
+
+      cover = BookCoverImprover.new(book: book).improve!
+      cover_note = cover.improved ? "cover ⬆ #{URI.parse(cover.new_cover).host}" : "cover unchanged (#{cover.reason})"
+
       notice = "Enriched “#{book.title}”: tags=[#{result.tags_added.join(', ')}] " \
         "country=#{result.country_of_origin || 'n/a'} " \
-        "pages=#{result.page_count_changed ? 'updated' : 'unchanged'} " \
-        "(country confidence: #{result.country_confidence})"
+        "(country confidence: #{result.country_confidence}); #{cover_note}"
       redirect_to admin_book_path(book), notice: notice
     rescue OtariClient::RequestError, OtariClient::ConfigurationError => e
       redirect_to admin_book_path(book), alert: "Enrichment failed: #{e.message}"

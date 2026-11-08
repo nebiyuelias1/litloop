@@ -16,11 +16,11 @@ Edit/Delete actions. Otherwise identical to Administrate's default show view.
 
   <div>
     <%= button_to(
-      "AI enrich metadata",
+      "AI enrich metadata + cover",
       enrich_admin_book_path(page.resource),
       class: "button",
       method: :post,
-      data: { turbo_confirm: "Run AI enrichment on this book now?" }
+      data: { turbo_confirm: "Run AI enrichment (metadata + cover) on this book now?" }
     ) %>
 
     <%= link_to(
