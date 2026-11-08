@@ -55,8 +55,8 @@ module CountryCodes
     "Tanzania" => "TZ", "Thailand" => "TH", "Timor-Leste" => "TL", "East Timor" => "TL",
     "Togo" => "TG", "Tonga" => "TO", "Trinidad and Tobago" => "TT", "Tunisia" => "TN",
     "Turkey" => "TR", "Turkmenistan" => "TM", "Tuvalu" => "TV", "Uganda" => "UG",
-    "Ukraine" => "UA", "United Arab Emirates" => "AE", "United Kingdom" => "GB",
-    "United States" => "US", "United States of America" => "US", "USA" => "US", "Uruguay" => "UY", "Uzbekistan" => "UZ", "Vanuatu" => "VU",
+    "Ukraine" => "UA", "United Arab Emirates" => "AE", "United Kingdom" => "GB", "UK" => "GB",
+    "United States" => "US", "United States of America" => "US", "USA" => "US", "US" => "US", "Uruguay" => "UY", "Uzbekistan" => "UZ", "Vanuatu" => "VU",
     "Venezuela" => "VE", "Vietnam" => "VN", "Yemen" => "YE", "Zambia" => "ZM",
     "Zimbabwe" => "ZW", "Hong Kong" => "HK", "Macao" => "MO"
   }.freeze

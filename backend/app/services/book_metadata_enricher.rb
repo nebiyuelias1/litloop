@@ -27,9 +27,12 @@ class BookMetadataEnricher
     "de" => "German", "it" => "Italian", "pt" => "Portuguese"
   }.freeze
 
-  # Verified working on the hosted gateway (mozilla-hosted account):
+  # Verified working on the hosted gateway (mozilla-hosted accounts):
   # https://api.otari.ai/api/v1/models
   DEFAULT_MODEL = "openai/gpt-oss-120b"
+  # Escalation model for fields the open-weight model declines; frontier world
+  # knowledge fills what the smaller model won't.
+  FALLBACK_MODEL = "mistral/mistral-large-latest"
   MAX_TAGS = 6
   MAX_TAG_LENGTH = 40
   MIN_DESCRIPTION_LENGTH = 30
@@ -86,6 +89,7 @@ class BookMetadataEnricher
     model ||= DEFAULT_MODEL
     lookup = fresh_lookup || fresh_lookup_candidates
     proposal = propose(model, lookup)
+    proposal = escalate_fields(proposal, FALLBACK_MODEL, lookup)
     changes, audit = apply(proposal, lookup, model)
     @book.enriched_at = Time.current
     @book.save!
@@ -101,12 +105,47 @@ class BookMetadataEnricher
 
   private
 
+  # Otari's routing story, applied at the app level: the open-weight model
+  # answers first; when it declines a field (empty country / unknown pages),
+  # the frontier fallback model fills just those fields.
+  def escalate_fields(proposal, fallback_model, lookup)
+    country_declined = proposal["country_of_origin"].to_s.strip.blank?
+    pages_declined = proposal["page_count"].to_i <= 0 || proposal["page_count_confidence"] == "low"
+    return proposal unless country_declined || pages_declined
+
+    fallback = propose(fallback_model, lookup)
+    merged = proposal.dup
+    escalated = []
+
+    if country_declined && fallback["country_of_origin"].to_s.strip.present?
+      merged["country_of_origin"] = fallback["country_of_origin"]
+      merged["country_evidence"] = fallback["country_evidence"]
+      merged["country_confidence"] = fallback["country_confidence"]
+      escalated << "country_of_origin"
+    end
+
+    if pages_declined && fallback["page_count"].to_i > 0
+      merged["page_count"] = fallback["page_count"]
+      merged["page_count_confidence"] = fallback["page_count_confidence"]
+      escalated << "page_count"
+    end
+
+    merged["escalated_with"] = fallback_model if escalated.any?
+    merged["escalated_fields"] = escalated if escalated.any?
+    merged
+  rescue OtariClient::Error => e
+    Rails.logger.warn("BookMetadataEnricher escalation failed: #{e.message}")
+    proposal
+  end
+
   # Turns the proposal into attribute changes plus the audit trail stored in
   # book.enrichment. page_count prefers the deterministic lookup value.
   def apply(proposal, lookup, model)
     changes = {}
     audit = {
       "model" => model,
+      "escalated_with" => proposal["escalated_with"].presence,
+      "escalated_fields" => proposal["escalated_fields"].presence,
       "country_confidence" => proposal["country_confidence"],
       "page_count_confidence" => proposal["page_count_confidence"],
       "country_evidence" => proposal["country_evidence"].presence,

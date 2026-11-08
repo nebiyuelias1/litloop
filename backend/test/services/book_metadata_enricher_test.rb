@@ -155,6 +155,40 @@ class BookMetadataEnricherTest < ActiveSupport::TestCase
     assert audit["enriched_at"].present?
   end
 
+  test "escalates declined fields to the fallback model" do
+    book = Book.create!(title: "Dune", author: "Frank Herbert")
+
+    declined = payload(description: "A richly detailed rebuilt description that is comfortably longer than the minimum length gate.", country: "", evidence: "", country_confidence: "low", page_count: 0, page_count_confidence: "low")
+    strong = payload(description: "A richly detailed rebuilt description that is comfortably longer than the minimum length gate.", country: "United States", evidence: "Author Frank Herbert is American; published by Chilton Books, a US publisher", page_count: 412)
+
+    enricher = BookMetadataEnricher.new(book: book)
+    result = nil
+    enricher.stub(:propose, lambda do |model, _lookup|
+      model == BookMetadataEnricher::DEFAULT_MODEL ? declined : strong
+    end) do
+      result = enricher.enrich!(fresh_lookup: [])
+    end
+
+    assert_equal "US", book.reload.country_of_origin
+    assert_equal 412, book.page_count
+    assert_equal "mistral/mistral-large-latest", book.enrichment["escalated_with"]
+    assert_equal "US", result.country_of_origin
+  end
+
+  test "no escalation when the primary model answers everything" do
+    book = Book.create!(title: "Test Book", author: "Test Author")
+
+    result = enrich_book(book, payload(
+      description: "A richly detailed rebuilt description that is comfortably longer than the minimum length gate.",
+      country: "US",
+      evidence: "claim",
+      page_count: 300
+    ))
+
+    assert_nil book.enrichment["escalated_with"]
+    assert_equal "US", book.reload.country_of_origin
+  end
+
   test "tags_added result reflects normalized tag names" do
     book = Book.create!(title: "Test Book", author: "Test Author")
 
