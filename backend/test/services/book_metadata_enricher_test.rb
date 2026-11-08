@@ -133,6 +133,26 @@ class BookMetadataEnricherTest < ActiveSupport::TestCase
     assert_equal "US", result.country_of_origin
   end
 
+  test "primary gateway failure falls straight through to the fallback model" do
+    book = Book.create!(title: "Dune", author: "Frank Herbert")
+    strong = payload(description: "A richly detailed rebuilt description that is comfortably longer than the minimum length gate.", country: "United States", evidence: "Author Frank Herbert is American; published by a US publisher")
+
+    enricher = BookMetadataEnricher.new(book: book)
+    result = nil
+    enricher.stub(:propose, lambda do |model, _lookup|
+      if model == BookMetadataEnricher::DEFAULT_MODEL
+        raise OtariClient::RequestError, "status=504 gateway timeout"
+      end
+
+      strong
+    end) do
+      result = enricher.enrich!(fresh_lookup: [])
+    end
+
+    assert_equal "US", book.reload.country_of_origin
+    assert_equal "mistral/mistral-large-latest", book.enrichment["escalated_with"]
+  end
+
   test "no escalation when the primary model answers everything" do
     book = Book.create!(title: "Test Book", author: "Test Author")
 

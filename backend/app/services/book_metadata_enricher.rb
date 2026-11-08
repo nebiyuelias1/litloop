@@ -71,7 +71,7 @@ class BookMetadataEnricher
   def enrich!(model: nil, fresh_lookup: nil)
     model ||= DEFAULT_MODEL
     lookup = fresh_lookup || fresh_lookup_candidates
-    proposal = propose(model, lookup)
+    proposal = propose_with_escalation(model, lookup)
     proposal = escalate_fields(proposal, FALLBACK_MODEL, lookup)
     changes, audit = apply(proposal, lookup, model)
     @book.enriched_at = Time.current
@@ -86,10 +86,29 @@ class BookMetadataEnricher
 
   private
 
+  # Primary model first; on gateway failure (timeout, 5xx, rate limit) switch
+  # to the fallback model entirely rather than failing the enrichment.
+  def propose_with_escalation(model, lookup)
+    if model != FALLBACK_MODEL
+      begin
+        return propose(model, lookup)
+      rescue OtariClient::Error => e
+        Rails.logger.warn("BookMetadataEnricher: primary model failed (#{e.class} #{e.message}); escalating to #{FALLBACK_MODEL}")
+      end
+    end
+
+    proposal = propose(FALLBACK_MODEL, lookup)
+    proposal["escalated_with"] = FALLBACK_MODEL
+    proposal
+  end
+
   # Otari's routing story, applied at the app level: the open-weight model
   # answers first; when it declines the country field, the frontier fallback
-  # model fills it.
+  # model fills it. Proposals that already escalated (primary model failed
+  # outright) are not escalated a second time.
   def escalate_fields(proposal, fallback_model, lookup)
+    return proposal if proposal["escalated_with"].present?
+
     country_declined = proposal["country_of_origin"].to_s.strip.blank?
     return proposal unless country_declined
 
