@@ -71,7 +71,7 @@ class BookMetadataEnricher
       },
       country_evidence: {
         type: "string",
-        description: "Short quote or paraphrase from the evidence supporting country_of_origin, empty string when none"
+        description: "Quote or paraphrase from the evidence supporting country_of_origin, or a short explanation of what is missing or ambiguous when declining; empty string when clearly nothing relevant"
       },
       confidence: {
         type: "string",
@@ -190,6 +190,8 @@ class BookMetadataEnricher
       Rules:
       - Never invent facts that are not supported by the evidence.
       - Extract and synthesize; if the evidence is insufficient, return an empty country with low confidence.
+      - When declining country_of_origin, country_evidence must state what is missing or ambiguous
+        (e.g. "author is of mixed ethnicity and nationality is not established by the evidence").
       - Write the description in #{language}.
       - Tags must be short lowercase English words (e.g. "fiction", "coming of age").
       - country_of_origin must be an official English country name, only when the evidence clearly supports it.
