@@ -19,6 +19,10 @@ namespace :books do
       next
     end
 
+    if ENV["IMPROVE_COVERS"] == "1"
+      Rake::Task["books:improve_covers"].invoke
+    end
+
     puts "Done. enriched=#{enriched} failed=#{failed}"
   end
 end

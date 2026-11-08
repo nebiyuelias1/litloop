@@ -14,8 +14,9 @@ require "json"
 #   OTARI_BASE_URL - gateway endpoint up to and including the version, e.g. "https://api.otari.ai/v1"
 #   OTARI_API_KEY  - virtual key issued by the Otari dashboard (starts with "tk-")
 class OtariClient
-  ConfigurationError = Class.new(StandardError)
-  RequestError = Class.new(StandardError)
+  Error = Class.new(StandardError)
+  ConfigurationError = Class.new(Error)
+  RequestError = Class.new(Error)
 
   DEFAULT_OPEN_TIMEOUT = 5
   DEFAULT_READ_TIMEOUT = 60
@@ -27,11 +28,14 @@ class OtariClient
 
   # Performs a chat completion and returns the full parsed response body hash.
   # See https://platform.openai.com/docs/api-reference/chat for the shape.
-  def chat(model:, messages:, response_format: nil, temperature: nil, max_tokens: nil)
+  # `tools` takes Otari built-in tool declarations, e.g.
+  #   [{ "type" => "otari_web_search", "max_uses" => 3 }]
+  def chat(model:, messages:, response_format: nil, temperature: nil, max_tokens: nil, tools: nil)
     body = { model: model, messages: messages }
     body[:response_format] = response_format if response_format
     body[:temperature] = temperature if temperature
     body[:max_tokens] = max_tokens if max_tokens
+    body[:tools] = tools if tools
 
     post("/chat/completions", body)
   end
