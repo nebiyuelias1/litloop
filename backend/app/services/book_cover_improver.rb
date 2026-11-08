@@ -205,7 +205,7 @@ class BookCoverImprover
   # files alphabetically, so "first" alone is not meaningful; score instead:
   #   exact title-name match  > title + cover-ish word > title first word among
   #   non-junk files; junk (flags, icons, film posters, collections) excluded.
-  JUNK_FILE_WORDS = /flag|icon|symbol|logo|stub|jukebox|collection|edit|voice|map|menu|poster|film|movie|wiktion/i
+  JUNK_FILE_WORDS = /\b(flag|icon|symbol|logo|stub|jukebox|collection|edit|voice|map|menu|poster|film|movie|wiktion)\b/i
   GOOD_FILE_WORDS = /cover|book|edition|jacket|first|front/i
 
   def choose_cover_file(files, article_title)
