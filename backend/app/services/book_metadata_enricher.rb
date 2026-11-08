@@ -44,7 +44,9 @@ class BookMetadataEnricher
     Venezuela Vietnam Yemen Zambia Zimbabwe
   ].to_set
 
-  DEFAULT_MODEL = "openai:gpt-oss-120b"
+  # Verified working on the hosted gateway (mozilla-hosted account):
+  # https://api.otari.ai/api/v1/models
+  DEFAULT_MODEL = "openai/gpt-oss-120b"
   MAX_TAGS = 6
   MAX_TAG_LENGTH = 40
   MIN_DESCRIPTION_LENGTH = 30
