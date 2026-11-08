@@ -13,7 +13,7 @@ require "uri"
 class BookCoverImprover
   Result = Struct.new(:improved, :old_cover, :new_cover, :reason, keyword_init: true)
 
-  DEFAULT_MODEL = "openai:gpt-oss-120b"
+  DEFAULT_MODEL = "openai/gpt-oss-120b"
   MIN_IMAGE_BYTES = 15_000       # thumbnails are typically < 15 KiB
   MAX_IMAGE_BYTES = 10_000_000
   VERIFY_OPEN_TIMEOUT = 5
