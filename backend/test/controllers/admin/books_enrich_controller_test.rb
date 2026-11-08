@@ -34,7 +34,9 @@ class Admin::BooksEnrichControllerTest < ActionDispatch::IntegrationTest
       "tags" => [ "fiction", "colonialism" ],
       "country_of_origin" => "Nigeria",
       "country_evidence" => "The blurb references Igbo warriors of Umuofia.",
-      "confidence" => "high"
+      "country_confidence" => "high",
+      "page_count" => 226,
+      "page_count_confidence" => "high"
     }
 
     enricher = BookMetadataEnricher.new(book: @book)
@@ -47,6 +49,7 @@ class Admin::BooksEnrichControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to admin_book_url(@book)
     assert_match(/Enriched/, flash[:notice])
     assert_equal "NG", @book.reload.country_of_origin
+    assert_equal 226, @book.page_count
     assert_equal [ "colonialism", "fiction" ], @book.tags.order(:name).pluck(:name)
     assert_not_nil @book.enriched_at
   end
