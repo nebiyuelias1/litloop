@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-28T14:30:00Z",
+  "generatedAt": "2026-11-06T11:30:00Z",
   "title": "Design System: LitLoop",
   "extensions": {
     "colorMeta": {
@@ -175,6 +175,14 @@
       "label": {
         "displayName": "Label",
         "purpose": "Short uppercase micro-headings, status labels, and metadata labels in the Ethiopic-first sans."
+      },
+      "email-body": {
+        "displayName": "Email Body",
+        "purpose": "Invitations, reminders, and notification email body copy set in the websafe system sans; email templates cannot load webfonts."
+      },
+      "email-headline": {
+        "displayName": "Email Headline",
+        "purpose": "Invitation and reminder email headings set in the websafe Georgia serif register, mirroring the serif-over-sans two-register system."
       }
     },
     "shadows": [
@@ -266,6 +274,14 @@
       "description": "The native select in the system field shell, used for language and form choices.",
       "html": "<label class=\"ds-field\"> <span class=\"ds-field-label\">Language</span> <select class=\"ds-select\"><option>English</option><option>አማርኛ</option><option>简体中文</option><option>繁體中文</option></select> </label>",
       "css": ".ds-field { display: flex; flex-direction: column; gap: 6px; width: 100%; font-family: var(--font-sans); } .ds-field-label { color: var(--color-content); font-size: 14px; font-weight: 500; } .ds-select { width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-content); font-family: var(--font-sans); font-size: 14px; cursor: pointer; transition: border-color 200ms ease, box-shadow 200ms ease; } .ds-select:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 20%, transparent); }"
+    },
+    {
+      "name": "Search Hero",
+      "kind": "input",
+      "refersTo": "search-field",
+      "description": "The full-pill search field on Book Page, the one place where a pill dominates.",
+      "html": "<div class=\"ds-search-hero\"> <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><circle cx=\"11\" cy=\"11\" r=\"6.5\"/><path d=\"m20 20-3.7-3.7\"/></svg> <input type=\"search\" placeholder=\"Search books by title, author, or ISBN\"> </div>",
+      "css": ".ds-search-hero { position: relative; display: flex; align-items: center; width: 100%; height: 48px; padding: 0 16px 0 56px; border: 1px solid var(--color-border); border-radius: 9999px; background: var(--color-surface); font-family: var(--font-sans); transition: border-color 200ms ease, box-shadow 200ms ease; } .ds-search-hero svg { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; color: var(--color-content-muted); pointer-events: none; } .ds-search-hero input { flex: 1; border: 0; outline: 0; background: transparent; color: var(--color-content); font-family: var(--font-sans); font-size: 14px; line-height: 1.4; } .ds-search-hero input::placeholder { color: var(--color-content-muted); } .ds-search-hero:focus-within { border-color: var(--color-primary); box-shadow: 0 4px 12px rgb(0 0 0 / 0.06); }"
     },
     {
       "name": "Reading Card",
@@ -367,11 +383,6 @@
         "name": "The No Hard Outline Rule",
         "body": "Borders are 1px Deckle Edge. Dividers use the same hairline. Never introduce black rules or heavy structural strokes.",
         "section": "shapes"
-      },
-      {
-        "name": "The Whole-Card Link Rule",
-        "body": "Make entire cards clickable with a stretched link at z-10; interactive controls sit above it at z-20. Never nest a button inside an anchor.",
-        "section": "components"
       }
     ],
     "dos": [

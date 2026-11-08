@@ -10,6 +10,7 @@ target_fingerprint: "sha256:347526416d7fff4bc9ba29b90d476c6a0890395e1497d4000a26
 target_path: /home/netale/projects/personal/arif-nibaboch/backend/app/views/book_reads/show.html.erb
 timestamp: 2026-10-28T07-25-00Z
 slug: backend-app-views-book-reads-show-html-erb
+closed: true
 ---
 # Critique: Book Read Detail Page (`book_reads/show.html.erb`)
 
