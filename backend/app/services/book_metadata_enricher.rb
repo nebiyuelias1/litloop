@@ -85,7 +85,7 @@ class BookMetadataEnricher
   end
 
   def enrich!(model: nil)
-    model ||= ENV.fetch("OTARI_MODEL", DEFAULT_MODEL)
+    model ||= DEFAULT_MODEL
     payload = generate_payload(model)
     changes, audit = apply(payload, model)
     @book.enriched_at = Time.current

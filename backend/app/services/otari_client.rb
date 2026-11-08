@@ -94,7 +94,7 @@ class OtariClient
   def ensure_configured!
     if @base_url.blank? || @api_key.blank?
       raise ConfigurationError,
-        "Otari is not configured. Set OTARI_BASE_URL and OTARI_API_KEY (and OTARI_MODEL where needed)."
+        "Otari is not configured. Set OTARI_BASE_URL and OTARI_API_KEY."
     end
   end
 end

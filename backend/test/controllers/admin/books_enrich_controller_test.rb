@@ -6,10 +6,10 @@ class Admin::BooksEnrichControllerTest < ActionDispatch::IntegrationTest
   setup do
     @user = users(:one) # admin user fixture
     @book = Book.create!(title: "Things Fall Apart", author: "Chinua Achebe", description: "An existing description that is long enough to pass the gate.", language: "am")
-  end
-
-  teardown do
-    ENV.delete("OTARI_API_KEY")
+    # dotenv autorestore puts .env values back before each test, so control the
+    # env explicitly per test rather than relying on teardown of the previous one.
+    ENV["OTARI_API_KEY"] = "tk-test"
+    ENV["OTARI_BASE_URL"] = "https://gateway.test/v1"
   end
 
   test "requires admin login" do
@@ -18,6 +18,7 @@ class Admin::BooksEnrichControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "redirects with alert when Otari is not configured" do
+    ENV["OTARI_API_KEY"] = ""
     sign_in @user
     post enrich_admin_book_url(@book)
     assert_redirected_to admin_book_url(@book)
