@@ -12,7 +12,9 @@ module Admin
 
       result = BookMetadataEnricher.new(book: book).enrich!
       notice = "Enriched “#{book.title}”: tags=[#{result.tags_added.join(', ')}] " \
-        "country=#{result.country_of_origin || 'n/a'} (confidence: #{result.confidence})"
+        "country=#{result.country_of_origin || 'n/a'} " \
+        "pages=#{result.page_count_changed ? 'updated' : 'unchanged'} " \
+        "(country confidence: #{result.country_confidence})"
       redirect_to admin_book_path(book), notice: notice
     rescue OtariClient::RequestError, OtariClient::ConfigurationError => e
       redirect_to admin_book_path(book), alert: "Enrichment failed: #{e.message}"
