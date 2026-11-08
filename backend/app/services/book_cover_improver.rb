@@ -166,28 +166,77 @@ class BookCoverImprover
 
     uri = URI("https://#{URI(article_url).host}/w/api.php")
     uri.query = URI.encode_www_form(
-      action: "query", prop: "pageimages", titles: title.tr("_", " "),
-      format: "json", pithumbsize: 800, redirects: 1
+      action: "query", prop: "images", titles: title.tr("_", " "),
+      format: "json", redirects: 1, imlimit: 40
     )
     data = http_get_json(uri)
-    page = data&.dig("query", "pages", 0)
-    thumbnail = page&.dig("thumbnail", "source")
-    # Avoid serving SVG logo/vector images as covers
-    thumbnail unless thumbnail.to_s.end_with?(".svg")
+    page = data&.dig("query", "pages")&.values&.first
+    files = (page&.dig("images") || []).map { |f| f["title"] }
+
+    chosen = choose_cover_file(files, title)
+    return nil if chosen.blank?
+
+    image_info_url(URI(article_url).host, chosen)
+  end
+
+  # Picks the most plausible cover among an article's files: files whose name
+  # matches the book title win outright; obvious junk (flags, icons, logos,
+  # author portraits etc.) is penalized.
+  JUNK_FILE_WORDS = /flag|icon|symbol|logo|stub|jukebox|collection|edit|voice|map|menu/i
+
+  def choose_cover_file(files, article_title)
+    image_files(files).max_by do |file|
+      score = 0
+      bare = file.gsub(/\AFile:|File:/, "").gsub(/[^a-zA-Z0-9]/, "").downcase
+      title_key = article_title.gsub(/[^a-zA-Z0-9]/, "").downcase
+      score += 100 if bare.include?(title_key) && title_key.length > 3
+      score += 10 if bare.start_with?(title_key[0, 8].to_s)
+      score -= 50 if JUNK_FILE_WORDS.match?(file)
+      score
+    end
+  end
+
+  def image_files(files)
+    files.select { |f| /\.(jpe?g|png)$/i.match?(f) }
   end
 
   def commons_image_url(file_page)
     return nil unless file_page.include?("commons.wikimedia.org/wiki/File:")
 
-    file = URI(file_page).path.split("/").last.delete_prefix("File:")
-    "https://commons.wikimedia.org/wiki/Special:FilePath/#{file}?width=800"
+    file = URI(file_page).path.split("/").last  # keeps File: prefix for imageinfo
+    image_info_url("commons.wikimedia.org", file)
   end
 
-  def http_get_json(uri)
+  # Resolves "File:..." on a MediaWiki host to a direct image URL
+  def image_info_url(host, file_title)
+    uri = URI("https://#{host}/w/api.php")
+    uri.query = URI.encode_www_form(
+      action: "query", prop: "imageinfo", titles: file_title,
+      iiprop: "url|mime|size", format: "json"
+    )
+    data = http_get_json(uri)
+    info = data&.dig("query", "pages")&.values&.first&.dig("imageinfo", 0)
+    return nil if info.nil?
+    return nil unless /\Aimage\/(jpe?g|png)\z/.match?(info["mime"].to_s)
+
+    info["url"].gsub(/\?.*\z/, "")
+  end
+
+  WIKIMEDIA_USER_AGENT = "Litloop/1.0 (AI cover enrichment; https://github.com/nebiyuelias1/litloop)".freeze
+
+  def http_get_json(uri, retries: 1)
     request = Net::HTTP::Get.new(uri)
+    request["User-Agent"] = WIKIMEDIA_USER_AGENT
     response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true, open_timeout: VERIFY_OPEN_TIMEOUT, read_timeout: VERIFY_READ_TIMEOUT) do |http|
       http.request(request)
     end
+
+    # Wikimedia rate-limits bursts; one polite retry after a pause
+    if response.code.to_i == 429 && retries.positive?
+      sleep(2)
+      return http_get_json(uri, retries: retries - 1)
+    end
+
     return nil unless response.is_a?(Net::HTTPSuccess)
 
     JSON.parse(response.body)

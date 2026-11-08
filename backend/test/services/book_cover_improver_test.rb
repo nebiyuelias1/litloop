@@ -34,14 +34,16 @@ class BookCoverImproverTest < ActiveSupport::TestCase
     book = Book.create!(title: "Test Book", author: "Test Author", cover_image: "https://images.unsplash.com/old")
 
     improver = BookCoverImprover.new(book: book)
-    improver.stub(:probe_image, ->(_url) { probe_result(90_000) }) do
-      stub_ai({ "wikipedia_page" => "", "commons_file_pages" => [ "https://commons.wikimedia.org/wiki/File:Things_Fall_Apart_signed.jpg" ] }) do
-        @result = improver.improve!
+    improver.stub(:commons_image_url, ->(fp) { "https://upload.wikimedia.org/commons/signed.jpg" }) do
+      improver.stub(:probe_image, ->(_url) { probe_result(90_000) }) do
+        stub_ai({ "wikipedia_page" => "", "commons_file_pages" => [ "https://commons.wikimedia.org/wiki/File:Things_Fall_Apart_signed.jpg" ] }) do
+          @result = improver.improve!
+        end
       end
     end
 
     assert @result.improved
-    assert_match(/Special:FilePath\/Things_Fall_Apart_signed.jpg/, book.reload.cover_image)
+    assert_match(/upload\.wikimedia\.org\/commons\/signed\.jpg/, book.reload.cover_image)
   end
 
   test "falls back to deterministic title search when model returns no usable candidates" do
