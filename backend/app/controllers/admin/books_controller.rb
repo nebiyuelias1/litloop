@@ -1,5 +1,22 @@
 module Admin
   class BooksController < Admin::ApplicationController
+    # Runs the Otari AI metadata enrichment synchronously so the admin can see
+    # the result immediately.
+    def enrich
+      book = find_resource(params[:id])
+
+      if ENV["OTARI_API_KEY"].blank?
+        return redirect_to admin_book_path(book),
+          alert: "Otari is not configured — set OTARI_BASE_URL and OTARI_API_KEY."
+      end
+
+      result = BookMetadataEnricher.new(book: book).enrich!
+      notice = "Enriched “#{book.title}”: tags=[#{result.tags_added.join(', ')}] " \
+        "country=#{result.country_of_origin || 'n/a'} (confidence: #{result.confidence})"
+      redirect_to admin_book_path(book), notice: notice
+    rescue OtariClient::RequestError, OtariClient::ConfigurationError => e
+      redirect_to admin_book_path(book), alert: "Enrichment failed: #{e.message}"
+    end
     # Overwrite any of the RESTful controller actions to implement custom behavior
     # For example, you may want to send an email after a foo is updated.
     #
