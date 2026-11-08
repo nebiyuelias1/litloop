@@ -24,7 +24,7 @@ class BookCoverImprover
   end
 
   def improve!(model: nil)
-    model ||= ENV.fetch("OTARI_MODEL", DEFAULT_MODEL)
+    model ||= DEFAULT_MODEL
     current_bytes = probe_image(@book.cover_image)&.fetch(:size, nil)
     candidates = fetch_candidates(model)
 
