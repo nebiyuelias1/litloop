@@ -13,7 +13,7 @@ class BookMetadataEnricherTest < ActiveSupport::TestCase
 
   def enrich_book(book, model_payload)
     enricher = BookMetadataEnricher.new(book: book)
-    enricher.stub(:generate_payload, model_payload) do
+    enricher.stub(:propose, model_payload) do
       enricher.enrich!
     end
   end

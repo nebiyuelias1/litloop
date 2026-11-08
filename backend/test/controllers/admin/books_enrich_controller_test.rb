@@ -39,7 +39,7 @@ class Admin::BooksEnrichControllerTest < ActionDispatch::IntegrationTest
 
     enricher = BookMetadataEnricher.new(book: @book)
     BookMetadataEnricher.stub(:new, ->(_book) { enricher }) do
-      enricher.stub(:generate_payload, payload) do
+      enricher.stub(:propose, payload) do
         post enrich_admin_book_url(@book)
       end
     end
@@ -57,7 +57,7 @@ class Admin::BooksEnrichControllerTest < ActionDispatch::IntegrationTest
 
     enricher = BookMetadataEnricher.new(book: @book)
     BookMetadataEnricher.stub(:new, ->(_book) { enricher }) do
-      enricher.stub(:generate_payload, ->(*_args) { raise OtariClient::RequestError, "boom" }) do
+      enricher.stub(:propose, ->(*_args) { raise OtariClient::RequestError, "boom" }) do
         post enrich_admin_book_url(@book)
       end
     end
