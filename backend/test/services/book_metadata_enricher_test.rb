@@ -86,6 +86,56 @@ class BookMetadataEnricherTest < ActiveSupport::TestCase
     assert_nil book.reload.country_of_origin
   end
 
+  test "fills page_count from the model when confident and lookup absent" do
+    book = Book.create!(title: "Test Book", author: "Test Author")
+
+    result = enrich_book(book, payload(
+      description: "A richly detailed rebuilt description that is comfortably longer than the minimum length gate.",
+      confidence: "high"
+    ).merge({ "page_count" => 226 }))
+
+    assert_equal 226, book.reload.page_count
+    assert result.page_count_changed
+    audit = book.enrichment
+    assert_equal "model", audit["page_count_source"]
+  end
+
+  test "page_count prefers the deterministic catalog lookup over the model" do
+    book = Book.create!(title: "Test Book", author: "Test Author")
+    lookup = [ { "source" => "google_books", "page_count" => 412 } ]
+
+    enricher = BookMetadataEnricher.new(book: book)
+    enricher.stub(:propose, payload(
+      description: "A richly detailed rebuilt description that is comfortably longer than the minimum length gate.",
+      confidence: "medium"
+    ).merge({ "page_count" => 99 })) do
+      enricher.enrich!(fresh_lookup: lookup)
+    end
+
+    assert_equal 412, book.reload.page_count
+    assert_equal "catalog_lookup", book.enrichment["page_count_source"]
+  end
+
+  test "page_count requires high confidence from the model alone" do
+    book = Book.create!(title: "Test Book", author: "Test Author")
+
+    enrich_book(book, payload(
+      description: "A richly detailed rebuilt description that is comfortably longer than the gate.",
+      confidence: "medium"
+    ).merge({ "page_count" => 226 }))
+    assert_nil book.reload.page_count
+  end
+
+  test "page_count sanity range" do
+    book = Book.create!(title: "Test Book", author: "Test Author")
+
+    enrich_book(book, payload(
+      description: "A richly detailed rebuilt description that is comfortably longer than the gate.",
+      confidence: "high"
+    ).merge({ "page_count" => 99_999 }))
+    assert_nil book.reload.page_count
+  end
+
   test "rejects bogus description (too short)" do
     book = Book.create!(title: "Test Book", author: "Test Author", description: "Original good description.")
     enrich_book(book, payload(description: "Too short."))

@@ -1,22 +1,21 @@
 # frozen_string_literal: true
 
-# Enriches a Book's metadata (description, tags, country of origin) using the
+# Enriches a Book's metadata (description, tags, country, page count) using the
 # Otari AI gateway.
 #
-# Anti-hallucination measures:
-# * The model is given an evidence bundle (title, author, description, publisher,
-#   ISBN, language) and is instructed to extract, not invent.
+# Policy (owner decision): the LLM proposes and we apply directly, gated by the
+# model's own confidence. Where a deterministic source is strictly better
+# (page_count from the catalog lookup), that wins over the LLM.
+#
+# Safety gates (small and cheap):
 # * Structured output with a strict JSON schema.
-# * The model must return supporting evidence for country_of_origin, or empty.
-# * The model outputs an official English country name; CountryCodes converts it
-#   to an ISO 3166-1 alpha-2 code. Anything unmappable is dropped.
-# * country_of_origin is validated against the ISO code whitelist in Ruby (and
-#   again at the model layer) before it can ever be persisted.
-# * Tags are normalized (lowercase, length-capped) and reused via find_or_create.
-# * The original values are stored in book.enrichment so every enrichment is
-#   reversible.
+# * country must map to a real ISO 3166-1 alpha-2 code; requires cited evidence
+#   and the model reporting medium/high confidence.
+# * page_count sanity-checked to 1..5_000.
+# * Tags normalized (lowercase, length-capped) and reused via find_or_create.
+# * Original values stored in book.enrichment so every enrichment is reversible.
 class BookMetadataEnricher
-  Result = Struct.new(:description_changed, :tags_added, :country_of_origin, :confidence, keyword_init: true)
+  Result = Struct.new(:description_changed, :tags_added, :country_of_origin, :page_count_changed, :confidence, keyword_init: true)
 
   # The model writes the description in the book's language
   LANGUAGE_NAMES = {
@@ -57,13 +56,9 @@ class BookMetadataEnricher
       confidence: {
         type: "string",
         enum: %w[high medium low]
-      },
-      wikipedia_page: {
-        type: "string",
-        description: "English Wikipedia article URL about this book (used to verify the country); empty string if unsure"
       }
     },
-    required: %w[description tags country_of_origin country_evidence confidence wikipedia_page],
+    required: %w[description tags country_of_origin country_evidence confidence],
     additionalProperties: false
   }.freeze
 
@@ -71,40 +66,32 @@ class BookMetadataEnricher
     @book = book
   end
 
-  def enrich!(model: nil)
+  def enrich!(model: nil, fresh_lookup: nil)
     model ||= DEFAULT_MODEL
-    proposal = propose(model)
-    verification = MetadataVerifier.new(book: @book).verify_country(
-      model_country_code: CountryCodes.code_for(proposal["country_of_origin"]),
-      wikipedia_page: proposal["wikipedia_page"].presence
-    )
-    changes, audit = apply(proposal, verification, model)
+    lookup = fresh_lookup || fresh_lookup_candidates
+    proposal = propose(model, lookup)
+    changes, audit = apply(proposal, lookup, model)
     @book.enriched_at = Time.current
     @book.save!
     Result.new(
       description_changed: changes.key?(:description),
       tags_added: changes[:tags] || [],
       country_of_origin: @book.country_of_origin,
+      page_count_changed: changes.key?(:page_count),
       confidence: proposal["confidence"]
     )
   end
 
   private
 
-  # Turns the verified proposal into attribute changes plus the audit trail
-  # stored in book.enrichment. Verification outcome decides the country.
-  def apply(proposal, verification, model)
+  # Turns the proposal into attribute changes plus the audit trail stored in
+  # book.enrichment. page_count prefers the deterministic lookup value.
+  def apply(proposal, lookup, model)
     changes = {}
     audit = {
       "model" => model,
       "confidence" => proposal["confidence"],
       "country_evidence" => proposal["country_evidence"].presence,
-      "country_verification" => verification && {
-        "verdict" => verification.verdict,
-        "source_country_qid" => verification.source_country_qid,
-        "model_country_code" => verification.model_country_code,
-        "detail" => verification.detail
-      },
       "enriched_at" => Time.current.iso8601
     }
 
@@ -119,18 +106,27 @@ class BookMetadataEnricher
     end
 
     audit["original_country_of_origin"] = @book.country_of_origin if @book.country_of_origin.present?
-    if (country = validate_country(proposal, verification)).present?
+    if (country = sanitize_country(proposal)).present?
       changes[:country_of_origin] = country
+    end
+
+    page_count = sanitize_page_count(proposal["page_count"], lookup, proposal["confidence"])
+    if page_count.present? && page_count != @book.page_count
+      audit["original_page_count"] = @book.page_count
+      audit["page_count_source"] = lookup_page_count(lookup) == page_count ? "catalog_lookup" : "model"
+      changes[:page_count] = page_count
     end
 
     @book.enrichment = audit.merge(
       "applied_description" => changes.key?(:description),
       "applied_tags" => (changes[:tags] if changes[:tags]),
-      "applied_country_of_origin" => changes[:country_of_origin]
+      "applied_country_of_origin" => changes[:country_of_origin],
+      "applied_page_count" => changes[:page_count]
     ).compact
 
     @book.description = changes[:description] if changes[:description]
     @book.country_of_origin = changes[:country_of_origin] if changes[:country_of_origin]
+    @book.page_count = changes[:page_count] if changes[:page_count]
     if changes[:tags]
       tags = changes[:tags].map { |name| Tag.find_or_create_by!(name: name) }
       @book.tags = tags
@@ -146,27 +142,37 @@ class BookMetadataEnricher
     value.strip
   end
 
-  # Country gate that consults the verification verdict:
-  #   confirmed     -> store (source-backed)
-  #   no_source     -> fall back to evidence + confidence gates
-  #   disagreement  -> reject the proposal entirely
-  def validate_country(proposal, verification)
-    case verification&.verdict
-    when "confirmed"
-      verification.country_code
-    when "disagreement", "rejected"
-      nil
-    when "no_source", nil
-      fallback_country_code(proposal)
-    end
-  end
-
-  def fallback_country_code(proposal)
+  # Model outputs an official English country name; stored as ISO alpha-2.
+  # Requires cited evidence and medium/high confidence.
+  def sanitize_country(proposal)
+    name = proposal["country_of_origin"].to_s.strip
+    return nil if name.blank?
     return nil if proposal["country_evidence"].to_s.strip.blank?
     return nil unless %w[high medium].include?(proposal["confidence"])
 
-    result = CountryCodes.code_for(proposal["country_of_origin"])
-    result if @book.country_of_origin.blank? || (result.present? && @book.country_of_origin == result)
+    code = CountryCodes.code_for(name)
+    code
+  end
+
+  # Deterministic-first: a catalog lookup page count is trusted outright;
+  # the model's suggestion needs high confidence and a sane range.
+  def sanitize_page_count(model_value, lookup, model_confidence)
+    from_lookup = lookup_page_count(lookup)
+    return from_lookup if from_lookup.present? && (1..5_000).cover?(from_lookup)
+
+    value = Integer(model_value.to_i) rescue nil
+    return nil unless (1..5_000).cover?(value.to_i)
+    return nil unless model_confidence == "high"
+
+    value
+  end
+
+  def lookup_page_count(lookup)
+    return nil if lookup.blank?
+
+    Integer(lookup.first&.fetch("page_count", nil) || nil)
+  rescue ArgumentError, TypeError
+    nil
   end
 
   def normalize_tags(values)
@@ -177,7 +183,7 @@ class BookMetadataEnricher
       .first(MAX_TAGS)
   end
 
-  def propose(model)
+  def propose(model, lookup)
     OtariClient.new.chat_structured(
       model: model,
       name: "book_metadata",
@@ -185,7 +191,7 @@ class BookMetadataEnricher
       temperature: 0.2,
       messages: [
         { role: "system", content: system_prompt },
-        { role: "user", content: evidence_prompt }
+        { role: "user", content: evidence_prompt(lookup) }
       ]
     )
   end
@@ -206,20 +212,20 @@ class BookMetadataEnricher
     PROMPT
   end
 
-  def evidence_prompt
+  def evidence_prompt(lookup)
     parts = [ "Title: #{@book.title}", "Author: #{@book.author}" ]
     parts << "Publisher: #{@book.publisher}" if @book.publisher.present?
     parts << "Published: #{@book.published_at.year}" if @book.published_at.present?
     parts << "ISBN: #{@book.isbn}" if @book.isbn.present?
     parts << "Language: #{@book.language}" if @book.language.present?
+    parts << "Existing page count: #{@book.page_count}" if @book.page_count.present?
     parts << "Existing description: #{@book.description[0, 1_000]}" if @book.description.present?
-    if (fresh = fresh_lookup_candidates.presence)
-      fresh.each_with_index do |result, i|
-        parts << "External catalog result ##{i + 1} (#{result['source']}):"
-        parts << "  categories: #{result['categories'].join(', ')}" if result["categories"].present?
-        parts << "  language: #{result['language']}" if result["language"].present?
-        parts << "  description: #{result['description'].to_s[0, 400]}" if result["description"].present?
-      end
+    Array(lookup).each_with_index do |result, i|
+      parts << "External catalog result ##{i + 1} (#{result['source']}):"
+      parts << "  categories: #{result['categories'].join(', ')}" if result["categories"].present?
+      parts << "  language: #{result['language']}" if result["language"].present?
+      parts << "  page_count: #{result['page_count']}" if result["page_count"].present?
+      parts << "  description: #{result['description'].to_s[0, 400]}" if result["description"].present?
     end
     tags = Tag.order(:name).limit(100).pluck(:name)
     if tags.any?
@@ -237,7 +243,7 @@ class BookMetadataEnricher
     results = BookLookup::Finder.new(title: @book.title, author: @book.author, max_candidates: 2).find || []
     results.first(2).map do |result|
       { source: result.source, categories: Array(result.categories), language: result.language,
-        description: result.description || "" }
+        page_count: result.page_count, description: result.description || "" }
     end
   rescue => e
     Rails.logger.warn("BookMetadataEnricher fresh lookup failed: #{e.message}")
