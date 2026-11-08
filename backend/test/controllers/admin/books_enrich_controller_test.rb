@@ -46,7 +46,7 @@ class Admin::BooksEnrichControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to admin_book_url(@book)
     assert_match(/Enriched/, flash[:notice])
-    assert_equal "Nigeria", @book.reload.country_of_origin
+    assert_equal "NG", @book.reload.country_of_origin
     assert_equal [ "colonialism", "fiction" ], @book.tags.order(:name).pluck(:name)
     assert_not_nil @book.enriched_at
   end

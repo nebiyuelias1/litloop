@@ -35,7 +35,7 @@ class BookMetadataEnricherTest < ActiveSupport::TestCase
 
     assert result.description_changed
     assert_match(/Okonkwo/, book.reload.description)
-    assert_equal "Nigeria", book.country_of_origin
+    assert_equal "NG", book.country_of_origin
     assert_equal [ "colonialism", "coming of age", "fiction" ], book.tags.order(:name).pluck(:name)
     assert_not_nil book.enriched_at
     assert_equal "high", result.confidence
@@ -109,7 +109,7 @@ class BookMetadataEnricherTest < ActiveSupport::TestCase
     audit = book.reload.enrichment
     assert_equal "Original blurb.", audit["original_description"]
     assert_equal [ "classic" ], audit["original_tags"]
-    assert_equal "Nigeria", audit["applied_country_of_origin"]
+    assert_equal "NG", audit["applied_country_of_origin"]
     assert_equal "evidence text", audit["country_evidence"]
     assert_equal "high", audit["confidence"]
     assert audit["enriched_at"].present?

@@ -133,7 +133,7 @@
         <span class="block text-content-muted mb-1"><%= t("country_of_origin", default: "Country of origin") %></span>
         <span class="font-medium text-content">
           <% if @book.country_of_origin.present? %>
-            <%= @book.country_of_origin %>
+            <%= country_display(@book.country_of_origin) %>
           <% else %>
             <span class="italic text-content-muted" title="AI enrichment couldn't determine this confidently">
               <%= @book.enriched_at.present? ? "Unknown" : "—" %>

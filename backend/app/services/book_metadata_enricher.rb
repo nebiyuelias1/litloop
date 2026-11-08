@@ -8,8 +8,10 @@
 #   ISBN, language) and is instructed to extract, not invent.
 # * Structured output with a strict JSON schema.
 # * The model must return supporting evidence for country_of_origin, or empty.
-# * country_of_origin is validated against a country-name whitelist in Ruby
-#   before it can ever be persisted.
+# * The model outputs an official English country name; CountryCodes converts it
+#   to an ISO 3166-1 alpha-2 code. Anything unmappable is dropped.
+# * country_of_origin is validated against the ISO code whitelist in Ruby (and
+#   again at the model layer) before it can ever be persisted.
 # * Tags are normalized (lowercase, length-capped) and reused via find_or_create.
 # * The original values are stored in book.enrichment so every enrichment is
 #   reversible.
@@ -22,27 +24,6 @@ class BookMetadataEnricher
     "fr" => "French", "sw" => "Swahili", "ti" => "Tigrinya", "es" => "Spanish",
     "de" => "German", "it" => "Italian", "pt" => "Portuguese"
   }.freeze
-
-  # The model must not invent country names; validate against this list
-  VALID_COUNTRIES = %w[
-    Afghanistan Albania Algeria Argentina Armenia Australia Austria Azerbaijan Bahrain Bangladesh
-    Belarus Belgium Belize Benin Bhutan Bolivia Bosnia\ and\ Herzegovina Botswana Brazil Bulgaria
-    Burkina\ Faso Burundi Cambodia Cameroon Canada Chad Chile China Colombia Congo Costa\ Rica
-    Croatia Cuba Cyprus Czechia Denmark Djibouti Dominica Dominican\ Republic Ecuador Egypt El\ Salvador
-    Eritrea Estonia Eswatini Ethiopia Fiji Finland France Gabon Gambia Georgia Germany Ghana Greece
-    Grenada Guatemala Guinea Guinea-Bissau Guyana Haiti Honduras Hungary Iceland India Indonesia Iran
-    Iraq Ireland Israel Italy Ivory\ Coast Jamaica Japan Jordan Kazakhstan Kenya Kiribati Kuwait
-    Kyrgyzstan Laos Latvia Lebanon Lesotho Liberia Libya Liechtenstein Lithuania Luxembourg Madagascar
-    Malawi Malaysia Maldives Mali Malta Mauritania Mauritius Mexico Moldova Monaco Mongolia Montenegro
-    Morocco Mozambique Myanmar Namibia Nauru Nepal Netherlands New\ Zealand Nicaragua Niger Nigeria
-    North\ Korea North\ Macedonia Norway Oman Pakistan Palau Palestine Panama Papua\ New\ Guinea Paraguay
-    Peru Philippines Poland Portugal Qatar Romania Russia Rwanda Samoa San\ Marino Saudi\ Arabia Senegal
-    Serbia Seychelles Sierra\ Leone Singapore Slovakia Slovenia Solomon\ Islands Somalia South\ Africa
-    South\ Korea South\ Sudan Spain Sri\ Lanka Sudan Suriname Sweden Switzerland Syria Taiwan Tajikistan
-    Tanzania Thailand Timor-Leste Togo Tonga Trinidad\ and\ Tobago Tunisia Turkey Turkmenistan Tuvalu
-    Uganda Ukraine United\ Arab\ Emirates United\ Kingdom United\ States Uruguay Uzbekistan Vanuatu
-    Venezuela Vietnam Yemen Zambia Zimbabwe
-  ].to_set
 
   # Verified working on the hosted gateway (mozilla-hosted account):
   # https://api.otari.ai/api/v1/models
@@ -156,9 +137,9 @@ class BookMetadataEnricher
     evidence = payload["country_evidence"].to_s.strip
     return nil if name.blank? || evidence.blank?
     return nil unless %w[high medium].include?(payload["confidence"])
-    return nil unless VALID_COUNTRIES.include?(name)
 
-    name
+    # Model outputs an official English country name; store the ISO alpha-2 code
+    CountryCodes.code_for(name)
   end
 
   def normalize_tags(values)
