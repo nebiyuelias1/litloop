@@ -35,6 +35,7 @@ class BooksController < ApplicationController
     @book = Book.new(book_params)
     respond_to do |format|
       if @book.save
+        enqueue_enrichment(@book)
         format.html { redirect_to @book }
         format.json { render json: @book, status: :created }
       else
@@ -104,6 +105,16 @@ class BooksController < ApplicationController
   end
 
   private
+
+  def enqueue_enrichment(book)
+    # The job is a no-op unless Otari is configured
+    return if ENV["OTARI_API_KEY"].blank?
+    return if book.enriched_at.present?
+
+    BookEnrichmentJob.perform_later(book.id)
+  rescue => e
+    Rails.logger.warn("Failed to enqueue book enrichment: #{e.message}")
+  end
 
   def map_lookup_result_to_book(result)
     Book.new(
