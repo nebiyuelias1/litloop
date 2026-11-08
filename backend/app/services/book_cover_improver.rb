@@ -54,15 +54,22 @@ class BookCoverImprover
     model ||= DEFAULT_MODEL
     candidates = collect_candidates(model)
 
-    best = candidates.filter_map do |url|
-      next if url.blank?
-      next if url == @book.cover_image
-      probe = probe_image(url)
-      next if probe.nil?
-      next if probe[:size] < MIN_IMAGE_BYTES || probe[:size] > MAX_IMAGE_BYTES
+    # Relevance beats size: candidates are tiered (wikipedia/arxiv-quality
+    # first, Open Library next, model-propose Commons last); we take the best
+    # VERIFIED candidate of the highest tier that yields one.
+    best = candidates.sort_by { |c| -c[:relevance] }
+                     .group_by { |c| c[:relevance] }
+                     .values
+                     .filter_map do |tier|
+      tier.filter_map do |candidate|
+        next if candidate[:url] == @book.cover_image
+        probe = probe_image(candidate[:url])
+        next if probe.nil?
+        next if probe[:size] < MIN_IMAGE_BYTES || probe[:size] > MAX_IMAGE_BYTES
 
-      { url: url, size: probe[:size] }
-    end.max_by { |candidate| candidate[:size] }
+        { url: candidate[:url], size: probe[:size] }
+      end.max_by { |c| c[:size] }
+    end.first
 
     return kept(candidates.any? ? "no candidate verified as a usable image" : "no candidates") if best.nil?
 
@@ -90,19 +97,22 @@ class BookCoverImprover
     Result.new(improved: false, old_cover: @book.cover_image, new_cover: nil, reason: reason)
   end
 
-  # Collects candidate image URLs Wikipedia-wise, AI-proposed first, Ruby
-  # search as the fallback.
+  RELEVANCE = { wiki_article: 100, openlibrary: 80, commons_proposal: 40 }.freeze
+
+  # Collects relevance-tagged candidate URLs:
+  #  - Wikipedia article file (resolved title-match) — 100
+  #  - Open Library ISBN cover — 80
+  #  - Model-proposed Commons files — 40 (name-middle tier: hallucinations die here)
   def collect_candidates(model)
     candidates = []
+    candidates.concat(ai_candidates(model))
+    # Always run the deterministic path too — the model can name the wrong
+    # article (e.g. a film page for a novel) or hallucinate Commons files;
+    # verified duplicate URLs dedupe below.
+    candidates.concat(deterministic_candidates)
+    candidates.concat(openlibrary_candidates)
 
-    ai = ai_candidates(model)
-    candidates.concat(ai)
-
-    if candidates.empty? || @book.cover_image.to_s.include?("unsplash")
-      candidates.concat(deterministic_candidates)
-    end
-
-    candidates.compact.uniq
+    candidates.compact.uniq { |c| c[:url] }
   end
 
   # Step 1: the model names pages, Ruby owns URLs -> images.
@@ -127,25 +137,37 @@ class BookCoverImprover
       ]
     )
 
-    urls = []
+    tagged = []
     wiki = payload["wikipedia_page"].to_s
-    urls << page_image_url(wiki) if wiki.include?("wikipedia.org/wiki/")
+    if wiki.include?("wikipedia.org/wiki/")
+      tagged << { url: page_image_url(wiki), relevance: RELEVANCE[:wiki_article] }
+    end
 
     Array(payload["commons_file_pages"]).each do |file_page|
-      urls << commons_image_url(file_page)
+      tagged << { url: commons_image_url(file_page), relevance: RELEVANCE[:commons_proposal] }
     end
-    urls
+    tagged
   rescue OtariClient::Error => e
     Rails.logger.warn("BookCoverImprover AI candidates failed: #{e.message}")
     []
   end
 
-  # Deterministic fallback: Wikipedia's own search API finds the article.
+  # Deterministic fallback: Wikipedia's own search API finds the article, and
+  # Open Library's ISBN cover endpoint offers a second independent source.
   def deterministic_candidates
     article = wikipedia_search_title
     return [] if article.blank?
 
-    [ page_image_url("https://en.wikipedia.org/wiki/#{URI.encode_www_form_component(article.tr(" ", "_"))}") ]
+    url = page_image_url("https://en.wikipedia.org/wiki/#{URI.encode_www_form_component(article.tr(" ", "_"))}")
+    return [] if url.blank?
+
+    [ { url: url, relevance: RELEVANCE[:wiki_article] } ]
+  end
+
+  def openlibrary_candidates
+    return [] if @book.isbn.blank?
+
+    [ { url: "https://covers.openlibrary.org/b/isbn/#{@book.isbn}-L.jpg", relevance: RELEVANCE[:openlibrary] } ]
   end
 
   def wikipedia_search_title
@@ -179,19 +201,28 @@ class BookCoverImprover
     image_info_url(URI(article_url).host, chosen)
   end
 
-  # Picks the most plausible cover among an article's files: files whose name
-  # matches the book title win outright; obvious junk (flags, icons, logos,
-  # author portraits etc.) is penalized.
-  JUNK_FILE_WORDS = /flag|icon|symbol|logo|stub|jukebox|collection|edit|voice|map|menu/i
+  # Picks the most plausible cover among an article's files. MediaWiki lists
+  # files alphabetically, so "first" alone is not meaningful; score instead:
+  #   exact title-name match  > title + cover-ish word > title first word among
+  #   non-junk files; junk (flags, icons, film posters, collections) excluded.
+  JUNK_FILE_WORDS = /flag|icon|symbol|logo|stub|jukebox|collection|edit|voice|map|menu|poster|film|movie|wiktion/i
+  GOOD_FILE_WORDS = /cover|book|edition|jacket|first|front/i
 
   def choose_cover_file(files, article_title)
-    image_files(files).max_by do |file|
+    eligible = image_files(files).reject { |file| JUNK_FILE_WORDS.match?(file) }
+    return nil if eligible.blank?
+
+    title_key = article_title.gsub(/[^a-zA-Z0-9]/, "").downcase
+    first_word = article_title.split(/[\s(]/).first.to_s.gsub(/[^a-zA-Z0-9]/, "").downcase
+
+    eligible.max_by do |file|
+      bare = File.basename(file, ".*").gsub(/[^a-zA-Z0-9]/, "").downcase
       score = 0
-      bare = file.gsub(/\AFile:|File:/, "").gsub(/[^a-zA-Z0-9]/, "").downcase
-      title_key = article_title.gsub(/[^a-zA-Z0-9]/, "").downcase
-      score += 100 if bare.include?(title_key) && title_key.length > 3
-      score += 10 if bare.start_with?(title_key[0, 8].to_s)
-      score -= 50 if JUNK_FILE_WORDS.match?(file)
+      score += 120 if title_key.length > 3 && bare == title_key
+      score += 80 if title_key.length > 3 && bare.include?(title_key)
+      if first_word.length > 2 && bare.include?(first_word)
+        score += GOOD_FILE_WORDS.match?(bare) ? 60 : 30
+      end
       score
     end
   end
