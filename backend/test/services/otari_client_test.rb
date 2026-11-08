@@ -51,14 +51,14 @@ class OtariClientTest < ActiveSupport::TestCase
     result = nil
     captured = stub_http(body) do
       client = OtariClient.new
-      result = client.chat(model: "openai:gpt-oss-120b", messages: [ { role: "user", content: "hi" } ])
+      result = client.chat(model: "openai/gpt-oss-120b", messages: [ { role: "user", content: "hi" } ])
     end
 
     assert_equal "hello", result.dig("choices", 0, "message", "content")
     assert_equal "Bearer tk-test", captured["Authorization"]
     assert_equal "application/json", captured["Content-Type"]
     payload = JSON.parse(captured.body)
-    assert_equal "openai:gpt-oss-120b", payload["model"]
+    assert_equal "openai/gpt-oss-120b", payload["model"]
     assert_equal [ { "role" => "user", "content" => "hi" } ], payload["messages"]
   end
 
@@ -75,7 +75,7 @@ class OtariClientTest < ActiveSupport::TestCase
     captured = stub_http(body) do
       client = OtariClient.new
       result = client.chat_structured(
-        model: "openai:gpt-oss-120b",
+        model: "openai/gpt-oss-120b",
         messages: [ { role: "user", content: "tag this" } ],
         name: "book_tags",
         schema: schema
