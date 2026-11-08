@@ -15,7 +15,10 @@
 # * Tags normalized (lowercase, length-capped) and reused via find_or_create.
 # * Original values stored in book.enrichment so every enrichment is reversible.
 class BookMetadataEnricher
-  Result = Struct.new(:description_changed, :tags_added, :country_of_origin, :page_count_changed, :confidence, keyword_init: true)
+  Result = Struct.new(
+    :description_changed, :tags_added, :country_of_origin, :page_count_changed,
+    :country_confidence, :page_count_confidence, keyword_init: true
+  )
 
   # The model writes the description in the book's language
   LANGUAGE_NAMES = {
@@ -53,12 +56,25 @@ class BookMetadataEnricher
         type: "string",
         description: "Quote or paraphrase from the evidence supporting country_of_origin, or a short explanation of what is missing or ambiguous when declining; empty string when clearly nothing relevant"
       },
-      confidence: {
+      country_confidence: {
         type: "string",
-        enum: %w[high medium low]
+        enum: %w[high medium low],
+        description: "Confidence in country_of_origin only"
+      },
+      page_count: {
+        type: "integer",
+        description: "Total page count of the book's main edition, 0 or omitted when unknown"
+      },
+      page_count_confidence: {
+        type: "string",
+        enum: %w[high medium low],
+        description: "Confidence in page_count only"
       }
     },
-    required: %w[description tags country_of_origin country_evidence confidence],
+    required: %w[
+      description tags country_of_origin country_evidence country_confidence
+      page_count page_count_confidence
+    ],
     additionalProperties: false
   }.freeze
 
@@ -78,7 +94,8 @@ class BookMetadataEnricher
       tags_added: changes[:tags] || [],
       country_of_origin: @book.country_of_origin,
       page_count_changed: changes.key?(:page_count),
-      confidence: proposal["confidence"]
+      country_confidence: proposal["country_confidence"],
+      page_count_confidence: proposal["page_count_confidence"]
     )
   end
 
@@ -90,7 +107,8 @@ class BookMetadataEnricher
     changes = {}
     audit = {
       "model" => model,
-      "confidence" => proposal["confidence"],
+      "country_confidence" => proposal["country_confidence"],
+      "page_count_confidence" => proposal["page_count_confidence"],
       "country_evidence" => proposal["country_evidence"].presence,
       "enriched_at" => Time.current.iso8601
     }
@@ -110,7 +128,7 @@ class BookMetadataEnricher
       changes[:country_of_origin] = country
     end
 
-    page_count = sanitize_page_count(proposal["page_count"], lookup, proposal["confidence"])
+    page_count = sanitize_page_count(proposal["page_count"], lookup, proposal["page_count_confidence"])
     if page_count.present? && page_count != @book.page_count
       audit["original_page_count"] = @book.page_count
       audit["page_count_source"] = lookup_page_count(lookup) == page_count ? "catalog_lookup" : "model"
@@ -148,19 +166,19 @@ class BookMetadataEnricher
     name = proposal["country_of_origin"].to_s.strip
     return nil if name.blank?
     return nil if proposal["country_evidence"].to_s.strip.blank?
-    return nil unless %w[high medium].include?(proposal["confidence"])
+    return nil unless %w[high medium].include?(proposal["country_confidence"])
 
     code = CountryCodes.code_for(name)
     code
   end
 
   # Deterministic-first: a catalog lookup page count is trusted outright;
-  # the model's suggestion needs high confidence and a sane range.
+  # the model's suggestion needs high (per-field) confidence and a sane range.
   def sanitize_page_count(model_value, lookup, model_confidence)
     from_lookup = lookup_page_count(lookup)
     return from_lookup if from_lookup.present? && (1..5_000).cover?(from_lookup)
 
-    value = Integer(model_value.to_i) rescue nil
+    value = Integer(model_value) rescue nil
     return nil unless (1..5_000).cover?(value.to_i)
     return nil unless model_confidence == "high"
 
@@ -203,12 +221,16 @@ class BookMetadataEnricher
 
       Rules:
       - Never invent facts that are not supported by the evidence.
-      - Extract and synthesize; if the evidence is insufficient, return an empty country with low confidence.
+      - Extract and synthesize; if the evidence is insufficient for a field, return an empty answer
+        for that field and low confidence FOR THAT FIELD ONLY — do not let one uncertain field
+        downgrade unrelated fields.
       - When declining country_of_origin, country_evidence must state what is missing or ambiguous
         (e.g. "author is of mixed ethnicity and nationality is not established by the evidence").
       - Write the description in #{language}.
       - Tags must be short lowercase English words (e.g. "fiction", "coming of age").
       - country_of_origin must be an official English country name, only when the evidence clearly supports it.
+      - page_count: page count of the original/first major edition; use the catalog evidence when present;
+        set page_count_confidence high only for well-known books you are certain about.
     PROMPT
   end
 

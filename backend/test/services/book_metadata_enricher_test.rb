@@ -1,13 +1,15 @@
 require "test_helper"
 
 class BookMetadataEnricherTest < ActiveSupport::TestCase
-  def payload(description:, tags: [], country: "", evidence: "", confidence: "high")
+  def payload(description:, tags: [], country: "", evidence: "", country_confidence: "high", page_count: 0, page_count_confidence: "high")
     {
       "description" => description,
       "tags" => tags,
       "country_of_origin" => country,
       "country_evidence" => evidence,
-      "confidence" => confidence
+      "country_confidence" => country_confidence,
+      "page_count" => page_count,
+      "page_count_confidence" => page_count_confidence
     }
   end
 
@@ -38,7 +40,7 @@ class BookMetadataEnricherTest < ActiveSupport::TestCase
     assert_equal "NG", book.country_of_origin
     assert_equal [ "colonialism", "coming of age", "fiction" ], book.tags.order(:name).pluck(:name)
     assert_not_nil book.enriched_at
-    assert_equal "high", result.confidence
+    assert_equal "high", result.country_confidence
     assert_equal [ "fiction", "colonialism", "coming of age" ], result.tags_added
   end
 
@@ -61,8 +63,7 @@ class BookMetadataEnricherTest < ActiveSupport::TestCase
       description: "A richly detailed rebuilt description that is comfortably longer than the minimum length gate we enforce.",
       country: "Nigeria",
       evidence: "",
-      confidence: "high"
-    ).merge("confidence" => "high"))
+      country_confidence: "high"))
 
     assert_nil book.reload.country_of_origin
   end
@@ -73,7 +74,7 @@ class BookMetadataEnricherTest < ActiveSupport::TestCase
       description: "A richly detailed rebuilt description that is comfortably longer than the minimum length gate.",
       country: "Atlantis",
       evidence: "claim",
-      confidence: "high"
+      country_confidence: "high"
     ))
     assert_nil book.reload.country_of_origin
 
@@ -81,7 +82,8 @@ class BookMetadataEnricherTest < ActiveSupport::TestCase
       description: "Another richly detailed rebuilt description that easily passes the length gate again.",
       country: "Nigeria",
       evidence: "claim",
-      confidence: "low"
+      country_confidence: "low",
+      page_count_confidence: "high"
     ))
     assert_nil book.reload.country_of_origin
   end
@@ -89,10 +91,7 @@ class BookMetadataEnricherTest < ActiveSupport::TestCase
   test "fills page_count from the model when confident and lookup absent" do
     book = Book.create!(title: "Test Book", author: "Test Author")
 
-    result = enrich_book(book, payload(
-      description: "A richly detailed rebuilt description that is comfortably longer than the minimum length gate.",
-      confidence: "high"
-    ).merge({ "page_count" => 226 }))
+    result = enrich_book(book, payload(description: "A richly detailed rebuilt description that is comfortably longer than the minimum length gate.", page_count: 226))
 
     assert_equal 226, book.reload.page_count
     assert result.page_count_changed
@@ -105,10 +104,7 @@ class BookMetadataEnricherTest < ActiveSupport::TestCase
     lookup = [ { "source" => "google_books", "page_count" => 412 } ]
 
     enricher = BookMetadataEnricher.new(book: book)
-    enricher.stub(:propose, payload(
-      description: "A richly detailed rebuilt description that is comfortably longer than the minimum length gate.",
-      confidence: "medium"
-    ).merge({ "page_count" => 99 })) do
+    enricher.stub(:propose, payload(description: "A richly detailed rebuilt description that is comfortably longer than the minimum length gate.", country_confidence: "medium", page_count: 99)) do
       enricher.enrich!(fresh_lookup: lookup)
     end
 
@@ -119,20 +115,14 @@ class BookMetadataEnricherTest < ActiveSupport::TestCase
   test "page_count requires high confidence from the model alone" do
     book = Book.create!(title: "Test Book", author: "Test Author")
 
-    enrich_book(book, payload(
-      description: "A richly detailed rebuilt description that is comfortably longer than the gate.",
-      confidence: "medium"
-    ).merge({ "page_count" => 226 }))
+    enrich_book(book, payload(description: "A richly detailed rebuilt description that is comfortably longer than the gate.", page_count: 226, page_count_confidence: "medium"))
     assert_nil book.reload.page_count
   end
 
   test "page_count sanity range" do
     book = Book.create!(title: "Test Book", author: "Test Author")
 
-    enrich_book(book, payload(
-      description: "A richly detailed rebuilt description that is comfortably longer than the gate.",
-      confidence: "high"
-    ).merge({ "page_count" => 99_999 }))
+    enrich_book(book, payload(description: "A richly detailed rebuilt description that is comfortably longer than the gate.", page_count: 99_999))
     assert_nil book.reload.page_count
   end
 
@@ -153,7 +143,7 @@ class BookMetadataEnricherTest < ActiveSupport::TestCase
       tags: [ "fiction" ],
       country: "Nigeria",
       evidence: "evidence text",
-      confidence: "high"
+      country_confidence: "high"
     ))
 
     audit = book.reload.enrichment
@@ -161,7 +151,7 @@ class BookMetadataEnricherTest < ActiveSupport::TestCase
     assert_equal [ "classic" ], audit["original_tags"]
     assert_equal "NG", audit["applied_country_of_origin"]
     assert_equal "evidence text", audit["country_evidence"]
-    assert_equal "high", audit["confidence"]
+    assert_equal "high", audit["country_confidence"]
     assert audit["enriched_at"].present?
   end
 
