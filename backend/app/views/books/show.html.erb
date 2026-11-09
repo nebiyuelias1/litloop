@@ -203,7 +203,7 @@
       </div>
       <% if @past_reads_count.positive? %>
         <p class="mt-4 text-sm text-content-muted">
-          <%= t("previously_read_clubs", count: @past_reads_count, default: { one: "Previously read by 1 club", other: "Previously read by %{count} clubs" }) %>
+          <%= t("previously_read_clubs", count: @past_reads_count) %>
         </p>
       <% end %>
     <% else %>
@@ -217,7 +217,7 @@
       </div>
       <% if @past_reads_count.positive? %>
         <p class="mt-2 text-center text-sm text-content-muted">
-          <%= t("previously_read_clubs", count: @past_reads_count, default: { one: "Previously read by 1 club", other: "Previously read by %{count} clubs" }) %>
+          <%= t("previously_read_clubs", count: @past_reads_count) %>
         </p>
       <% end %>
     <% end %>
