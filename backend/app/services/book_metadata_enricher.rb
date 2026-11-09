@@ -203,9 +203,10 @@ class BookMetadataEnricher
           - If the stored value is already good and the facts do not clearly contradict it,
             act with "keep_existing".
           - Write description updates in the stored language listed below; drop celebrity endorsements,
-            keep 80-300 words.
-          - For the cover: judge from the provided quality facts (missing = no image at all;
-            low_quality = placeholder/generic photo library image or suspiciously small file).
+          - For the cover: the VISION judgment section is authoritative and measured from the actual
+            image. When it reports verdict real_cover AND depicts this specific book true AND quality high_res,
+            judgment MUST be "adequate". Only "missing", "low_quality" when the vision says not_cover /
+            placeholder / wrong book / low_res, or when facts report the image missing or unreachable.
           - Empty quote => low confidence => nothing will be applied, so if you recommend an update,
             always include the supporting quote.
         PROMPT
@@ -237,20 +238,27 @@ class BookMetadataEnricher
     PROMPT
   end
 
-  # Quality facts about the stored cover, measured by code (plus a hard signal
-  # for the known placeholder domain used by catalogue seeds).
+  # Quality facts about the stored cover. The primary source is a real vision
+  # judgment (the model sees the image); when that is unavailable, code
+  # measurements stand in.
   def old_cover_facts
-    url = @book.cover_image
-    return "MISSING: no cover image stored" if url.blank?
+    vision = CoverVisionJudge.new(book: @book).judge!
 
-    probe = probe_image(url)
-    if url.include?("unsplash")
-      host = "images.unsplash.com (generic placeholder photo, not the real cover)"
+    if vision.verdict != "unknown"
+      "Vision judgment of the stored cover:\n" \
+        "  verdict: #{vision.verdict} (real book cover? -> #{vision.verdict == 'real_cover'})\n" \
+        "  depicts this specific book: #{vision.matches_book}\n" \
+        "  quality: #{vision.quality}\n" \
+        "  notes: #{vision.detail}"
     else
+      url = @book.cover_image
+      return "MISSING: no cover image stored (#{vision.detail})" if url.blank?
+
+      probe = probe_image(url)
       host = URI(url).host rescue "unknown"
+      placeholder = url.include?("unsplash")
+      "Stored cover URL: #{url}\nHost: #{host}#{placeholder ? ' (generic placeholder domain)' : ''}\nSize when fetched: #{probe&.dig(:size) || 'unreachable'}"
     end
-    quality = probe.nil? ? "unreachable this run" : "#{probe[:size]} bytes"
-    "Stored cover URL: #{url}\nHost: #{host}\nSize when fetched: #{quality}"
   end
 
   # ---- Phase 3: APPLY -------------------------------------------------------
