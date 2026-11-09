@@ -15,7 +15,13 @@ module Admin
 
       # The judge decides whether the current cover is missing/low quality;
       # the improver only runs when the judgment calls for a replacement.
-      if %w[missing low_quality].include?(result.cover_judgment.to_s)
+      # Known placeholder hosts always force an attempt regardless of the
+      # LLM's verdict (the LLM occasionally marks placeholder images "adequate").
+      placeholder_cover = BookCoverImprover::COVER_PLACEHOLDER_HOSTS.any? { |ph| book.cover_image.to_s.include?(ph) }
+      judgment = (result.cover_judgment.to_s.presence || (placeholder_cover ? "low_quality" : nil))
+      needs_cover = BookCoverImprover::COVER_PLACEHOLDER_HOSTS.any? { |ph| book.cover_image.to_s.include?(ph) } ||
+                    %w[missing low_quality].include?(judgment.to_s)
+      if needs_cover
         cited = result.cover_source_url
         cover = BookCoverImprover.new(book: book, cited_cover_url: cited).improve!
         cover_note = cover.improved ? "cover ⬆ #{URI.parse(cover.new_cover).host} (#{cover.reason})" : "cover: needed, but no candidate verified (#{cover.reason})"

@@ -25,6 +25,10 @@ class BooksController < ApplicationController
     else
       []
     end
+    @upcoming_reads = @book.book_reads.includes(:book_club, :poll)
+      .where(book_reads: { meetup_time: Time.current.. })
+      .order(:meetup_time).limit(4)
+    @past_reads_count = @book.book_reads.where(book_reads: { meetup_time: ...Time.current }).count
   end
 
   def new

@@ -247,12 +247,16 @@ class BookMetadataEnricher
           - Write description updates in the stored language listed below; drop celebrity endorsements,
             keep 80-300 words.
           - For the cover: the VISION judgment section is authoritative and measured from the actual
-            image. When it reports verdict real_cover AND depicts this specific book true AND quality high_res,
-            judgment MUST be "adequate". Only "missing"/"low_quality" when the vision says not_cover /
-            placeholder / wrong book / low_res, or when facts report the image missing or unreachable.
+            image. The judgment field takes these values ONLY:
+              "adequate"    — vision said real_cover AND depicts this book AND quality high_res
+              "low_quality" — vision said real_cover but low_res, or vision is unavailable,
+                              or the stored image is a placeholder/generic photo
+              "missing"     — no cover stored at all
+          - Vision saying "not_cover" for the stored image ALWAYS means judgment = "low_quality",
+            even when the grounded facts contain a better cover URL. Never "adequate" then.
           - When the grounded facts name a page carrying the real cover (publisher, catalogue, store,
             original edition when possible), cite that exact page URL in cover.source_url so the
-            pipeline can extract the image from the page.
+            pipeline can extract the image from it.
           - Empty quote => low confidence => nothing will be applied, so if you recommend an update,
             always include the supporting quote.
         PROMPT
@@ -293,11 +297,11 @@ class BookMetadataEnricher
     PROMPT
   end
 
-  # Quality facts about the stored cover. The primary source is a real vision
-  # judgment (the model sees the image); when that is unavailable, code
-  # measurements stand in.
+  # Old-cover facts for the judge; the structured vision result is kept for the
+  # audit trail.
   def old_cover_facts
     vision = CoverVisionJudge.new(book: @book).judge!
+    @cover_vision_audit = vision
 
     if vision.verdict != "unknown"
       "Vision judgment of the stored cover:\n" \
@@ -311,7 +315,7 @@ class BookMetadataEnricher
 
       probe = probe_image(url)
       host = URI(url).host rescue "unknown"
-      placeholder = url.include?("unsplash")
+      placeholder = BookCoverImprover::COVER_PLACEHOLDER_HOSTS.any? { |ph| url.include?(ph) }
       "Stored cover URL: #{url}\nHost: #{host}#{placeholder ? ' (generic placeholder domain)' : ''}\nSize when fetched: #{probe&.dig(:size) || 'unreachable'}"
     end
   end
@@ -346,6 +350,14 @@ class BookMetadataEnricher
     end
 
     audit["cover_judgment"] = judgment["cover"].presence
+    if (cover_vision = @cover_vision_audit)
+      audit["cover_vision"] = {
+        "verdict" => cover_vision.verdict,
+        "quality" => cover_vision.quality,
+        "matches_book" => cover_vision.matches_book,
+        "notes" => cover_vision.detail
+      }
+    end
     audit["tags_source_url"] = (judgment["tags"]["source_url"] if changes[:tags])
     @book.enrichment = audit.merge(
       "applied_description" => changes.key?(:description),

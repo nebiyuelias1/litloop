@@ -19,6 +19,10 @@ require "json"
 #    and, for placeholder covers like generic unsplash photos, any distinct
 #    real cover wins) before book.cover_image may change.
 class BookCoverImprover
+  # Domains whose images are known catalogue placeholders (generic photos,
+  # not a specific book's cover). A cover on one of these always triggers an
+  # improvement attempt regardless of LLM verdicts.
+  COVER_PLACEHOLDER_HOSTS = %w[images.unsplash.com unsplash.com source.unsplash.com].freeze
   Result = Struct.new(:improved, :old_cover, :new_cover, :reason, keyword_init: true)
 
   # Verified working on the hosted gateway (mozilla-hosted account):
