@@ -16,7 +16,8 @@ module Admin
       # The judge decides whether the current cover is missing/low quality;
       # the improver only runs when the judgment calls for a replacement.
       if %w[missing low_quality].include?(result.cover_judgment.to_s)
-        cover = BookCoverImprover.new(book: book).improve!
+        cited = result.cover_source_url
+        cover = BookCoverImprover.new(book: book, cited_cover_url: cited).improve!
         cover_note = cover.improved ? "cover ⬆ #{URI.parse(cover.new_cover).host} (#{cover.reason})" : "cover: needed, but no candidate verified (#{cover.reason})"
       else
         cover_note = "cover #{result.cover_judgment || 'n/a'} (kept)"

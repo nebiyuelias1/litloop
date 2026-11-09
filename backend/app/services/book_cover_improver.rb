@@ -46,8 +46,9 @@ class BookCoverImprover
     additionalProperties: false
   }.freeze
 
-  def initialize(book:)
+  def initialize(book:, cited_cover_url: nil)
     @book = book
+    @cited_cover_url = cited_cover_url
   end
 
   def improve!(model: nil)
@@ -97,12 +98,13 @@ class BookCoverImprover
     Result.new(improved: false, old_cover: @book.cover_image, new_cover: nil, reason: reason)
   end
 
-  RELEVANCE = { wiki_article: 100, openlibrary: 80, commons_proposal: 40 }.freeze
+  RELEVANCE = { wiki_article: 100, openlibrary: 80, cited_source: 55, commons_proposal: 40 }.freeze
 
   # Collects relevance-tagged candidate URLs:
   #  - Wikipedia article file (resolved title-match) — 100
   #  - Open Library ISBN cover — 80
-  #  - Model-proposed Commons files — 40 (name-middle tier: hallucinations die here)
+  #  - URL the enrichment judge cited as showing the real cover — 55
+  #  - Model-proposed Commons files — 40 (lowest tier: hallucinations die here)
   def collect_candidates(model)
     candidates = []
     candidates.concat(ai_candidates(model))
@@ -111,8 +113,26 @@ class BookCoverImprover
     # verified duplicate URLs dedupe below.
     candidates.concat(deterministic_candidates)
     candidates.concat(openlibrary_candidates)
+    candidates.concat(cited_cover_candidates)
 
     candidates.compact.uniq { |c| c[:url] }
+  end
+
+  # The enrichment judge may cite a URL it found on the web as "this is what
+  # the real cover is". Turn that citation into a candidate: if it is an
+  # article/file page shape we can resolve, resolve it properly; otherwise
+  # take it as an unverified direct image guess (probe will decide).
+  def cited_cover_candidates
+    cited = @cited_cover_url.to_s
+    return [] if cited.blank? || cited == @book.cover_image
+
+    if cited.include?("wikipedia.org/wiki/") && !cited.include?("/File:")
+      [ { url: page_image_url(cited), relevance: RELEVANCE[:wiki_article] } ]
+    elsif cited.include?("commons.wikimedia.org/wiki/File:")
+      [ { url: commons_image_url(cited), relevance: RELEVANCE[:commons_proposal] } ]
+    else
+      [ { url: cited, relevance: RELEVANCE[:cited_source] } ]
+    end
   end
 
   # Step 1: the model names pages, Ruby owns URLs -> images.

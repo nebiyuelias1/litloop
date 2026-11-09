@@ -26,7 +26,7 @@ require "json"
 class BookMetadataEnricher
   Result = Struct.new(
     :description_changed, :tags_added, :country_of_origin, :country_source,
-    :cover_judgment, keyword_init: true
+    :cover_judgment, :cover_source_url, keyword_init: true
   )
 
   LANGUAGE_NAMES = {
@@ -312,7 +312,8 @@ class BookMetadataEnricher
       tags_added: changes[:tags] || [],
       country_of_origin: @book.country_of_origin,
       country_source: audit["country_source_url"],
-      cover_judgment: judgment["cover"] && judgment["cover"]["judgment"]
+      cover_judgment: judgment.dig("cover", "judgment"),
+      cover_source_url: judgment.dig("cover", "source_url").presence
     )
   end
 
