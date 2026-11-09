@@ -126,18 +126,26 @@ class BookMetadataEnricher
   # Returns { facts:, sources: } where facts is text about the book and
   # sources is the whitelist of URLs the gateway actually searched.
   def ground_with_web_search(model)
-    ground = ground_via_web_search(model)
-    return ground if ground[:facts].to_s.strip.present?
+    ground = try_grounding(model)
+    return ground if ground && ground[:facts].to_s.strip.present?
 
     # The open-weight model sometimes searches nothing useful (especially for
-    # non-Latin titles); the frontier model's broader knowledge fills in.
+    # non-Latin titles) or the gateway times out; the frontier model's broader
+    # knowledge fills in.
     if model != FALLBACK_MODEL
       enrich_log("grounding empty on #{model}; escalating grounding to #{FALLBACK_MODEL}")
-      ground = ground_via_web_search(FALLBACK_MODEL)
-      return ground if ground[:facts].to_s.strip.present?
+      ground = try_grounding(FALLBACK_MODEL)
+      return ground if ground && ground[:facts].to_s.strip.present?
     end
 
     ground_via_deterministic_sources
+  end
+
+  def try_grounding(model)
+    ground_via_web_search(model)
+  rescue OtariClient::Error => e
+    enrich_log("web grounding failed on #{model} (#{e.class} #{e.message})")
+    nil
   end
 
   def ground_via_web_search(model)
