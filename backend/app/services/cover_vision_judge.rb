@@ -34,7 +34,16 @@ class CoverVisionJudge
   def judge!
     return not_assessed("no cover stored") if @book.cover_image.blank?
 
-    file_id = upload_current_cover
+    bytes, content_type, filename = download_current_cover
+    return not_assessed("cover could not be fetched for analysis") if bytes.nil?
+
+    inspect_bytes(bytes: bytes, content_type: content_type, filename: filename)
+  end
+
+  # Vision-checks raw image bytes against THIS book; used by the improver to
+  # validate a candidate before it replaces the stored cover.
+  def inspect_bytes(bytes:, content_type:, filename:)
+    file_id = upload_bytes(data: bytes, filename: filename, content_type: content_type)
     return not_assessed("cover could not be uploaded for analysis") if file_id.nil?
 
     prompt = <<~PROMPT
@@ -84,27 +93,32 @@ class CoverVisionJudge
     {}
   end
 
-  # Downloads the stored cover URL and uploads it. Returns nil when anything
-  # fails (the judge degrades to "unassessed" rather than blocking enrichment).
-  def upload_current_cover
+  # Downloads the stored cover URL. Returns [bytes, content_type, filename]
+  # or [nil, nil, nil] when the fetch fails.
+  def download_current_cover
     uri = URI(@book.cover_image)
     bytes = content_type = nil
     Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https", open_timeout: 5, read_timeout: 15) do |http|
       request = Net::HTTP::Get.new(uri)
       response = http.request(request)
-      return nil unless response.is_a?(Net::HTTPSuccess)
-      return nil unless response["content-type"].to_s.start_with?("image/")
+      return [ nil, nil, nil ] unless response.is_a?(Net::HTTPSuccess)
+      return [ nil, nil, nil ] unless response["content-type"].to_s.start_with?("image/")
 
       content_type = response["content-type"].to_s.split(";").first
       bytes = response.body
     end
 
-    return nil if bytes.nil? || bytes.bytesize > MAX_UPLOAD_BYTES
+    return [ nil, nil, nil ] if bytes.nil? || bytes.bytesize > MAX_UPLOAD_BYTES
 
     filename = File.basename(URI.parse(@book.cover_image).path.to_s)
     filename = filename.blank? || filename.include?("?") ? "cover.jpg" : filename.tr("?", "_")
-    file_id = @client.upload_file(data: bytes, filename: filename, content_type: content_type || "image/jpeg")
-    Rails.logger.tagged("[vision ##{@book.id}]") { |l| l.info("uploaded #{bytes.bytesize}B as #{file_id}") }
+    [ bytes, content_type, filename ]
+  end
+
+
+  def upload_bytes(data:, filename:, content_type:)
+    file_id = @client.upload_file(data: data, filename: filename, content_type: content_type || "image/jpeg")
+    Rails.logger.tagged("[vision ##{@book.id}]") { |l| l.info("uploaded #{data.bytesize}B as #{file_id}") }
     file_id
   end
 end

@@ -57,49 +57,83 @@ class BookCoverImprover
     candidates = collect_candidates(model)
     candidates.each { |c| cover_log("candidate #{c[:url].to_s[0, 100]} (tier #{c[:relevance]})") }
 
-    # Relevance beats size: candidates are tiered (wikipedia/arxiv-quality
-    # first, Open Library next, model-propose Commons last); we take the best
-    # VERIFIED candidate of the highest tier that yields one.
-    best = candidates.sort_by { |c| -c[:relevance] }
-                     .group_by { |c| c[:relevance] }
-                     .values
-                     .filter_map do |tier|
-      tier.filter_map do |candidate|
-        next if candidate[:url] == @book.cover_image
-        probe = probe_image(candidate[:url])
-        cover_log("probe #{candidate[:url].to_s[0, 90]} -> #{probe ? probe[:size] : 'nil'}")
-        next if probe.nil?
-        next if probe[:size] < MIN_IMAGE_BYTES || probe[:size] > MAX_IMAGE_BYTES
+    ordered = candidates
+      .reject { |c| c[:url].blank? || c[:url] == @book.cover_image }
+      .sort_by { |c| [ -c[:relevance], 0 ] }
 
-        { url: candidate[:url], size: probe[:size] }
-      end.max_by { |c| c[:size] }
-    end.first
+    judge = CoverVisionJudge.new(book: @book)
 
-    if best.nil?
-      reason = candidates.any? ? "no candidate verified as a usable image" : "no candidates"
+    chosen = nil
+    unverified = nil
+    ordered.find do |candidate|
+      image = fetch_image_bytes(candidate[:url])
+      cover_log("fetch #{candidate[:url].to_s[0, 90]} -> #{image ? image[:size] : 'nil'}B")
+      if image.nil? || image[:size] < MIN_IMAGE_BYTES || image[:size] > MAX_IMAGE_BYTES
+        next
+      end
+
+      vision = judge.inspect_bytes(bytes: image[:bytes], content_type: image[:content_type], filename: "cover.jpg")
+      cover_log("vision #{candidate[:url].to_s[0, 80]} -> #{vision.verdict}/#{vision.quality} matches=#{vision.matches_book} #{vision.detail.to_s[0, 80]}")
+
+      if vision.verdict == "unknown"
+        unverified ||= { url: candidate[:url], size: image[:size] }
+        next
+      end
+      if vision.verdict == "real_cover" && vision.matches_book
+        chosen = { url: candidate[:url], size: image[:size], vision: vision }
+        true
+      else
+        false
+      end
+    end
+
+    if chosen.nil?
+      reason = unverified ? "no candidate verified by vision; best unverified: #{unverified[:url][0, 80]}" : (candidates.any? ? "no candidate verified as a usable image" : "no candidates")
       cover_log("kept (#{reason})")
       return kept(reason)
     end
 
-    if @book.cover_image == best[:url]
-      cover_log("kept (best candidate is the current cover)")
-      return kept("best candidate is already the current cover")
-    end
-
-    audit = @book.enrichment || {}
-    audit["cover"] = {
-      "old_cover" => @book.cover_image,
-      "new_cover" => best[:url],
-      "old_size_bytes" => probe_image(@book.cover_image)&.fetch(:size, nil),
-      "new_size_bytes" => best[:size],
-      "improved_at" => Time.current.iso8601
-    }
-    cover_log("swapped to #{best[:url][0, 100]} (#{best[:size]} bytes)")
-    @book.update!(cover_image: best[:url], enrichment: audit)
-    Result.new(improved: true, old_cover: audit["cover"]["old_cover"], new_cover: best[:url], reason: "verified higher-quality cover found")
+    swap(chosen, chosen[:vision])
   rescue OtariClient::Error => e
     cover_log("gateway error: #{e.message}")
     Result.new(improved: false, old_cover: @book.cover_image, new_cover: nil, reason: "gateway error: #{e.message}")
+  end
+
+  def swap(chosen, vision)
+    audit = @book.enrichment || {}
+    audit["cover"] = {
+      "old_cover" => @book.cover_image,
+      "new_cover" => chosen[:url],
+      "old_size_bytes" => probe_image(@book.cover_image)&.fetch(:size, nil),
+      "new_size_bytes" => chosen[:size],
+      "vision_verdict" => "#{vision.verdict}/#{vision.quality}",
+      "improved_at" => Time.current.iso8601
+    }
+    cover_log("swapped to #{chosen[:url][0, 100]} (#{chosen[:size]} bytes, vision=#{vision.verdict}/#{vision.quality})")
+    @book.update!(cover_image: chosen[:url], enrichment: audit)
+    Result.new(improved: true, old_cover: audit["cover"]["old_cover"], new_cover: chosen[:url], reason: "verified cover swap (vision: #{vision.verdict} #{vision.quality})")
+  end
+
+  # One-shot candidate verification download: returns bytes + size + type, or
+  # nil when the URL is dead/non-image/oversized. Single network pass — probes
+  # and vision consume the same bytes.
+  def fetch_image_bytes(url)
+    uri = URI(url)
+    request = Net::HTTP::Get.new(uri)
+    Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https", open_timeout: VERIFY_OPEN_TIMEOUT, read_timeout: VERIFY_READ_TIMEOUT) do |http|
+      response = http.request(request)
+      return nil unless response.is_a?(Net::HTTPSuccess)
+      return nil unless response["content-type"].to_s.start_with?("image/")
+
+      bytes = response.body.to_s
+      return nil if bytes.bytesize > MAX_IMAGE_BYTES
+
+      { bytes: bytes, size: response["content-length"] ? response["content-length"].to_i : bytes.bytesize,
+        content_type: response["content-type"].to_s.split(";").first }
+    end
+  rescue => e
+    Rails.logger.warn("BookCoverImprover image fetch failed for #{url}: #{e.message}")
+    nil
   end
 
   def cover_log(message)
@@ -159,8 +193,10 @@ class BookCoverImprover
     return [] if html.blank?
 
     candidates = []
-    og = html[/property=["']og:image["'][^>]*content=["']([^"']+)["']/i] ||
-         html[/content=["']([^"']+)["'][^>]*property=["']og:image["']/i]
+    # Two-step: find the og:image meta tag text, then its content attribute
+    # (single-pass regexes break on Ruby's greedy backtracking here).
+    meta_tag = html[/<meta[^>]+og:image[^>]*>/i] || html[/<meta[^>]+og:image.*>/i]
+    og = meta_tag && meta_tag[/content=["']([^"']+)["']/i, 1]
     candidates << { url: absolute_uri(page_url, og), relevance: RELEVANCE[:cited_source] } if og
 
     img_urls = html.scan(/<img[^>]+src=["']([^"']+)["']/i).flatten
@@ -337,6 +373,23 @@ class BookCoverImprover
   end
 
   WIKIMEDIA_USER_AGENT = "Litloop/1.0 (AI cover enrichment; https://github.com/nebiyuelias1/litloop)".freeze
+
+  # Fetches a web page for og:image / <img> mining; drops anything past 2 MiB.
+  def http_get_text(url)
+    uri = URI(url)
+    request = Net::HTTP::Get.new(uri)
+    request["User-Agent"] = WIKIMEDIA_USER_AGENT
+    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https", open_timeout: VERIFY_OPEN_TIMEOUT, read_timeout: VERIFY_READ_TIMEOUT) do |http|
+      http.request(request)
+    end
+    return nil unless response.is_a?(Net::HTTPSuccess)
+    return nil unless /html|text/i.match?(response["content-type"].to_s)
+
+    response.body.to_s[0, 2_000_000]
+  rescue => e
+    Rails.logger.warn("BookCoverImprover page fetch failed for #{url}: #{e.message}")
+    nil
+  end
 
   def http_get_json(uri, retries: 1)
     request = Net::HTTP::Get.new(uri)
