@@ -235,3 +235,4 @@ zh-CN:
   ai_assisted_title: "这段简介经 AI 依据资料改写（已核对来源，详见出处）"
   show_previous_description: "查看原有简介"
   ai_updated_by: "由 AI（%{model}）更新"
+  previously_read_label: "此前由以下书友会读过："

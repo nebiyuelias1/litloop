@@ -275,3 +275,4 @@ en:
   ai_assisted_title: "This description was improved with AI grounding (source-checked, see provenance)"
   show_previous_description: "Show previous description"
   ai_updated_by: "Updated by AI (%{model})"
+  previously_read_label: "Previously read by"

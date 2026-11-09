@@ -203,9 +203,20 @@
         <% end %>
       </div>
       <% if @past_reads_count.positive? %>
-        <p class="mt-4 text-sm text-content-muted">
-          <%= t("previously_read_clubs", count: @past_reads_count) %>
-        </p>
+        <% if @past_clubs.any? %>
+          <p class="mt-4 text-sm text-content-muted flex flex-wrap items-center gap-1">
+            <%= t("previously_read_label", default: "Previously read by") %>
+            <% @past_clubs.each do |club| %>
+              <%= link_to club.name, book_club_path(club),
+                class: "text-accent font-medium hover:underline underline-offset-2",
+                data: { turbo_frame: "_top" } %>
+            <% end %>
+          </p>
+        <% else %>
+          <p class="mt-4 text-sm text-content-muted">
+            <%= t("previously_read_clubs", count: @past_reads_count) %>
+          </p>
+        <% end %>
       <% end %>
     <% else %>
       <div class="py-6 text-center">
@@ -217,9 +228,20 @@
         <%= link_to t("browse_clubs", default: "Browse book clubs"), book_clubs_path, class: "btn-secondary mt-4" %>
       </div>
       <% if @past_reads_count.positive? %>
-        <p class="mt-2 text-center text-sm text-content-muted">
-          <%= t("previously_read_clubs", count: @past_reads_count) %>
-        </p>
+        <% if @past_clubs.any? %>
+          <p class="mt-2 text-sm text-content-muted flex flex-wrap justify-center items-center gap-1">
+            <%= t("previously_read_label", default: "Previously read by") %>
+            <% @past_clubs.each do |club| %>
+              <%= link_to club.name, book_club_path(club),
+                class: "text-accent font-medium hover:underline underline-offset-2",
+                data: { turbo_frame: "_top" } %>
+            <% end %>
+          </p>
+        <% else %>
+          <p class="mt-2 text-center text-sm text-content-muted">
+            <%= t("previously_read_clubs", count: @past_reads_count) %>
+          </p>
+        <% end %>
       <% end %>
     <% end %>
   </div>

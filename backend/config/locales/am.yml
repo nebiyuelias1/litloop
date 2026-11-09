@@ -246,3 +246,4 @@ am:
   ai_assisted_title: "ይህ መግለጫ በAI ከምንጭ ማረጋገጫ ጋር ተሻሽሏል"
   show_previous_description: "ያለፈውን መግለጫ አሳይ"
   ai_updated_by: "በAI (%{model}) ተዘምኗል"
+  previously_read_label: "ቀድሞ በተነበበው በ"

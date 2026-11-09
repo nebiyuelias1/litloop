@@ -235,3 +235,4 @@ zh-TW:
   ai_assisted_title: "這段簡介經 AI 依據資料改寫（已核對來源，詳見出處）"
   show_previous_description: "檢視原有簡介"
   ai_updated_by: "由 AI（%{model}）更新"
+  previously_read_label: "此前由以下讀書會讀過："
