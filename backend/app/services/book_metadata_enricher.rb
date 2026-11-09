@@ -160,19 +160,29 @@ class BookMetadataEnricher
     )
 
     facts = response.dig("choices", 0, "message", "content").to_s
-    sources = (response["otari_tool_calls"] || [])
+    tool_urls = (response["otari_tool_calls"] || [])
       .flat_map { |call| call["sources"] || [] }
       .map { |s| s.is_a?(String) ? s : (s["url"] || s["href"]) }
       .compact
       .map { |s| strip_query(s) }
 
-    logger_for(self.class.name).info("web grounding: #{facts.bytesize}B facts, #{sources.size} sources, model=#{model}")
     if facts.strip.blank?
       logger_for(self.class.name).warn("web grounding returned empty facts; falling back to deterministic sources")
       return ground_via_deterministic_sources
     end
 
-    { facts: facts, sources: sources.uniq }
+    # Not everything the search backend visited is a citation: separate the
+    # URLs the model's facts actually reference ("cited") from everything the
+    # gateway read along the way ("consulted").
+    fact_urls = URI.extract(facts, %w[http https]).map { |u| strip_query(u) }
+    cited_sources = (fact_urls & tool_urls).uniq
+    cited_sources = fact_urls.uniq if cited_sources.blank?
+
+    logger_for(self.class.name).info(
+      "web grounding: #{facts.bytesize}B facts, #{cited_sources.size} cited / #{tool_urls.size} consulted sources, model=#{model}"
+    )
+
+    { facts: facts, sources: tool_urls.uniq, cited_sources: cited_sources }
   end
 
   # No-gateway fallback: Wikipedia REST extract with attribution.
@@ -250,6 +260,7 @@ class BookMetadataEnricher
 
   def judge_prompt(ground)
     facts = ground[:facts].to_s[0, 6_000]
+    cited = Array(ground[:cited_sources]).join("\n  ")
     sources = ground[:sources].join("\n  ")
     language = LANGUAGE_NAMES.fetch(@book.language.to_s, nil) || "the book's original language"
     <<~PROMPT
@@ -266,7 +277,10 @@ class BookMetadataEnricher
       === GROUNDED FACTS (web) ===
       #{facts}
 
-      === HARVESTED SOURCES (whitelist) ===
+      === CITED SOURCES (referenced by the facts — trusted for attribution) ===
+      #{cited}
+
+      === ALL SOURCES CONSULTED during searching (may include noise) ===
       #{sources}
     PROMPT
   end
@@ -300,7 +314,8 @@ class BookMetadataEnricher
     changes = {}
     audit = {
       "model" => model,
-      "ground_sources" => ground[:sources],
+      "cited_sources" => ground[:cited_sources],
+      "sources_consulted" => ground[:sources],
       "enriched_at" => Time.current.iso8601,
       "judged" => true
     }
@@ -365,8 +380,9 @@ class BookMetadataEnricher
     source_url = strip_query(country_judgment["source_url"].to_s)
     quote = country_judgment["quote"].to_s.strip
     facts = ground[:facts].to_s
+    cited = Array(ground[:cited_sources]).map { |u| strip_query(u) }
 
-    if strip_query(source_url).present? && ground[:sources].include?(strip_query(source_url))
+    if source_url.present? && cited.include?(source_url)
       { code: code, source_url: source_url, confidence: "high" }
     elsif quote.present? && normalize_space(facts).include?(normalize_space(quote))
       { code: code, source_url: source_url.presence || "quote-verified", confidence: "medium" }
@@ -391,9 +407,14 @@ class BookMetadataEnricher
     source_url = strip_query(judgment["source_url"].to_s)
     quote = judgment["quote"].to_s.strip
 
-    cited = (source_url.present? && ground[:sources].include?(source_url)) ||
-      (quote.present? && normalize_space(ground[:facts].to_s).include?(normalize_space(quote)))
-    return nil unless cited
+    if source_url.present?
+      in_cited = Array(ground[:cited_sources]).include?(source_url)
+      in_consulted = ground[:sources].include?(source_url)
+      return nil unless in_cited || in_consulted
+    elsif quote.blank?
+      return nil
+    end
+    return nil unless quote.blank? || normalize_space(ground[:facts].to_s).include?(normalize_space(quote))
 
     value
   end

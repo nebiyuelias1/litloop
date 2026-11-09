@@ -3,8 +3,8 @@ require "test_helper"
 class BookMetadataEnricherTest < ActiveSupport::TestCase
   WIKI = "https://en.wikipedia.org/wiki/Things_Fall_Apart"
 
-  def ground(facts: nil, sources: [ WIKI ])
-    { facts: facts || default_facts, sources: sources }
+  def ground(facts: nil, sources: [ WIKI ], cited_sources: [ WIKI ])
+    { facts: facts || default_facts, sources: sources, cited_sources: cited_sources }
   end
 
   def default_facts
