@@ -145,8 +145,39 @@
 
     <%# Description %>
     <div class="prose prose-sm sm:prose-base text-content-subtle max-w-none mb-10">
-      <h3 class="text-content font-semibold text-lg mb-3">About this book</h3>
+      <div class="flex items-center justify-between gap-3 mb-3">
+        <h3 class="text-content font-semibold text-lg">About this book</h3>
+        <% enrichment = @book.enrichment || {} %>
+        <% if @book.enriched_at.present? && enrichment["applied_description"] %>
+          <span
+            class="
+              inline-flex items-center gap-1 shrink-0 px-2 py-0.5 text-[10px] font-medium
+              bg-surface-subtle border border-border rounded-full text-content-muted
+            "
+            title="This description was improved with AI grounding (source-checked, see provenance)">
+            ✨ AI-assisted
+          </span>
+        <% end %>
+      </div>
       <%= simple_format(@book.description) %>
+
+      <% if @book.enriched_at.present? && enrichment["original_description"].present? %>
+        <details class="mt-3 text-sm">
+          <summary class="cursor-pointer text-content-muted select-none hover:text-content transition-colors">
+            Show previous description
+          </summary>
+          <div class="mt-2 pl-3 border-l border-border text-content-muted">
+            <%= simple_format(enrichment["original_description"]) %>
+          </div>
+          <% if enrichment["model"].present? %>
+            <p class="mt-2 text-xs text-content-muted">
+              Updated by AI (<%= enrichment["model"] %>)
+              <%= "— #{enrichment['country_evidence']}" if enrichment["country_evidence"].present? %>
+              <%= "— source: #{enrichment['country_source_url']}" if enrichment["country_source_url"].present? %>
+            </p>
+          <% end %>
+        </details>
+      <% end %>
     </div>
 
     <%# Interactive Rating Section %>
