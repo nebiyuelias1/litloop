@@ -186,8 +186,19 @@ class BookCoverImprover
     nil
   end
 
-  # Step 1: the model names pages, Ruby owns URLs -> images.
+  # Step 1: the model names pages, Ruby owns URLs -> images. When the primary
+  # model yields nothing resolvable (extra true for non-Latin titles), retry
+  # once with the frontier fallback model.
   def ai_candidates(model)
+    tagged = ai_candidates_with(model)
+    if tagged.compact.empty? && model != BookMetadataEnricher::FALLBACK_MODEL
+      cover_log("AI candidates empty on #{model}; escalating to #{BookMetadataEnricher::FALLBACK_MODEL}")
+      tagged = ai_candidates_with(BookMetadataEnricher::FALLBACK_MODEL)
+    end
+    tagged
+  end
+
+  def ai_candidates_with(model)
     client = OtariClient.new
     payload = client.chat_structured(
       model: model,
@@ -201,6 +212,7 @@ class BookCoverImprover
           Book: "#{@book.title}" by #{@book.author}
           Current cover: #{@book.cover_image || "none"}
 
+          For non-Latin-script titles, also try the transliteration in your reasoning.
           Return:
           - wikipedia_page: the English Wikipedia article about this book (empty if unsure)
           - commons_file_pages: Wikimedia Commons file page URLs for this book's cover

@@ -126,9 +126,17 @@ class BookMetadataEnricher
   # Returns { facts:, sources: } where facts is text about the book and
   # sources is the whitelist of URLs the gateway actually searched.
   def ground_with_web_search(model)
-    ground_via_web_search(model)
-  rescue OtariClient::Error => e
-    Rails.logger.warn("BookMetadataEnricher web grounding failed (#{e.message}); using deterministic sources")
+    ground = ground_via_web_search(model)
+    return ground if ground[:facts].to_s.strip.present?
+
+    # The open-weight model sometimes searches nothing useful (especially for
+    # non-Latin titles); the frontier model's broader knowledge fills in.
+    if model != FALLBACK_MODEL
+      enrich_log("grounding empty on #{model}; escalating grounding to #{FALLBACK_MODEL}")
+      ground = ground_via_web_search(FALLBACK_MODEL)
+      return ground if ground[:facts].to_s.strip.present?
+    end
+
     ground_via_deterministic_sources
   end
 
@@ -140,7 +148,7 @@ class BookMetadataEnricher
       messages: [
         { role: "user", content: <<~PROMPT }
           Research this book and report bullet-point FACTS, each on its own line, each ending with the source URL you used:
-          description/plot summary, country of origin of the author/work, and where its real cover image image can be found.
+          description/plot summary, country of origin of the author/work, and where its real cover image can be found.
           Only state what the searched sources support.
           Non-Latin-script titles: also try searching a transliteration (e.g. Amharic "የተቆለፈበት ቁልፍ" -> "Yeteqolefetebet Kulf")
           and include the URL of any page whose cover photo is the real book cover.
