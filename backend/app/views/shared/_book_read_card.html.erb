@@ -7,8 +7,9 @@
   <figure class="w-32 shrink-0 relative overflow-hidden bg-background">
     <% if book&.cover_image.present? %>
       <img
-        src="<%= book.cover_image %>"
+        src="<%= cover_book_path(book) %>"
         alt="<%= book.title %>"
+        loading="lazy"
         class="absolute inset-0 h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500">
     <% elsif book_read.poll.present? && can_see_details %>
       <div class="absolute inset-0 flex flex-col items-center justify-center text-accent p-2 text-center">
@@ -38,9 +39,17 @@
               <%= club&.name_initial || "B" %>
             </div>
           <% end %>
-          <span class="text-xs font-bold uppercase tracking-wider text-accent truncate">
-            <%= club&.name || t("book_club", default: "Book Club") %>
-          </span>
+          <% if can_see_details && club&.persisted? %>
+            <%= link_to book_club_path(club), class: "min-w-0", title: t("view_details", default: "View details") do %>
+              <span class="text-xs font-bold uppercase tracking-wider text-accent truncate hover:underline underline-offset-2">
+                <%= club&.name || t("book_club", default: "Book Club") %>
+              </span>
+            <% end %>
+          <% else %>
+            <span class="text-xs font-bold uppercase tracking-wider text-accent truncate">
+              <%= club&.name || t("book_club", default: "Book Club") %>
+            </span>
+          <% end %>
         </div>
       <% end %>
 
