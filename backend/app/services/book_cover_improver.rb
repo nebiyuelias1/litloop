@@ -151,7 +151,7 @@ class BookCoverImprover
     Result.new(improved: false, old_cover: @book.cover_image, new_cover: nil, reason: reason)
   end
 
-  RELEVANCE = { wiki_article: 100, openlibrary: 80, cited_source: 55, cover_page: 50, commons_proposal: 40 }.freeze
+  RELEVANCE = { cited_source: 110, wiki_article: 100, openlibrary: 80, cited_page: 50, commons_proposal: 40 }.freeze
 
   # Collects relevance-tagged candidate URLs:
   #  - Wikipedia article file (resolved title-match) — 100
@@ -183,6 +183,8 @@ class BookCoverImprover
       [ { url: page_image_url(cited), relevance: RELEVANCE[:wiki_article] } ]
     elsif cited.include?("commons.wikimedia.org/wiki/File:")
       [ { url: commons_image_url(cited), relevance: RELEVANCE[:commons_proposal] } ]
+    elsif cited.match?(/\.(jpe?g|png|webp|gif)(\?.*)?\z/i)
+      [ { url: strip_query(cited), relevance: RELEVANCE[:cited_source] } ]
     else
       html_page_cover_candidates(cited)
     end
@@ -219,6 +221,10 @@ class BookCoverImprover
 
     cover_log("cited page #{page_url[0, 80]} -> og=#{og ? og[0, 60].inspect : 'none'}, imgs=#{img_urls.size} (#{candidates.size} candidates)")
     candidates
+  end
+
+  def strip_query(url)
+    url.to_s.gsub(/\?.*\z/, "").gsub(/[).,;]+\z/, "")
   end
 
   def absolute_uri(base_url, value)

@@ -51,6 +51,12 @@ class CoverVisionJudge
       {"is_real_book_cover": true|false, "depicts_title_match": true|false, "quality": "high_res"|"low_res",
        "notes": "one short line describing what you see"}
       Context: the book is "#{@book.title}" by #{@book.author}.
+
+      On depicts_title_match: the cover's title text may be in the book's original script (here: Amharic).
+      Judge "true" when the visible title text plausibly renders this book's title (original script,
+      transliteration like "Oromay", or author name "Baalu Girma"), or when the look is clearly the
+      book's published cover. Only answer false when the image clearly depicts a different work.
+      is_real_book_cover = false for photos of people/place stacks, document scans of pages, or generic art.
     PROMPT
 
     response = @client.chat(
