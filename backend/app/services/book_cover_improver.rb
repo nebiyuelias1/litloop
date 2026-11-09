@@ -40,9 +40,14 @@ class BookCoverImprover
         type: "array",
         items: { type: "string" },
         description: "Full URLs of Wikimedia Commons file pages (commons.wikimedia.org/wiki/File:...) showing this book's cover"
+      },
+      cover_pages: {
+        type: "array",
+        items: { type: "string" },
+        description: "Any other web pages that show the real published cover image (Goodreads, publisher pages, store listings, blogs)"
       }
     },
-    required: %w[wikipedia_page commons_file_pages],
+    required: %w[wikipedia_page commons_file_pages cover_pages],
     additionalProperties: false
   }.freeze
 
@@ -146,7 +151,7 @@ class BookCoverImprover
     Result.new(improved: false, old_cover: @book.cover_image, new_cover: nil, reason: reason)
   end
 
-  RELEVANCE = { wiki_article: 100, openlibrary: 80, cited_source: 55, commons_proposal: 40 }.freeze
+  RELEVANCE = { wiki_article: 100, openlibrary: 80, cited_source: 55, cover_page: 50, commons_proposal: 40 }.freeze
 
   # Collects relevance-tagged candidate URLs:
   #  - Wikipedia article file (resolved title-match) — 100
@@ -204,6 +209,7 @@ class BookCoverImprover
                    .select { |u| /\Ahttps?:/.match?(u) }
                    .reject { |u| /logo|icon|spinner|avatar|banner|sprite|\.svg\z|analytics|pixel|tracking/i.match?(u) }
                    .reject { |u| u == @book.cover_image }
+                   .reject { |u| u.include?("$") || u.include?("{{") }
     # Images whose filenames mention the book or "cover" outrank the rest
     title_key = @book.title.to_s.gsub(/[^a-zA-Z0-9]/i, "").downcase
     img_urls.sort_by { |u|
@@ -248,10 +254,12 @@ class BookCoverImprover
           Book: "#{@book.title}" by #{@book.author}
           Current cover: #{@book.cover_image || "none"}
 
-          For non-Latin-script titles, also try the transliteration in your reasoning.
           Return:
           - wikipedia_page: the English Wikipedia article about this book (empty if unsure)
           - commons_file_pages: Wikimedia Commons file page URLs for this book's cover
+          - cover_pages: any other web pages that show the real cover image
+            (Goodreads, publisher pages, store listings, blogs). Prefer those with
+            the official published cover.
         PROMPT
       ]
     )
@@ -264,6 +272,11 @@ class BookCoverImprover
 
     Array(payload["commons_file_pages"]).each do |file_page|
       tagged << { url: commons_image_url(file_page), relevance: RELEVANCE[:commons_proposal] }
+    end
+
+    Array(payload["cover_pages"]).each do |page_url|
+      cover_log("cover_page proposal: #{page_url[0, 90]}")
+      tagged.concat(html_page_cover_candidates(page_url))
     end
     tagged
   rescue OtariClient::Error => e

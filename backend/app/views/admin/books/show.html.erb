@@ -70,4 +70,15 @@ Edit/Delete actions. Otherwise identical to Administrate's default show view.
   </section>
 <% end %>
 
+<% if page.resource.enrichment.present? || page.resource.enriched_at.present? %>
+  <section class="main-content__body">
+    <h2 style="font-weight: 600; margin-bottom: 8px;">AI enrichment audit</h2>
+    <pre
+      style="
+        background: #f6f6f6; border: 1px solid #d0d0d0; border-radius: 4px;
+        padding: 12px; font-size: 12px; overflow: auto; white-space: pre-wrap;
+      "><%= JSON.pretty_generate((page.resource.enrichment || {}).merge("enriched_at" => page.resource.enriched_at&.iso8601)) %></pre>
+  </section>
+<% end %>
+
 <%= content_for(:after_main) %>
