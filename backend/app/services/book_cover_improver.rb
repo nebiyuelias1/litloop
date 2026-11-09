@@ -53,7 +53,9 @@ class BookCoverImprover
 
   def improve!(model: nil)
     model ||= DEFAULT_MODEL
+    cover_log("improver start (book cover=#{@book.cover_image.to_s[0, 60]})")
     candidates = collect_candidates(model)
+    candidates.each { |c| cover_log("candidate #{c[:url].to_s[0, 100]} (tier #{c[:relevance]})") }
 
     # Relevance beats size: candidates are tiered (wikipedia/arxiv-quality
     # first, Open Library next, model-propose Commons last); we take the best
@@ -65,6 +67,7 @@ class BookCoverImprover
       tier.filter_map do |candidate|
         next if candidate[:url] == @book.cover_image
         probe = probe_image(candidate[:url])
+        cover_log("probe #{candidate[:url].to_s[0, 90]} -> #{probe ? probe[:size] : 'nil'}")
         next if probe.nil?
         next if probe[:size] < MIN_IMAGE_BYTES || probe[:size] > MAX_IMAGE_BYTES
 
@@ -72,9 +75,14 @@ class BookCoverImprover
       end.max_by { |c| c[:size] }
     end.first
 
-    return kept(candidates.any? ? "no candidate verified as a usable image" : "no candidates") if best.nil?
+    if best.nil?
+      reason = candidates.any? ? "no candidate verified as a usable image" : "no candidates"
+      cover_log("kept (#{reason})")
+      return kept(reason)
+    end
 
     if @book.cover_image == best[:url]
+      cover_log("kept (best candidate is the current cover)")
       return kept("best candidate is already the current cover")
     end
 
@@ -86,10 +94,16 @@ class BookCoverImprover
       "new_size_bytes" => best[:size],
       "improved_at" => Time.current.iso8601
     }
+    cover_log("swapped to #{best[:url][0, 100]} (#{best[:size]} bytes)")
     @book.update!(cover_image: best[:url], enrichment: audit)
     Result.new(improved: true, old_cover: audit["cover"]["old_cover"], new_cover: best[:url], reason: "verified higher-quality cover found")
   rescue OtariClient::Error => e
+    cover_log("gateway error: #{e.message}")
     Result.new(improved: false, old_cover: @book.cover_image, new_cover: nil, reason: "gateway error: #{e.message}")
+  end
+
+  def cover_log(message)
+    Rails.logger.tagged("[cover ##{@book.id}]") { |l| l.info(message) }
   end
 
   private
@@ -121,7 +135,7 @@ class BookCoverImprover
   # The enrichment judge may cite a URL it found on the web as "this is what
   # the real cover is". Turn that citation into a candidate: if it is an
   # article/file page shape we can resolve, resolve it properly; otherwise
-  # take it as an unverified direct image guess (probe will decide).
+  # treat the page as HTML and extract cover-looking images (og:image first).
   def cited_cover_candidates
     cited = @cited_cover_url.to_s
     return [] if cited.blank? || cited == @book.cover_image
@@ -131,8 +145,45 @@ class BookCoverImprover
     elsif cited.include?("commons.wikimedia.org/wiki/File:")
       [ { url: commons_image_url(cited), relevance: RELEVANCE[:commons_proposal] } ]
     else
-      [ { url: cited, relevance: RELEVANCE[:cited_source] } ]
+      html_page_cover_candidates(cited)
     end
+  end
+
+  # Arbitrary web pages (publisher/store/blog): pull og:image and <img> tags
+  # whose filename looks like a cover, then probe each. None of these are
+  # trusted until they pass the same verification as every other candidate.
+  def html_page_cover_candidates(page_url)
+    return [] if page_url.blank?
+
+    html = http_get_text(page_url)
+    return [] if html.blank?
+
+    candidates = []
+    og = html[/property=["']og:image["'][^>]*content=["']([^"']+)["']/i] ||
+         html[/content=["']([^"']+)["'][^>]*property=["']og:image["']/i]
+    candidates << { url: absolute_uri(page_url, og), relevance: RELEVANCE[:cited_source] } if og
+
+    img_urls = html.scan(/<img[^>]+src=["']([^"']+)["']/i).flatten
+                   .map { |src| absolute_uri(page_url, src) }
+                   .select { |u| /\Ahttps?:/.match?(u) }
+                   .reject { |u| /logo|icon|spinner|avatar|banner|sprite|\.svg\z|analytics|pixel|tracking/i.match?(u) }
+                   .reject { |u| u == @book.cover_image }
+    # Images whose filenames mention the book or "cover" outrank the rest
+    title_key = @book.title.to_s.gsub(/[^a-zA-Z0-9]/i, "").downcase
+    img_urls.sort_by { |u|
+      u_name = File.basename(URI.parse(u).path.to_s).downcase
+      (u_name.include?(title_key) || u_name.include?("cover") ? "0" : "1") + u
+    }.first(8).each { |u| candidates << { url: u, relevance: RELEVANCE[:cited_source] } }
+
+    cover_log("cited page #{page_url[0, 80]} -> og=#{og ? og[0, 60].inspect : 'none'}, imgs=#{img_urls.size} (#{candidates.size} candidates)")
+    candidates
+  end
+
+  def absolute_uri(base_url, value)
+    URI.join(URI(base_url), value.to_s.strip).to_s
+  rescue StandardError => e
+    cover_log("bad image url #{value.to_s[0, 60]} on #{base_url.to_s[0, 60]}: #{e.message}")
+    nil
   end
 
   # Step 1: the model names pages, Ruby owns URLs -> images.

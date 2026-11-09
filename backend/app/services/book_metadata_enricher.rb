@@ -100,10 +100,23 @@ class BookMetadataEnricher
 
   def enrich!(model: nil)
     model ||= DEFAULT_MODEL
+    enrich_log("enrichment start (model=#{model})")
     ground = ground_with_web_search(model)
+    enrich_log("grounded: sources=#{ground[:sources].size} facts_bytes=#{ground[:facts].bytesize}")
     judgment = judge(model, ground)
 
-    commit(judgment, ground, model)
+    commit(judgment, ground, model).tap do |result|
+      enrich_log("done: desc=#{result.description_changed} country=#{result.country_of_origin.inspect} " \
+        "source=#{result.country_source.inspect} cover=#{result.cover_judgment.inspect}")
+    end
+  end
+
+  def enrich_log(message)
+    Rails.logger.tagged("[enrich ##{@book.id}]") { |l| l.info(message) }
+  end
+
+  def logger_for(_name)
+    Rails.logger.tagged("[enrich ##{@book.id}]") { |l| l }
   end
 
   private
@@ -129,6 +142,8 @@ class BookMetadataEnricher
           Research this book and report bullet-point FACTS, each on its own line, each ending with the source URL you used:
           description/plot summary, country of origin of the author/work, and where its real cover image image can be found.
           Only state what the searched sources support.
+          Non-Latin-script titles: also try searching a transliteration (e.g. Amharic "የተቆለፈበት ቁልፍ" -> "Yeteqolefetebet Kulf")
+          and include the URL of any page whose cover photo is the real book cover.
 
           Book: "#{@book.title}" by #{@book.author}
           Current metadata: language=#{@book.language}, country=#{@book.country_of_origin || "unknown"}, cover=#{@book.cover_image || "none"}
@@ -143,8 +158,9 @@ class BookMetadataEnricher
       .compact
       .map { |s| strip_query(s) }
 
+    logger_for(self.class.name).info("web grounding: #{facts.bytesize}B facts, #{sources.size} sources, model=#{model}")
     if facts.strip.blank?
-      Rails.logger.warn("BookMetadataEnricher: web grounding returned empty facts; falling back")
+      logger_for(self.class.name).warn("web grounding returned empty facts; falling back to deterministic sources")
       return ground_via_deterministic_sources
     end
 
@@ -184,7 +200,7 @@ class BookMetadataEnricher
   def judge(model, ground)
     judge_with(model, ground)
   rescue OtariClient::Error => e
-    Rails.logger.warn("BookMetadataEnricher judge failed on #{model} (#{e.message}); escalating")
+    Rails.logger.tagged("[enrich ##{@book.id}]") { |l| l.warn("judge failed on #{model} (#{e.message}); escalating to #{FALLBACK_MODEL}") }
     judge_with(FALLBACK_MODEL, ground)
   end
 
@@ -203,16 +219,25 @@ class BookMetadataEnricher
           - If the stored value is already good and the facts do not clearly contradict it,
             act with "keep_existing".
           - Write description updates in the stored language listed below; drop celebrity endorsements,
+            keep 80-300 words.
           - For the cover: the VISION judgment section is authoritative and measured from the actual
             image. When it reports verdict real_cover AND depicts this specific book true AND quality high_res,
-            judgment MUST be "adequate". Only "missing", "low_quality" when the vision says not_cover /
+            judgment MUST be "adequate". Only "missing"/"low_quality" when the vision says not_cover /
             placeholder / wrong book / low_res, or when facts report the image missing or unreachable.
+          - When the grounded facts name a page carrying the real cover (publisher, catalogue, store,
+            original edition when possible), cite that exact page URL in cover.source_url so the
+            pipeline can extract the image from the page.
           - Empty quote => low confidence => nothing will be applied, so if you recommend an update,
             always include the supporting quote.
         PROMPT
         { role: "user", content: judge_prompt(ground) }
       ]
-    )
+    ).tap do |j|
+      Rails.logger.tagged("[enrich ##{@book.id}]") do |l|
+        l.info("judged: desc=#{j.dig('description', 'action')} country=#{j.dig('country_of_origin', 'action')}:#{j.dig('country_of_origin', 'value')} " \
+          "#{j.dig('country_of_origin', 'source_url').to_s[0, 80]} cover=#{j.dig('cover', 'judgment')} cited=#{j.dig('cover', 'source_url').to_s[0, 100]}")
+      end
+    end
   end
 
   def judge_prompt(ground)

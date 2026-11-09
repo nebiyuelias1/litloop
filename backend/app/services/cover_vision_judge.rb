@@ -56,6 +56,7 @@ class CoverVisionJudge
     )
 
     content = response.dig("choices", 0, "message", "content").to_s
+    Rails.logger.tagged("[vision ##{@book.id}]") { |l| l.info("judge done: #{content[0, 160]}") }
     data = parse_verdict(content)
 
     verdict = data["is_real_book_cover"] === true ? "real_cover" : (data["is_real_book_cover"] === false ? "not_cover" : "unknown")
@@ -64,7 +65,7 @@ class CoverVisionJudge
 
     Result.new(verdict: verdict, quality: quality, matches_book: matches, detail: data["notes"].to_s)
   rescue OtariClient::Error, JSON::ParserError => e
-    Rails.logger.warn("CoverVisionJudge failed: #{e.message}")
+    Rails.logger.tagged("[vision ##{@book.id}]") { |l| l.warn("failed: #{e.message.split("\n").first}") }
     not_assessed("vision judgment failed: #{e.message.split("\n").first}")
   end
 
@@ -102,6 +103,8 @@ class CoverVisionJudge
 
     filename = File.basename(URI.parse(@book.cover_image).path.to_s)
     filename = filename.blank? || filename.include?("?") ? "cover.jpg" : filename.tr("?", "_")
-    @client.upload_file(data: bytes, filename: filename, content_type: content_type || "image/jpeg")
+    file_id = @client.upload_file(data: bytes, filename: filename, content_type: content_type || "image/jpeg")
+    Rails.logger.tagged("[vision ##{@book.id}]") { |l| l.info("uploaded #{bytes.bytesize}B as #{file_id}") }
+    file_id
   end
 end
