@@ -29,19 +29,20 @@ class Admin::BooksEnrichControllerTest < ActionDispatch::IntegrationTest
     ENV["OTARI_API_KEY"] = "tk-test"
     sign_in @user
 
-    payload = {
-      "description" => "A richly detailed rebuilt description that is comfortably longer than the minimum length gate we enforce.",
-      "tags" => [ "fiction", "colonialism" ],
-      "country_of_origin" => "Nigeria",
-      "country_evidence" => "The blurb references Igbo warriors of Umuofia.",
-      "country_confidence" => "high"
-
+    ground = { facts: "1958 novel by Nigerian author Chinua Achebe. Source: https://en.wikipedia.org/wiki/Things_Fall_Apart", sources: [ "https://en.wikipedia.org/wiki/Things_Fall_Apart" ] }
+    judgment = {
+      "description" => { "action" => "keep_existing", "value" => "", "source_url" => "", "quote" => "" },
+      "tags" => { "action" => "update", "values" => [ "fiction", "colonialism" ], "source_url" => "https://en.wikipedia.org/wiki/Things_Fall_Apart" },
+      "country_of_origin" => { "action" => "update", "value" => "Nigeria", "source_url" => "https://en.wikipedia.org/wiki/Things_Fall_Apart", "quote" => "Nigerian author Chinua Achebe" },
+      "cover" => { "judgment" => "missing", "reason" => "no cover stored", "source_url" => "" }
     }
 
     enricher = BookMetadataEnricher.new(book: @book)
     BookMetadataEnricher.stub(:new, ->(_book) { enricher }) do
-      enricher.stub(:propose, payload) do
-        post enrich_admin_book_url(@book)
+      enricher.stub(:ground_with_web_search, ground) do
+        enricher.stub(:judge, judgment) do
+          post enrich_admin_book_url(@book)
+        end
       end
     end
 
@@ -57,25 +58,26 @@ class Admin::BooksEnrichControllerTest < ActionDispatch::IntegrationTest
     ENV["OTARI_BASE_URL"] = "https://gateway.test/v1"
     sign_in @user
 
-    payload = {
-      "description" => "A richly detailed rebuilt description that is comfortably longer than the minimum length gate.",
-      "tags" => [ "fiction", "colonialism" ],
-      "country_of_origin" => "Nigeria",
-      "country_evidence" => "The blurb references Igbo warriors of Umuofia.",
-      "country_confidence" => "high"
-
+    ground = { facts: "1958 novel by Nigerian author Chinua Achebe.", sources: [ "https://en.wikipedia.org/wiki/Things_Fall_Apart" ] }
+    judgment = {
+      "description" => { "action" => "keep_existing", "value" => "", "source_url" => "", "quote" => "" },
+      "tags" => { "action" => "keep_existing", "values" => [], "source_url" => "" },
+      "country_of_origin" => { "action" => "keep_existing", "value" => "", "source_url" => "", "quote" => "" },
+      "cover" => { "judgment" => "low_quality", "reason" => "placeholder unsplash image, not the real cover", "source_url" => "" }
     }
     enricher = BookMetadataEnricher.new(book: @book)
     BookMetadataEnricher.stub(:new, ->(book:) { enricher }) do
-      enricher.stub(:propose, payload) do
-        improve_result = BookCoverImprover::Result.new(
-          improved: true, old_cover: "https://old.example/a.jpg", new_cover: "https://upload.wikimedia.org/new.jpg",
-          reason: "verified higher-quality cover found"
-        )
-        improver = Object.new
-        improver.define_singleton_method(:improve!) { |**_kw| improve_result }
-        BookCoverImprover.stub(:new, improver) do
-          post enrich_admin_book_url(@book)
+      enricher.stub(:ground_with_web_search, ground) do
+        enricher.stub(:judge, judgment) do
+          improve_result = BookCoverImprover::Result.new(
+            improved: true, old_cover: "https://old.example/a.jpg", new_cover: "https://upload.wikimedia.org/new.jpg",
+            reason: "verified higher-quality cover found"
+          )
+          improver = Object.new
+          improver.define_singleton_method(:improve!) { |**_kw| improve_result }
+          BookCoverImprover.stub(:new, improver) do
+            post enrich_admin_book_url(@book)
+          end
         end
       end
     end
@@ -90,7 +92,7 @@ class Admin::BooksEnrichControllerTest < ActionDispatch::IntegrationTest
 
     enricher = BookMetadataEnricher.new(book: @book)
     BookMetadataEnricher.stub(:new, ->(_book) { enricher }) do
-      enricher.stub(:propose, ->(*_args) { raise OtariClient::RequestError, "boom" }) do
+      enricher.stub(:ground_with_web_search, ->(_model) { raise OtariClient::RequestError, "boom" }) do
         post enrich_admin_book_url(@book)
       end
     end

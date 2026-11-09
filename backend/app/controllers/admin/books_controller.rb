@@ -13,12 +13,19 @@ module Admin
 
       result = BookMetadataEnricher.new(book: book).enrich!
 
-      cover = BookCoverImprover.new(book: book).improve!
-      cover_note = cover.improved ? "cover ⬆ #{URI.parse(cover.new_cover).host}" : "cover unchanged (#{cover.reason})"
+      # The judge decides whether the current cover is missing/low quality;
+      # the improver only runs when the judgment calls for a replacement.
+      if %w[missing low_quality].include?(result.cover_judgment.to_s)
+        cover = BookCoverImprover.new(book: book).improve!
+        cover_note = cover.improved ? "cover ⬆ #{URI.parse(cover.new_cover).host} (#{cover.reason})" : "cover: needed, but no candidate verified (#{cover.reason})"
+      else
+        cover_note = "cover #{result.cover_judgment || 'n/a'} (kept)"
+      end
 
       notice = "Enriched “#{book.title}”: tags=[#{result.tags_added.join(', ')}] " \
-        "country=#{result.country_of_origin || 'n/a'} " \
-        "(country confidence: #{result.country_confidence}); #{cover_note}"
+        "country=#{result.country_of_origin || 'n/a'}" +
+        (result.country_source.present? ? " (source: #{result.country_source})" : "") +
+        "; #{cover_note}"
       redirect_to admin_book_path(book), notice: notice
     rescue OtariClient::RequestError, OtariClient::ConfigurationError => e
       redirect_to admin_book_path(book), alert: "Enrichment failed: #{e.message}"
