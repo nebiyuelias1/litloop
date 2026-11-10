@@ -1,0 +1,42 @@
+<%#
+  Reusable SVG donut with center total + legend.
+  Locals:
+    - series: Hash<label, count>
+    - unit: word label under the center number
+    - compact: smaller legible center text
+%>
+<% compact = local_assigns.fetch(:compact, false) %>
+<% total = series.values.sum %>
+<% if total > 0 %>
+  <% r = 38; c = 2 * Math::PI * r %>
+  <div class="flex items-center gap-3">
+    <svg viewBox="0 0 100 100" class="<%= compact ? "h-20 w-20" : "h-24 w-24" %> shrink-0" role="img" aria-label="Composition chart">
+      <% offset = 0 %>
+      <% series.each_with_index do |(_name, count), idx| %>
+        <% len = count.to_f / total * c %>
+        <circle
+          cx="50" cy="50" r="<%= r %>"
+          fill="none"
+          stroke="var(--color-accent)"
+          stroke-opacity="<%= [1.0, 0.65, 0.45, 0.3, 0.22, 0.16, 0.12][idx] || 0.12 %>"
+          stroke-width="12"
+          stroke-dasharray="<%= len.round(2) %> <%= (c - len).round(2) %>"
+          stroke-dashoffset="<%= -offset.round(2) %>"
+          transform="rotate(-90 50 50)">
+        </circle>
+        <% offset += len %>
+      <% end %>
+      <text x="50" y="48" text-anchor="middle" class="fill-[var(--color-content)] text-[15px] font-black"><%= total %></text>
+      <text x="50" y="61" text-anchor="middle" class="fill-[var(--color-content-subtle)] text-[6px]"><%= unit %></text>
+    </svg>
+    <div class="space-y-1 text-[11px]">
+      <% series.each_with_index do |(name, count), idx| %>
+        <div class="flex items-center gap-1.5">
+          <span class="inline-block h-2.5 w-2.5 rounded-sm bg-accent" style="opacity: <%= [1.0, 0.65, 0.45, 0.3, 0.22, 0.16, 0.12][idx] || 0.12 %>;"></span>
+          <span class="text-content"><%= name %></span>
+          <span class="font-bold text-accent"><%= count %></span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

@@ -1,17 +1,22 @@
 <%#
-  Server-rendered SVG charts for the Literature DNA panel: recurring-theme
-  bars, a region-composition donut, and reads-per-month mini-bars. No chart
-  library, no JS — every number comes from the verified dataset and never
-  from the model.
+  Server-rendered visual analytics for the Literature DNA panel. No chart
+  library, no JS — every value comes from the verified dataset (Ruby), never
+  from the model. The model only narrates; these must not lie.
 
   Locals:
-    - tags:    Hash<tag name, count>   (already sorted desc)
-    - regions: Hash<region name, count>
-    - months:  Hash<"YYYY-MM", count>  (ascending)
+    - tags:      Hash<tag, count>
+    - regions:   Hash<region, count>
+    - months:    Hash<"YYYY-MM", count>
+    - engagement: {"per_session" => [], "avg_turnout" => f}
+    - discussion: {"total" => n, "max" => n}
+    - weekday:   Hash<"Mon", n>
+    - time_of_day: Hash<"morning", n>
+    - locations: Hash<location, n>
+    - cadence_days: Float|nil
 %>
 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 
-  <%# ---- Recurring themes: horizontal bars -------------------------------- %>
+  <%# ---- Recurring themes: horizontal bars ------------------------------- %>
   <div class="rounded-2xl border border-border bg-background p-3">
     <h4 class="mb-2 text-xs font-bold uppercase tracking-wide text-content-subtle">
       <%= t("dna_chart_themes", default: "Recurring themes") %>
@@ -22,7 +27,7 @@
       <div class="space-y-2">
         <% chart_tags.each do |name, count| %>
           <div class="flex items-center gap-2">
-            <span class="w-20 shrink-0 truncate text-right text-[11px] text-content-muted" title="<%= name %>"><%= name %></span>
+            <span class="w-24 shrink-0 truncate text-right text-[11px] text-content-muted" title="<%= name %>"><%= name %></span>
             <div class="h-3.5 flex-1 overflow-hidden rounded-full bg-accent/10">
               <div class="h-full rounded-full bg-accent" style="width: <%= (count * 100.0 / max_tag).round %>%;"></div>
             </div>
@@ -35,51 +40,21 @@
     <% end %>
   </div>
 
-  <%# ---- World composition: donut ----------------------------------------- %>
+  <%# ---- World composition: donut ---------------------------------------- %>
   <div class="rounded-2xl border border-border bg-background p-3">
     <h4 class="mb-2 text-xs font-bold uppercase tracking-wide text-content-subtle">
       <%= t("dna_chart_regions", default: "World composition") %>
     </h4>
     <% region_total = regions.values.sum %>
     <% if regions.any? && region_total > 0 %>
-      <% r = 38; c = 2 * Math::PI * r %>
-      <div class="flex items-center gap-4">
-        <svg viewBox="0 0 100 100" class="h-24 w-24 shrink-0" role="img" aria-label="Books by region">
-          <% offset = 0 %>
-          <% regions.each_with_index do |(name, count), idx| %>
-            <% len = count.to_f / region_total * c %>
-            <circle
-              cx="50" cy="50" r="<%= r %>"
-              fill="none"
-              stroke="<%= idx.zero? ? "var(--color-accent)" : "var(--color-accent)" %>"
-              stroke-opacity="<%= [1.0, 0.65, 0.45, 0.3][idx] || 0.3 %>"
-              stroke-width="12"
-              stroke-dasharray="<%= len.round(2) %> <%= (c - len).round(2) %>"
-              stroke-dashoffset="<%= -offset.round(2) %>"
-              transform="rotate(-90 50 50)">
-            </circle>
-            <% offset += len %>
-          <% end %>
-          <text x="50" y="47" text-anchor="middle" class="fill-[var(--color-content)] text-[14px] font-black"><%= region_total %></text>
-          <text x="50" y="60" text-anchor="middle" class="fill-[var(--color-content-subtle)] text-[6px]"><%= t("books_word", default: "books") %></text>
-        </svg>
-        <div class="space-y-1 text-[11px]">
-          <% regions.each_with_index do |(name, count), idx| %>
-            <div class="flex items-center gap-1.5">
-              <span class="inline-block h-2.5 w-2.5 rounded-sm bg-accent" style="opacity: <%= [1.0, 0.65, 0.45, 0.3][idx] || 0.3 %>;"></span>
-              <span class="text-content"><%= name %></span>
-              <span class="font-bold text-accent"><%= count %></span>
-            </div>
-          <% end %>
-        </div>
-      </div>
+      <%= render "book_clubs/dna_donut", series: regions, unit: t("books_word", default: "books"), compact: (regions.size > 3) %>
     <% else %>
       <p class="text-xs text-content-subtle"><%= t("dna_chart_empty", default: "No country data yet.") %></p>
     <% end %>
   </div>
 
-  <%# ---- Reads over time: mini month bars ---------------------------------- %>
-  <div class="sm:col-span-2 rounded-2xl border border-border bg-background p-3">
+  <%# ---- Reading rhythm: month bars --------------------------------------- %>
+  <div class="rounded-2xl border border-border bg-background p-3">
     <h4 class="mb-2 text-xs font-bold uppercase tracking-wide text-content-subtle">
       <%= t("dna_chart_timeline", default: "Reading rhythm") %>
     </h4>
@@ -100,4 +75,95 @@
       <p class="text-xs text-content-subtle"><%= t("dna_chart_empty", default: "No sessions yet.") %></p>
     <% end %>
   </div>
+
+  <%# ---- Engagement: going-turnout per session --------------------------- %>
+  <div class="rounded-2xl border border-border bg-background p-3">
+    <h4 class="mb-2 text-xs font-bold uppercase tracking-wide text-content-subtle">
+      <%= t("dna_chart_engagement", default: "Attendance") %>
+    </h4>
+    <% per_session = (engagement["per_session"] || []).first(12) %>
+    <% if per_session.any? %>
+      <div class="flex items-end gap-1.5" style="height: 64px;">
+        <% max_going = [per_session.max || 1, 1].max %>
+        <% per_session.each do |going| %>
+          <div class="flex flex-1 flex-col items-center justify-end gap-1" title="<%= going %> <%= t("attended_word", default: "RSVPed") %>">
+            <span class="text-[10px] font-bold text-accent"><%= going %></span>
+            <div class="w-full rounded-md bg-accent" style="height: <%= [(going * 40.0 / max_going).round, 4].max %>px; opacity: <%= going == max_going ? 1 : 0.65 %>;"></div>
+          </div>
+        <% end %>
+      </div>
+      <% if engagement["avg_turnout"].present? %>
+        <div class="mt-2 flex items-baseline gap-1 text-xs text-content-muted">
+          <span class="font-bold text-accent text-base"><%= engagement["avg_turnout"] %></span>
+          <%= t("dna_avg_turnout", default: "average attendance per meetup") %>
+        </div>
+      <% end %>
+    <% else %>
+      <p class="text-xs text-content-subtle"><%= t("dna_chart_empty", default: "No sessions yet.") %></p>
+    <% end %>
+  </div>
+
+  <%# ---- Meeting clock: weekday donut + time-of-day + cadence ------------ %>
+  <div class="rounded-2xl border border-border bg-background p-3">
+    <h4 class="mb-2 text-xs font-bold uppercase tracking-wide text-content-subtle">
+      <%= t("dna_chart_when", default: "When the club meets") %>
+    </h4>
+    <% if weekday.any? %>
+      <div class="flex items-start gap-4">
+        <div class="w-32 shrink-0">
+          <%= render "book_clubs/dna_donut", series: weekday, unit: t("meetup_word", default: "meetups"), compact: true %>
+        </div>
+        <div class="space-y-1.5 text-[11px]">
+          <% time_of_day.each do |tname, count| %>
+            <div class="flex items-center gap-1.5 text-content">
+              <span class="font-bold text-accent"><%= count %></span>
+              <%= t("dna_tod_#{tname}", default: tname.capitalize) %>
+            </div>
+          <% end %>
+          <% if cadence_days %>
+            <div class="border-t border-border pt-1.5 text-content-muted">
+              <%= cadence_days %> <%= t("dna_cadence", default: "days between meetups (avg)") %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% else %>
+      <p class="text-xs text-content-subtle"><%= t("dna_chart_empty", default: "No sessions yet.") %></p>
+    <% end %>
+  </div>
+
+  <%# ---- Conversation depth: questions per session ----------------------- %>
+  <div class="rounded-2xl border border-border bg-background p-3">
+    <h4 class="mb-2 text-xs font-bold uppercase tracking-wide text-content-subtle">
+      <%= t("dna_chart_questions", default: "Conversation depth") %>
+    </h4>
+    <% if discussion["total"].to_i > 0 %>
+      <div class="flex items-baseline gap-1 text-xs text-content-muted">
+        <span class="font-bold text-accent text-xl"><%= discussion["total"] %></span>
+        <%= t("dna_questions_total", default: "discussion questions asked across past meets") %>
+      </div>
+      <div class="mt-2 text-[11px] text-content-subtle">
+        <%= t("dna_questions_peak", default: "Peaked at %{n} in a single meet", n: discussion["max"]) %>
+      </div>
+    <% else %>
+      <p class="text-xs text-content-subtle"><%= t("dna_chart_empty_q", default: "No discussion questions yet.") %></p>
+    <% end %>
+  </div>
+
+  <%# ---- Meetup places: chips row ---------------------------------------- %>
+  <% if locations.any? %>
+    <div class="sm:col-span-2 rounded-2xl border border-border bg-background p-3">
+      <h4 class="mb-2 text-xs font-bold uppercase tracking-wide text-content-subtle">
+        <%= t("dna_chart_places", default: "Regular meetup spots") %>
+      </h4>
+      <div class="flex flex-wrap gap-2">
+        <% locations.each do |place, count| %>
+          <span class="rounded-full bg-accent/10 px-2.5 py-1 text-xs text-content">
+            📍 <%= place %>
+            <% if count > 1 %><span class="font-bold text-accent"><%= count %></span><% end %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
 </div>

@@ -19,6 +19,7 @@ class OtariClient
   RequestError = Class.new(Error)
   DEFAULT_OPEN_TIMEOUT = 5
   DEFAULT_READ_TIMEOUT = 60
+  TOOL_LOOP_READ_TIMEOUT = 180
   FILES_UPLOAD_READ_TIMEOUT = 120
 
   # Whether the gateway is fully configured for outbound calls. The single
@@ -79,14 +80,43 @@ class OtariClient
   # See https://platform.openai.com/docs/api-reference/chat for the shape.
   # `tools` takes Otari built-in tool declarations, e.g.
   #   [{ "type" => "otari_web_search", "max_uses" => 3 }]
-  def chat(model:, messages:, response_format: nil, temperature: nil, max_tokens: nil, tools: nil)
+  # Chat completion with Otari's built-in tools (gateway-run search / code
+  # execution) and an optional read timeout — the tool + sandbox loop can
+  # legitimately outlast a plain completion.
+  def chat(model:, messages:, response_format: nil, temperature: nil, max_tokens: nil, tools: nil, read_timeout: nil)
     body = { model: model, messages: messages }
     body[:response_format] = response_format if response_format
     body[:temperature] = temperature if temperature
     body[:max_tokens] = max_tokens if max_tokens
     body[:tools] = tools if tools
 
-    post("/chat/completions", body)
+    post("/chat/completions", body, read_timeout: read_timeout || (tools.present? ? TOOL_LOOP_READ_TIMEOUT : DEFAULT_READ_TIMEOUT))
+  end
+
+  # Runs Python directly in the gateway's sandbox — no model involved
+  # (POST /api/v1/code/execute). Returns the parsed result body
+  # (stdout, stderr, return_code, files with file_id + filename).
+  def execute_code(code, timeout_seconds: 60)
+    post("/code/execute", { code: code, timeout_seconds: timeout_seconds }, read_timeout: timeout_seconds + 30)
+  end
+
+  # Downloads a file produced/uploaded through the Files API. Returns the
+  # raw bytes.
+  def download_file(file_id)
+    ensure_configured!
+    uri = URI("#{@base_url}/files/#{file_id}/content")
+
+    request = Net::HTTP::Get.new(uri)
+    request["Authorization"] = "Bearer #{@api_key}"
+
+    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https",
+      open_timeout: DEFAULT_OPEN_TIMEOUT, read_timeout: DEFAULT_READ_TIMEOUT) { |http| http.request(request) }
+
+    unless response.is_a?(Net::HTTPSuccess)
+      raise RequestError, "file download failed: status=#{response.code} body=#{response.body.to_s[0, 300]}"
+    end
+
+    response.body
   end
 
   # Chat completion with OpenAI structured output. Returns the parsed JSON
@@ -116,7 +146,7 @@ class OtariClient
 
   private
 
-  def post(path, body)
+  def post(path, body, read_timeout: DEFAULT_READ_TIMEOUT)
     ensure_configured!
     uri = URI("#{@base_url}#{path}")
 
@@ -129,7 +159,7 @@ class OtariClient
       uri.hostname, uri.port,
       use_ssl: uri.scheme == "https",
       open_timeout: DEFAULT_OPEN_TIMEOUT,
-      read_timeout: DEFAULT_READ_TIMEOUT
+      read_timeout: read_timeout
     ) { |http| http.request(request) }
 
     unless response.is_a?(Net::HTTPSuccess)

@@ -33,6 +33,13 @@ class ClubDnaCollector
         "avg_turnout" => turnout(past)
       },
       "months" => months(reads),
+      "engagement" => engagement(past),
+      "discussion" => discussion(past),
+      "pages" => pages(read_books),
+      "weekday" => weekday(past),
+      "time_of_day" => time_of_day(past),
+      "locations" => locations(past),
+      "cadence_days" => cadence(past),
       "countries" => countries(read_books),
       "regions" => regions(read_books),
       "tags" => tags(read_books),
@@ -96,10 +103,66 @@ class ClubDnaCollector
   # the Visualization timeline mini-bars.
   def months(reads)
     counts = Hash.new(0)
-    reads.each do |read|
-      counts[read.meetup_time.strftime("%Y-%m")] += 1
-    end
+    reads.each { |r| counts[r.meetup_time.strftime("%Y-%m")] += 1 }
     counts.sort.to_h
+  end
+
+  # Going-RSVP turnout per past session + the average. Turnout is the
+  # club's health metric; RSVPs are preloaded.
+  def engagement(past_reads)
+    per = past_reads.map { |r| r.book_read_rsvps.count(&:going?) }
+    {
+      "per_session" => per,
+      "total_going" => per.sum,
+      "avg_turnout" => per.empty? ? nil : (per.sum.to_f / per.size).round(1)
+    }
+  end
+
+  def discussion(past_reads)
+    per = past_reads.map { |r| r.discussion_questions.size }
+    {
+      "total" => per.sum, "max" => per.max || 0,
+      "avg_per_meetup" => per.empty? ? nil : (per.sum.to_f / per.size).round(1)
+    }
+  end
+
+  # Books table page_count where it exists (not AI-maintained — read-only).
+  def pages(books)
+    known = books.filter_map(&:page_count).reject(&:zero?)
+    known.any? ? { "avg" => (known.sum.to_f / known.size).round, "min" => known.min, "max" => known.max } : nil
+  end
+
+  def weekday(past_reads)
+    counts = Hash.new(0)
+    past_reads.each { |r| counts[r.meetup_time.strftime("%a")] += 1 }
+    counts.sort_by { |_d, n| -n }.to_h
+  end
+
+  TIME_BUCKETS = { "morning" => 5..11, "afternoon" => 12..16, "evening" => 17..22 }.freeze
+  def time_of_day(past_reads)
+    counts = Hash.new(0)
+    past_reads.each do |r|
+      hour = r.meetup_time.hour
+      bucket = TIME_BUCKETS.find { |_name, range| range.cover?(hour) }
+      counts[bucket&.first || "night"] += 1
+    end
+    counts.sort_by { |_t, _n| -_n }.to_h
+  end
+
+  def locations(past_reads)
+    counts = Hash.new(0)
+    past_reads.each { |r| counts[r.meetup_location.to_s.truncate(24)] += 1 if r.meetup_location.present? }
+    counts.sort_by { |_l, n| -n }.to_h
+  end
+
+  # Average number of days between consecutive past meetups (nil if fewer
+  # than two past sessions).
+  def cadence(past_reads)
+    times = past_reads.map(&:meetup_time).sort
+    return nil if times.size < 2
+
+    gaps = times.each_cons(2).map { |a, b| (b - a) / 1.day }
+    (gaps.sum / gaps.size).round(1)
   end
 
   # Average RSVPs per *past* session (RSVPs are already preloaded).

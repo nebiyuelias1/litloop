@@ -34,6 +34,13 @@ class ClubDnaCollectorTest < ActiveSupport::TestCase
     # timeline: 2 past reads in distinct recent months
     assert data["months"].is_a?(Hash)
     assert data["months"].values.sum >= 2
+    assert_equal 1, data["engagement"]["total_going"]
+    assert_equal 0.5, data["engagement"]["avg_turnout"]
+    assert_equal 2, data["engagement"]["per_session"].size
+    assert data["weekday"].all? { |d, _| %w[Mon Tue Wed Thu Fri Sat Sun].include?(d) }
+    assert data["time_of_day"].is_a?(Hash)
+    assert_includes data["locations"].keys, "Cafe 1"
+    assert data["cadence_days"].present?
     assert_equal 3, data["reads"]["total"]
     assert_equal 2, data["reads"]["past"]
     assert_equal 1, data["reads"]["upcoming"]

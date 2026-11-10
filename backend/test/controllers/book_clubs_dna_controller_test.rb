@@ -79,10 +79,18 @@ class BookClubsDnaControllerTest < ActionDispatch::IntegrationTest
     assert_includes body, "data-dna-country=\"ET\""
     assert_includes body, "Ethiopia"
     assert_includes body, "openai/gpt-oss-120b"
-    # visual analytics: chart sections + sandbox proof rendered
+    # visual analytics: all chart cards rendered, no python-speak on page
     assert_includes body, "Recurring themes"
     assert_includes body, "World composition"
     assert_includes body, "Reading rhythm"
-    assert_includes body, "verified sandbox run"
+    assert_includes body, "Attendance"
+    assert_includes body, "When the club meets"
+    assert_includes body, "Conversation depth"
+    assert_includes body, "Where these stories come from"
+    refute_includes body, "python"
+
+    # AI commentary is collapsed behind a <details> element
+    assert_includes body, "<details"
+    assert_includes body, "commentary on this DNA"
   end
 end

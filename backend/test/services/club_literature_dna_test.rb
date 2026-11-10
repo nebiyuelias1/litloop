@@ -46,7 +46,9 @@ class ClubLiteratureDnaTest < ActiveSupport::TestCase
     stub_otari(content: "", sandbox_calls: 0, attempts: attempts, fallback_content: @golden_narrative) do
       dna = ClubLiteratureDna.new(club: @club).generate!.dna
 
-      assert_equal [ ClubLiteratureDna::DEFAULT_MODEL, ClubLiteratureDna::FALLBACK_MODEL ], attempts
+      # the third chat call (mistral again) is the chart render, not the
+      # narrative escalation — chart calls are excluded below
+      assert_equal [ ClubLiteratureDna::DEFAULT_MODEL, ClubLiteratureDna::FALLBACK_MODEL ], attempts.first(2)
       assert_equal ClubLiteratureDna::FALLBACK_MODEL, dna["model"]
     end
   end
@@ -69,7 +71,66 @@ class ClubLiteratureDnaTest < ActiveSupport::TestCase
     end
   end
 
+  test "renders a sandbox chart when the model produces a verifiable PNG" do
+    golden = @golden_narrative
+    stub_otari(content: @golden_narrative, sandbox_calls: 0) do
+      # second chat call (chart) + the Files API download
+      @client.define_singleton_method(:chat) do |**kwargs|
+        if kwargs[:messages].to_s.include?("chart.png")
+          {
+            "choices" => [ { "message" => { "content" => "" } } ],
+            "otari_tool_calls" => [ {
+              "id" => "otari_ci_chart", "type" => "code_execution",
+              "code" => 'import matplotlib.pyplot as plt; ...; savefig("chart.png")',
+              "stdout" => "", "exit_code" => 0, "file_ids" => [ "file-chart123" ]
+            } ]
+          }
+        else
+          { "choices" => [ { "message" => { "content" => golden } } ],
+            "otari_tool_calls" => [] }
+        end
+      end
+      @client.define_singleton_method(:download_file) do |file_id|
+        raise OtariClient::RequestError, "no file" unless file_id == "file-chart123"
+        SAMPLE_PNG
+      end
+
+      dna = ClubLiteratureDna.new(club: @club).generate!.dna
+      chart = dna["charts"]
+
+      assert_not_nil chart
+      assert chart["data_uri"].start_with?("data:image/png;base64,")
+      assert_equal "file-chart123", chart["file_id"]
+      assert_includes chart["code"], "matplotlib"
+    end
+  end
+
+  test "chart failure is non-fatal and keeps the narrative" do
+    golden = @golden_narrative
+    stub_otari(content: @golden_narrative, sandbox_calls: 0) do
+      @client.define_singleton_method(:chat) do |**kwargs|
+        if kwargs[:messages].to_s.include?("chart.png")
+          raise OtariClient::RequestError, "sandbox down"
+        else
+          { "choices" => [ { "message" => { "content" => golden } } ],
+            "otari_tool_calls" => [] }
+        end
+      end
+      @client.define_singleton_method(:download_file) do |_id|
+        raise OtariClient::RequestError, "unreachable"
+      end
+
+      dna = ClubLiteratureDna.new(club: @club).generate!.dna
+
+      assert_not_nil dna
+      assert_nil dna["charts"]
+      assert_equal 3, dna.dig("narrative", "highlights").to_a.size
+    end
+  end
+
   private
+
+  SAMPLE_PNG = "\x89PNG\r\n\x1a\n" + ("A" * 2048) + "\x00\x00"
 
   def create_club_history!
     et = Book.create!(title: "ኦሮማይ", author: "በዓሉ ግርማ", description: "Amharic novel", language: "am", country_of_origin: "ET")
@@ -97,8 +158,8 @@ class ClubLiteratureDnaTest < ActiveSupport::TestCase
       "stdout" => "2",
       "exit_code" => 0
     }
-    client = Object.new
-    client.define_singleton_method(:chat) do |**kwargs|
+    @client = Object.new
+    @client.define_singleton_method(:chat) do |**kwargs|
       attempts << kwargs[:model]
       answered = content
       if kwargs[:model] == ClubLiteratureDna::FALLBACK_MODEL && fallback_content
@@ -109,6 +170,9 @@ class ClubLiteratureDnaTest < ActiveSupport::TestCase
         "otari_tool_calls" => Array.new(sandbox_calls) { sandbox_payload }
       }
     end
-    OtariClient.stub(:new, client) { yield }
+    @client.define_singleton_method(:download_file) do |_file_id|
+      raise OtariClient::RequestError, "unexpected download in this test"
+    end
+    OtariClient.stub(:new, @client) { yield }
   end
 end
