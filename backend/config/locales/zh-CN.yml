@@ -207,7 +207,6 @@ zh-CN:
   language_label: "语言"
   country_of_origin: "原产国"
   isbn_label: "ISBN"
-  source_label: "数据来源"
   unknown_country: "未知"
   not_rated_yet: "暂无评分"
   reviews_count_label:

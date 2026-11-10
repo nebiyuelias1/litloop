@@ -217,7 +217,6 @@ am:
   language_label: "ቋንቋ"
   country_of_origin: "የመነሻ ሀገር"
   isbn_label: "ISBN"
-  source_label: "የመረጃ ምንጭ"
   unknown_country: "ያልታወቀ"
   not_rated_yet: "እስካሁን አልተደረገበትም"
   reviews_count_label:

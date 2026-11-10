@@ -246,7 +246,6 @@ en:
   language_label: "Language"
   country_of_origin: "Country of origin"
   isbn_label: "ISBN"
-  source_label: "Data source"
   unknown_country: "Unknown"
   not_rated_yet: "Not yet rated"
   reviews_count_label:

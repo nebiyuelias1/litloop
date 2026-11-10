@@ -24,6 +24,7 @@ class BookCoverImprover
   # improvement attempt regardless of LLM verdicts.
   COVER_PLACEHOLDER_HOSTS = %w[images.unsplash.com unsplash.com source.unsplash.com].freeze
   Result = Struct.new(:improved, :old_cover, :new_cover, :reason, keyword_init: true)
+  MAX_VISION_CHECKS = 3
 
   # Verified working on the hosted gateway (mozilla-hosted account):
   # https://api.otari.ai/api/v1/models
@@ -72,7 +73,14 @@ class BookCoverImprover
 
     judge = CoverVisionJudge.new(book: @book)
 
+    # Budget for vision checks (each is a gateway upload + completion): the
+    # ordered candidates get at most MAX_VISION_CHECKS vision passes; when the
+    # budget runs dry the best probed candidate is accepted deterministically
+    # and flagged vision=unverified.
+    vision_budget = MAX_VISION_CHECKS
+
     chosen = nil
+    best_probed = nil
     unverified = nil
     ordered.find do |candidate|
       image = fetch_image_bytes(candidate[:url])
@@ -80,6 +88,12 @@ class BookCoverImprover
       if image.nil? || image[:size] < MIN_IMAGE_BYTES || image[:size] > MAX_IMAGE_BYTES
         next
       end
+
+      best_probed ||= { url: candidate[:url], size: image[:size], content_type: image[:content_type], bytes: image[:bytes] }
+      if vision_budget <= 0
+        next
+      end
+      vision_budget -= 1
 
       vision = judge.inspect_bytes(bytes: image[:bytes], content_type: image[:content_type], filename: "cover.jpg")
       cover_log("vision #{candidate[:url].to_s[0, 80]} -> #{vision.verdict}/#{vision.quality} matches=#{vision.matches_book} #{vision.detail.to_s[0, 80]}")
@@ -94,6 +108,11 @@ class BookCoverImprover
       else
         false
       end
+    end
+
+    if chosen.nil? && best_probed && vision_budget <= 0
+      cover_log("vision budget exhausted; accepting best probed candidate unverified")
+      chosen = { url: best_probed[:url], size: best_probed[:size], vision: "unverified" }
     end
 
     if chosen.nil?
@@ -115,12 +134,17 @@ class BookCoverImprover
       "new_cover" => chosen[:url],
       "old_size_bytes" => probe_image(@book.cover_image)&.fetch(:size, nil),
       "new_size_bytes" => chosen[:size],
-      "vision_verdict" => "#{vision.verdict}/#{vision.quality}",
+      "vision_verdict" => vision.is_a?(Struct) || vision.respond_to?(:verdict) ? "#{vision.verdict}/#{vision.quality}" : vision.to_s,
       "improved_at" => Time.current.iso8601
     }
-    cover_log("swapped to #{chosen[:url][0, 100]} (#{chosen[:size]} bytes, vision=#{vision.verdict}/#{vision.quality})")
+    cover_log("swapped to #{chosen[:url][0, 100]} (#{chosen[:size]} bytes, vision=#{vision.respond_to?(:verdict) ? "#{vision.verdict}/#{vision.quality}" : vision})")
     @book.update!(cover_image: chosen[:url], enrichment: audit)
-    Result.new(improved: true, old_cover: audit["cover"]["old_cover"], new_cover: chosen[:url], reason: "verified cover swap (vision: #{vision.verdict} #{vision.quality})")
+    Result.new(
+      improved: true,
+      old_cover: audit["cover"]["old_cover"],
+      new_cover: chosen[:url],
+      reason: vision.respond_to?(:verdict) ? "verified cover swap (vision: #{vision.verdict} #{vision.quality})" : "cover swap (probe-only, vision budget exhausted)"
+    )
   end
 
   # One-shot candidate verification download: returns bytes + size + type, or

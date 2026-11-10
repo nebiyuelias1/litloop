@@ -1,8 +1,8 @@
 module Admin
   class BooksController < Admin::ApplicationController
-    # Runs the Otari AI enrichment synchronously so the admin can see the
-    # result immediately: metadata (description, tags, country) first, then
-    # the cover image where a better one can be verified.
+    # Kicks off the full AI flow in the background (grounded metadata judging
+    # + cover swap) and returns immediately — the run typically takes a
+    # couple of minutes because of multiple gateway calls and vision checks.
     def enrich
       book = find_resource(params[:id])
 
@@ -11,31 +11,14 @@ module Admin
           alert: "Otari is not configured — set OTARI_BASE_URL and OTARI_API_KEY."
       end
 
-      result = BookMetadataEnricher.new(book: book).enrich!
-
-      # The judge decides whether the current cover is missing/low quality;
-      # the improver only runs when the judgment calls for a replacement.
-      # Known placeholder hosts always force an attempt regardless of the
-      # LLM's verdict (the LLM occasionally marks placeholder images "adequate").
-      placeholder_cover = BookCoverImprover::COVER_PLACEHOLDER_HOSTS.any? { |ph| book.cover_image.to_s.include?(ph) }
-      judgment = (result.cover_judgment.to_s.presence || (placeholder_cover ? "low_quality" : nil))
-      needs_cover = BookCoverImprover::COVER_PLACEHOLDER_HOSTS.any? { |ph| book.cover_image.to_s.include?(ph) } ||
-                    %w[missing low_quality].include?(judgment.to_s)
-      if needs_cover
-        cited = result.cover_source_url
-        cover = BookCoverImprover.new(book: book, cited_cover_url: cited).improve!
-        cover_note = cover.improved ? "cover ⬆ #{URI.parse(cover.new_cover).host} (#{cover.reason})" : "cover: needed, but no candidate verified (#{cover.reason})"
-      else
-        cover_note = "cover #{result.cover_judgment || 'n/a'} (kept)"
+      begin
+        BookEnrichmentJob.perform_later(book.id)
+      rescue StandardError => e
+        return redirect_to admin_book_path(book),
+          alert: "Enrichment failed: #{e.message}"
       end
-
-      notice = "Enriched “#{book.title}”: tags=[#{result.tags_added.join(', ')}] " \
-        "country=#{result.country_of_origin || 'n/a'}" +
-        (result.country_source.present? ? " (source: #{result.country_source})" : "") +
-        "; #{cover_note}"
-      redirect_to admin_book_path(book), notice: notice
-    rescue OtariClient::RequestError, OtariClient::ConfigurationError => e
-      redirect_to admin_book_path(book), alert: "Enrichment failed: #{e.message}"
+      redirect_to admin_book_path(book),
+        notice: "AI enrichment queued for “#{book.title}” — it runs in the background (usually 1–2 minutes). Refresh this page to see the audit panel update."
     end
     # Overwrite any of the RESTful controller actions to implement custom behavior
     # For example, you may want to send an email after a foo is updated.
