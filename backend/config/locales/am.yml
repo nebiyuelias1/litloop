@@ -223,14 +223,8 @@ am:
   reviews_count_label:
     one: "%{count} ግምገማ"
     other: "%{count} ግምገማዎች"
-  currently_being_read: "አሁን የሚነበብበት ወቅት"
-  previously_read_clubs:
     one: "በ1 ክለብ በፊት ተነበበ"
     other: "በ%{count} ክለባዎች በፊት ተነበበ"
-  no_active_reads: "እስካሁን ምንም ክለብ ይህን መጽሐፍ አልተመደበችም"
-  no_active_reads_hint: "ክለብ ካመቻቸው በኋላ ስብሰባዎቹ እዚህ ይታያሉ።"
-  browse_clubs: "ክለባዎችን ይመልከቱ"
-  have_you_read_this: "ይህን መጽሐፍ አንብበዋል?"
   rate_it_hint: "ደረጃ በመስጠት አስተያየትዎን ያጋሩ"
   rate_cta_title: "ይህን መጽሐፍ አንብበዋል?"
   sign_in_to_rate: "ደረጃ ለመስጠት ከምርት መደብዎ ጋር ለማካተት ይግቡ።"
@@ -246,4 +240,3 @@ am:
   ai_assisted_title: "ይህ መግለጫ በAI ከምንጭ ማረጋገጫ ጋር ተሻሽሏል"
   show_previous_description: "ያለፈውን መግለጫ አሳይ"
   ai_updated_by: "በAI (%{model}) ተዘምኗል"
-  previously_read_label: "ቀድሞ በተነበበው በ"

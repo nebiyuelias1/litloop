@@ -252,14 +252,8 @@ en:
   reviews_count_label:
     one: "%{count} review"
     other: "%{count} reviews"
-  currently_being_read: "Currently Being Read"
-  previously_read_clubs:
     one: "Previously read by 1 club"
     other: "Previously read by %{count} clubs"
-  no_active_reads: "No club is reading this book yet"
-  no_active_reads_hint: "When a club schedules it, the meetups will appear here."
-  browse_clubs: "Browse book clubs"
-  have_you_read_this: "Have you read this?"
   rate_it_hint: "Rate it to share your opinion"
   rate_cta_title: "Read this book?"
   sign_in_to_rate: "Sign in to rate it and add it to your collection."
@@ -275,4 +269,3 @@ en:
   ai_assisted_title: "This description was improved with AI grounding (source-checked, see provenance)"
   show_previous_description: "Show previous description"
   ai_updated_by: "Updated by AI (%{model})"
-  previously_read_label: "Previously read by"

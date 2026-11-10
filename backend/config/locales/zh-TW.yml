@@ -212,14 +212,8 @@ zh-TW:
   not_rated_yet: "暫無評分"
   reviews_count_label:
     other: "%{count} 則書評"
-  currently_being_read: "正在閱讀此書"
-  previously_read_clubs:
     one: "此前已有 1 個書友會讀過"
     other: "此前已有 %{count} 個書友會讀過"
-  no_active_reads: "目前還沒有書友會安排閱讀這本書"
-  no_active_reads_hint: "當書友會安排閱讀時，聚會資訊會顯示在這裡。"
-  browse_clubs: "瀏覽書友會"
-  have_you_read_this: "你讀過這本書嗎？"
   rate_it_hint: "評分以分享你的看法"
   rate_cta_title: "讀過這本書嗎？"
   sign_in_to_rate: "登入即可評分，並加入你的書單。"
@@ -235,4 +229,3 @@ zh-TW:
   ai_assisted_title: "這段簡介經 AI 依據資料改寫（已核對來源，詳見出處）"
   show_previous_description: "檢視原有簡介"
   ai_updated_by: "由 AI（%{model}）更新"
-  previously_read_label: "此前由以下讀書會讀過："
