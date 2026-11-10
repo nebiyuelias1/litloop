@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_11_08_120000) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_10_154413) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -59,6 +59,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_08_120000) do
     t.datetime "updated_at", null: false
     t.integer "book_club_members_count", default: 0, null: false
     t.string "application_form_url"
+    t.json "literature_dna"
+    t.datetime "dna_generated_at"
     t.index ["owner_id"], name: "index_book_clubs_on_owner_id"
   end
 

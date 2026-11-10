@@ -1,0 +1,167 @@
+# frozen_string_literal: true
+
+# Generates a book club's "Literature DNA": an AI narrative about the club's
+# reading taste, grounded in a deterministic dataset computed in Ruby
+# (ClubDnaCollector) and verified with Otari's built-in code execution tool.
+#
+# The trust model mirrors the book enrichment pipeline:
+#   - the model may not invent numbers — it must verify them in the gateway's
+#     sandbox (otari_code_execution) before quoting them
+#   - every stat it quotes must cite a dot-path from the dataset
+#   - Ruby re-resolves each cited path and rejects any mismatch
+#   - the narrative must be strict JSON; anything unparseable escalates once
+#     to the frontier fallback model, then fails without persisting anything
+class ClubLiteratureDna
+  DEFAULT_MODEL = BookMetadataEnricher::DEFAULT_MODEL
+  FALLBACK_MODEL = BookMetadataEnricher::FALLBACK_MODEL
+
+  MIN_PAST_READS = 1
+  MAX_SANDBOX_SNIPPET = 4000
+
+  Result = Struct.new(:dna, keyword_init: true)
+
+  def initialize(club:)
+    @club = club
+  end
+
+  def generate!(model: nil)
+    model ||= DEFAULT_MODEL
+    dna_log("start (reads=#{@club.book_reads.count} members=#{@club.book_club_members_count})")
+    t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+    dataset = ClubDnaCollector.new(club: @club).collect!.data
+    past = dataset.dig("reads", "past").to_i
+    if past < MIN_PAST_READS
+      dna_log("skipped: only #{past} past read(s)")
+      return Result.new(dna: nil)
+    end
+
+    result = analyze_with(model, dataset)
+    if result.blank? && model != FALLBACK_MODEL
+      dna_log("empty or unverifiable on #{model}; escalating to #{FALLBACK_MODEL}")
+      result = analyze_with(FALLBACK_MODEL, dataset)
+    end
+    raise OtariClient::RequestError, "no verifiable narrative produced" if result.blank?
+
+    elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0
+    highlights = result.dig("narrative", "highlights")
+    dna_log("done in #{elapsed.round(1)}s model=#{result['model']} highlights=#{highlights.size}")
+
+    Result.new(dna: result)
+  end
+
+  private
+
+  def analyze_with(model, dataset)
+    response = OtariClient.new.chat(
+      model: model,
+      temperature: 0.0,
+      tools: [ { type: "otari_code_execution" } ],
+      messages: [
+        { role: "user", content: <<~PROMPT }
+          You are the analyst of a book club's reading history — its "Literature DNA".
+          This dataset was computed deterministically in Ruby and is TRUSTED; treat it as the only source of truth:
+
+          ```json
+          #{dataset.to_json}
+          ```
+
+          Verify any stat you want to quote by running Python code (otari_code_execution tool)
+          over the dataset above, then report ONLY numbers your code printed.
+          Note: titles and tags may be in Amharic (Ge'ez script) — treat them as normal data.
+
+          Return ONLY a JSON object with exactly these keys:
+          {
+            "identity": "1-3 sentence narrative of this club's reading DNA",
+            "signatures": [{"title": "short trait name", "note": "why"}],
+            "highlights": [{"dataset_path": "reads.past", "value": 3, "comment": "why it matters"}],
+            "gaps": ["..."],
+            "recommendation": "one sentence: what to read next based on this DNA"
+          }
+          (signatures max 4, highlights max 6, gaps max 3)
+
+          Rules:
+          - "value" must exactly equal what the value at "dataset_path" resolves to.
+          - dataset_path is a dot walk into the JSON, e.g. "reads.past", "countries.ET.count", "regions.Africa", "tags.<tag name>".
+          - if you cannot find a clean path for a number, drop the highlight instead of guessing.
+          - gaps: only claim a region or theme is under-read when the dataset shows it is absent or tiny — use real region or tag names.
+          PROMPT
+      ]
+    )
+
+    raw = response.dig("choices", 0, "message", "content").to_s
+    narrative = JSON.parse(extract_json(raw))
+    narrative = verified(narrative, dataset)
+    return nil if narrative.blank?
+
+    assemble(narrative, dataset, model, response)
+  rescue JSON::ParserError, OtariClient::Error => e
+    dna_log("attempt failed on #{model}: #{e.class} #{e.message.to_s[0, 120]}")
+    nil
+  end
+
+  def assemble(narrative, dataset, model, response)
+    {
+      "narrative" => narrative,
+      "dataset" => dataset,
+      "model" => model,
+      "sandbox_calls" => sandbox_calls(response),
+      "generated_at" => Time.current.iso8601
+    }
+  end
+
+  # The sandbox trail is the audit evidence: what code the model ran and what
+  # its own prints said (used by the admin audit panel).
+  def sandbox_calls(response)
+    (response["otari_tool_calls"] || []).filter_map do |call|
+      next if call["code"].blank?
+
+      {
+        "code" => call["code"].to_s[0, MAX_SANDBOX_SNIPPET],
+        "stdout" => call["stdout"].to_s[0, MAX_SANDBOX_SNIPPET],
+        "exit_code" => call["exit_code"]
+      }
+    end
+  end
+
+  # Deterministic gate: every highlight's value must match what the dataset
+  # holds at the cited path, and gaps must reference real region/tag names.
+  def verified(narrative, dataset)
+    return nil if narrative.blank? || narrative["identity"].to_s.strip.blank?
+
+    highlights = Array(narrative["highlights"]).filter_map do |hl|
+      path = hl["dataset_path"].to_s
+      expected = resolve_path(dataset, path)
+      next unless expected.is_a?(Numeric)
+      next unless expected == hl["value"] || (expected.is_a?(Float) || hl["value"].is_a?(Float)) && (expected - hl["value"].to_f).abs < 0.01
+
+      { "dataset_path" => path, "value" => expected, "comment" => hl["comment"].to_s[0, 240] }
+    end
+    narrative["highlights"] = highlights
+
+    authentic_names = (dataset["regions"].keys + dataset["tags"].keys).compact
+    narrative["gaps"] = Array(narrative["gaps"]).select { |gap|
+      authentic_names.any? { |name| gap.to_s.include?(name) }
+    }.map { |gap| gap.to_s[0, 140] }
+
+    narrative
+  end
+
+  def resolve_path(node, path)
+    path.to_s.split(".").reduce(node) { |current, key|
+      current.is_a?(Hash) ? current[key] : nil
+    }
+  end
+
+  def extract_json(content)
+    first = content.index("{")
+    last = content.rindex("}")
+    raise JSON::ParserError, "no JSON object found" if first.nil? || last.nil? || last <= first
+
+    content[first..last]
+  end
+
+  def dna_log(message)
+    Rails.logger.tagged("[dna ##{@club.id}]") { |l| l.info(message) }
+  end
+end

@@ -60,6 +60,9 @@ Rails.application.routes.draw do
     collection do
       get :discover
     end
+    member do
+      post :generate_dna
+    end
 
     resource :membership, controller: "book_club_members", only: [ :create, :destroy ]
     resources :members, controller: "book_club_members", only: [ :update, :destroy ]

@@ -1,0 +1,33 @@
+<%#
+  World map of the countries the club has read from. Each country with reads
+  is shaded by read-count; everything else stays neutral. Rendered purely
+  from CountryCodes data — never from AI output (the AI may only narrate it).
+
+  Locals:
+    countries: Hash<iso2 code, {"name","flag","count","titles"}>
+%>
+<svg
+  viewBox="0 0 <%= WorldMapPaths::WIDTH %> <%= WorldMapPaths::HEIGHT %>"
+  class="h-auto w-full max-w-[540px]"
+  role="img"
+  aria-label="<%= t("dna_map_aria", default: "World map highlighting countries the club has read from") %>">
+  <% WorldMapPaths::PATHS.each do |code, d| %>
+    <% info = countries[code] %>
+    <% if info %>
+      <path
+        d="<%= d %>"
+        style="fill: var(--color-accent); fill-opacity: <%= info["count"] >= 4 ? 1.0 : 0.35 + info["count"] * 0.15 %>;"
+        stroke="transparent"
+        stroke-width="0.4">
+        <title><%= "#{info["flag"]} #{info["name"]} — #{info["count"]} #{info["count"] == 1 ? "book" : "books"}" %></title>
+      </path>
+    <% else %>
+      <path
+        d="<%= d %>"
+        style="fill: var(--color-content-subtle); fill-opacity: 0.30;"
+        stroke="transparent"
+        stroke-width="0.4">
+      </path>
+    <% end %>
+  <% end %>
+</svg>
