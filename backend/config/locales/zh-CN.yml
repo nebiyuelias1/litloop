@@ -212,8 +212,6 @@ zh-CN:
   not_rated_yet: "暂无评分"
   reviews_count_label:
     other: "%{count} 条书评"
-    one: "此前已有 1 个书友会读过"
-    other: "此前已有 %{count} 个书友会读过"
   rate_it_hint: "评分以分享你的看法"
   rate_cta_title: "读过这本书吗？"
   sign_in_to_rate: "登录即可评分，并加入你的书单。"

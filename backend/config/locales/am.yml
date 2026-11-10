@@ -223,8 +223,6 @@ am:
   reviews_count_label:
     one: "%{count} ግምገማ"
     other: "%{count} ግምገማዎች"
-    one: "በ1 ክለብ በፊት ተነበበ"
-    other: "በ%{count} ክለባዎች በፊት ተነበበ"
   rate_it_hint: "ደረጃ በመስጠት አስተያየትዎን ያጋሩ"
   rate_cta_title: "ይህን መጽሐፍ አንብበዋል?"
   sign_in_to_rate: "ደረጃ ለመስጠት ከምርት መደብዎ ጋር ለማካተት ይግቡ።"

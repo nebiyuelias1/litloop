@@ -252,8 +252,6 @@ en:
   reviews_count_label:
     one: "%{count} review"
     other: "%{count} reviews"
-    one: "Previously read by 1 club"
-    other: "Previously read by %{count} clubs"
   rate_it_hint: "Rate it to share your opinion"
   rate_cta_title: "Read this book?"
   sign_in_to_rate: "Sign in to rate it and add it to your collection."
