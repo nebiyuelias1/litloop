@@ -115,4 +115,24 @@ class BookTest < ActiveSupport::TestCase
     # assert_includes books.pluck(:title), "ለምትኬ"
     # assert_includes books.pluck(:author), "ደረጀ ለማ ደገፉ"
   end
+
+  test "enrichment attributes are accessible" do
+    book = Book.new(
+      title: "Things Fall Apart",
+      author: "Chinua Achebe",
+      country_of_origin: "Nigeria",
+      enriched_at: nil
+    )
+
+    assert_equal "Nigeria", book.country_of_origin
+    assert_nil book.enriched_at
+
+    book.save!
+    assert_nil Book.find(book.id).enriched_at, "enriched_at should default to nil (not yet enriched)"
+
+    book.update!(enriched_at: Time.current)
+    assert_not_nil Book.find(book.id).enriched_at
+
+    book.destroy
+  end
 end
