@@ -8,6 +8,13 @@ class BookEnrichmentJob < ApplicationJob
     book = Book.find_by(id: book_id)
     return if book.blank?
 
+    # Configuration can drift between enqueue and execution (restarts, deploy
+    # envs). Fail fast, loudly, without leaving partial state.
+    unless OtariClient.configured?
+      Rails.logger.tagged("[enrich ##{book_id}]") { |l| l.error("aborted: Otari is not configured (OTARI_BASE_URL / OTARI_API_KEY)") }
+      return
+    end
+
     t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     Rails.logger.tagged("[enrich ##{book_id}]") { |l| l.info("background job started") }
 

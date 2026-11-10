@@ -6,7 +6,7 @@ module Admin
     def enrich
       book = find_resource(params[:id])
 
-      if ENV["OTARI_API_KEY"].blank?
+      unless OtariClient.configured?
         return redirect_to admin_book_path(book),
           alert: "Otari is not configured — set OTARI_BASE_URL and OTARI_API_KEY."
       end

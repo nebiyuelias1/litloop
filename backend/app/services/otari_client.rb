@@ -21,6 +21,17 @@ class OtariClient
   DEFAULT_READ_TIMEOUT = 60
   FILES_UPLOAD_READ_TIMEOUT = 120
 
+  # Whether the gateway is fully configured for outbound calls. The single
+  # source of truth for "is Otari set up" — controllers use it for instant UX
+  # feedback, jobs use it as a cheap pre-flight before doing work.
+  def self.configured?(base_url: ENV["OTARI_BASE_URL"], api_key: ENV["OTARI_API_KEY"])
+    base_url.to_s.strip.present? && api_key.to_s.strip.present?
+  end
+
+  def configured?
+    self.class.configured?(base_url: @base_url, api_key: @api_key)
+  end
+
   def initialize(base_url: ENV["OTARI_BASE_URL"], api_key: ENV["OTARI_API_KEY"])
     @base_url = base_url.to_s.chomp("/")
     @api_key = api_key
