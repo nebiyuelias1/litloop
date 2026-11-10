@@ -1,6 +1,9 @@
 class Book < ApplicationRecord
   validates :title, presence: true
   validates :author, presence: true
+  validates :country_of_origin,
+    inclusion: { in: ->(_) { CountryCodes::CODES }, message: "is not a valid ISO 3166-1 alpha-2 code" },
+    allow_nil: true
 
   has_many :book_tags, dependent: :destroy
   has_many :tags, through: :book_tags

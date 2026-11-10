@@ -1,5 +1,25 @@
 module Admin
   class BooksController < Admin::ApplicationController
+    # Kicks off the full AI flow in the background (grounded metadata judging
+    # + cover swap) and returns immediately — the run typically takes a
+    # couple of minutes because of multiple gateway calls and vision checks.
+    def enrich
+      book = find_resource(params[:id])
+
+      unless OtariClient.configured?
+        return redirect_to admin_book_path(book),
+          alert: "Otari is not configured — set OTARI_BASE_URL and OTARI_API_KEY."
+      end
+
+      begin
+        BookEnrichmentJob.perform_later(book.id)
+      rescue StandardError => e
+        return redirect_to admin_book_path(book),
+          alert: "Enrichment failed: #{e.message}"
+      end
+      redirect_to admin_book_path(book),
+        notice: "AI enrichment queued for “#{book.title}” — it runs in the background (usually 1–2 minutes). Refresh this page to see the audit panel update."
+    end
     # Overwrite any of the RESTful controller actions to implement custom behavior
     # For example, you may want to send an email after a foo is updated.
     #

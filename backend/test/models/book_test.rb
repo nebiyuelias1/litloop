@@ -116,15 +116,26 @@ class BookTest < ActiveSupport::TestCase
     # assert_includes books.pluck(:author), "ደረጀ ለማ ደገፉ"
   end
 
+  test "rejects invalid country_of_origin codes" do
+    book = Book.new(title: "Test Book", author: "Test Author", country_of_origin: "XX")
+    assert_not book.valid?
+    assert_includes book.errors[:country_of_origin], "is not a valid ISO 3166-1 alpha-2 code"
+
+    book = Book.new(title: "Test Book", author: "Test Author", country_of_origin: "Nigeria")
+    assert_not book.valid?, "names must not be stored; only ISO alpha-2 codes"
+    book = Book.new(title: "Test Book", author: "Test Author", country_of_origin: "NG")
+    assert book.valid?
+  end
+
   test "enrichment attributes are accessible" do
     book = Book.new(
       title: "Things Fall Apart",
       author: "Chinua Achebe",
-      country_of_origin: "Nigeria",
+      country_of_origin: "NG",
       enriched_at: nil
     )
 
-    assert_equal "Nigeria", book.country_of_origin
+    assert_equal "NG", book.country_of_origin
     assert_nil book.enriched_at
 
     book.save!

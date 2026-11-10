@@ -1,6 +1,8 @@
 Rails.application.routes.draw do
   namespace :admin do
-    resources :books
+    resources :books do
+      member { post :enrich }
+    end
     resources :book_clubs
     resources :book_club_members
     resources :book_reads

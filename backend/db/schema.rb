@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_11_08_090000) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_08_120000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -123,6 +123,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_08_090000) do
     t.integer "page_count"
     t.string "country_of_origin"
     t.datetime "enriched_at"
+    t.json "enrichment"
   end
 
   create_table "discussion_questions", force: :cascade do |t|

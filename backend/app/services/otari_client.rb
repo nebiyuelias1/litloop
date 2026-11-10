@@ -14,24 +14,77 @@ require "json"
 #   OTARI_BASE_URL - gateway endpoint up to and including the version, e.g. "https://api.otari.ai/v1"
 #   OTARI_API_KEY  - virtual key issued by the Otari dashboard (starts with "tk-")
 class OtariClient
-  ConfigurationError = Class.new(StandardError)
-  RequestError = Class.new(StandardError)
-
+  Error = Class.new(StandardError)
+  ConfigurationError = Class.new(Error)
+  RequestError = Class.new(Error)
   DEFAULT_OPEN_TIMEOUT = 5
   DEFAULT_READ_TIMEOUT = 60
+  FILES_UPLOAD_READ_TIMEOUT = 120
+
+  # Whether the gateway is fully configured for outbound calls. The single
+  # source of truth for "is Otari set up" — controllers use it for instant UX
+  # feedback, jobs use it as a cheap pre-flight before doing work.
+  def self.configured?(base_url: ENV["OTARI_BASE_URL"], api_key: ENV["OTARI_API_KEY"])
+    base_url.to_s.strip.present? && api_key.to_s.strip.present?
+  end
+
+  def configured?
+    self.class.configured?(base_url: @base_url, api_key: @api_key)
+  end
 
   def initialize(base_url: ENV["OTARI_BASE_URL"], api_key: ENV["OTARI_API_KEY"])
     @base_url = base_url.to_s.chomp("/")
     @api_key = api_key
   end
 
+  # Uploads an image/document to the Otari Files API (multipart) and returns
+  # the file id ("<file-...>") usable as { type: "file", file: { file_id } } in
+  # chat messages. Vision-capable models receive the image natively.
+  def upload_file(data:, filename:, content_type:)
+    ensure_configured!
+    uri = URI("#{@base_url}/files")
+
+    boundary = "otarirb#{rand(1e9)}"
+    pre = "\r\n--#{boundary}\r\n" \
+      "Content-Disposition: form-data; name=\"purpose\"\r\n\r\nuser_data\r\n" \
+      "--#{boundary}\r\n" \
+      "Content-Disposition: form-data; name=\"file\"; filename=\"#{filename}\"\r\n" \
+      "Content-Type: #{content_type}\r\n\r\n"
+    body = pre + data + "\r\n--#{boundary}--\r\n"
+
+    request = Net::HTTP::Post.new(uri)
+    request["Otari-Key"] = @api_key
+    request["Content-Type"] = "multipart/form-data; boundary=#{boundary}"
+    request["Content-Length"] = body.bytesize
+    request.body = body
+
+    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https",
+      open_timeout: DEFAULT_OPEN_TIMEOUT, read_timeout: FILES_UPLOAD_READ_TIMEOUT) { |http| http.request(request) }
+
+    unless response.is_a?(Net::HTTPSuccess)
+      raise RequestError, "file upload failed: status=#{response.code} body=#{response.body.to_s[0, 300]}"
+    end
+
+    JSON.parse(response.body)["id"].tap do |file_id|
+      raise RequestError, "file upload succeeded but no id returned" if file_id.blank?
+    end
+  rescue RequestError, ConfigurationError
+    raise
+  rescue => e
+    Rails.logger.error("OtariClient file upload failed: #{e.class} #{e.message}")
+    raise RequestError, "unexpected file upload error: #{e.class} #{e.message}"
+  end
+
   # Performs a chat completion and returns the full parsed response body hash.
   # See https://platform.openai.com/docs/api-reference/chat for the shape.
-  def chat(model:, messages:, response_format: nil, temperature: nil, max_tokens: nil)
+  # `tools` takes Otari built-in tool declarations, e.g.
+  #   [{ "type" => "otari_web_search", "max_uses" => 3 }]
+  def chat(model:, messages:, response_format: nil, temperature: nil, max_tokens: nil, tools: nil)
     body = { model: model, messages: messages }
     body[:response_format] = response_format if response_format
     body[:temperature] = temperature if temperature
     body[:max_tokens] = max_tokens if max_tokens
+    body[:tools] = tools if tools
 
     post("/chat/completions", body)
   end
@@ -94,7 +147,7 @@ class OtariClient
   def ensure_configured!
     if @base_url.blank? || @api_key.blank?
       raise ConfigurationError,
-        "Otari is not configured. Set OTARI_BASE_URL and OTARI_API_KEY (and OTARI_MODEL where needed)."
+        "Otari is not configured. Set OTARI_BASE_URL and OTARI_API_KEY."
     end
   end
 end

@@ -62,11 +62,11 @@ export default class extends Controller {
   updateAppearance() {
     const icon = this.iconTarget
     if (this.likedValue) {
-      icon.classList.add('text-red-500')
-      icon.classList.remove('text-gray-400', 'hover:text-red-400')
+      icon.classList.add('text-accent')
+      icon.classList.remove('text-content-muted', 'hover:text-content-subtle')
     } else {
-      icon.classList.remove('text-red-500')
-      icon.classList.add('text-gray-400', 'hover:text-red-400')
+      icon.classList.remove('text-accent')
+      icon.classList.add('text-content-muted', 'hover:text-accent')
     }
   }
 }
