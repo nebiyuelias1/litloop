@@ -31,6 +31,9 @@ class ClubDnaCollectorTest < ActiveSupport::TestCase
     assert_equal({ "Africa" => 1, "South America" => 1 }, data["regions"])
     assert_equal 2, data["tags"]["fiction"]
     assert_equal(0.5, data["reads"]["avg_turnout"])
+    # timeline: 2 past reads in distinct recent months
+    assert data["months"].is_a?(Hash)
+    assert data["months"].values.sum >= 2
     assert_equal 3, data["reads"]["total"]
     assert_equal 2, data["reads"]["past"]
     assert_equal 1, data["reads"]["upcoming"]

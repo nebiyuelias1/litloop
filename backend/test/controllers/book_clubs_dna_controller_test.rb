@@ -79,5 +79,10 @@ class BookClubsDnaControllerTest < ActionDispatch::IntegrationTest
     assert_includes body, "data-dna-country=\"ET\""
     assert_includes body, "Ethiopia"
     assert_includes body, "openai/gpt-oss-120b"
+    # visual analytics: chart sections + sandbox proof rendered
+    assert_includes body, "Recurring themes"
+    assert_includes body, "World composition"
+    assert_includes body, "Reading rhythm"
+    assert_includes body, "verified sandbox run"
   end
 end

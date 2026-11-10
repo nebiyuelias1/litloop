@@ -32,6 +32,7 @@ class ClubDnaCollector
         "poll_only" => reads.count { |r| r.book.blank? },
         "avg_turnout" => turnout(past)
       },
+      "months" => months(reads),
       "countries" => countries(read_books),
       "regions" => regions(read_books),
       "tags" => tags(read_books),
@@ -89,6 +90,16 @@ class ClubDnaCollector
     counts = Hash.new(0)
     books.each { |book| counts[book.author.presence || "unknown"] += 1 }
     counts.sort_by { |_author, count| -count }.first(10).to_h
+  end
+
+  # Reads grouped into calendar months (YYYY-MM -> count), oldest first —
+  # the Visualization timeline mini-bars.
+  def months(reads)
+    counts = Hash.new(0)
+    reads.each do |read|
+      counts[read.meetup_time.strftime("%Y-%m")] += 1
+    end
+    counts.sort.to_h
   end
 
   # Average RSVPs per *past* session (RSVPs are already preloaded).

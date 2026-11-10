@@ -1,0 +1,103 @@
+<%#
+  Server-rendered SVG charts for the Literature DNA panel: recurring-theme
+  bars, a region-composition donut, and reads-per-month mini-bars. No chart
+  library, no JS — every number comes from the verified dataset and never
+  from the model.
+
+  Locals:
+    - tags:    Hash<tag name, count>   (already sorted desc)
+    - regions: Hash<region name, count>
+    - months:  Hash<"YYYY-MM", count>  (ascending)
+%>
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+  <%# ---- Recurring themes: horizontal bars -------------------------------- %>
+  <div class="rounded-2xl border border-border bg-background p-3">
+    <h4 class="mb-2 text-xs font-bold uppercase tracking-wide text-content-subtle">
+      <%= t("dna_chart_themes", default: "Recurring themes") %>
+    </h4>
+    <% chart_tags = tags.first(6) %>
+    <% max_tag = [chart_tags.map(&:last).max || 1, 1].max %>
+    <% if chart_tags.any? %>
+      <div class="space-y-2">
+        <% chart_tags.each do |name, count| %>
+          <div class="flex items-center gap-2">
+            <span class="w-20 shrink-0 truncate text-right text-[11px] text-content-muted" title="<%= name %>"><%= name %></span>
+            <div class="h-3.5 flex-1 overflow-hidden rounded-full bg-accent/10">
+              <div class="h-full rounded-full bg-accent" style="width: <%= (count * 100.0 / max_tag).round %>%;"></div>
+            </div>
+            <span class="w-5 text-right text-[11px] font-bold text-accent"><%= count %></span>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-xs text-content-subtle"><%= t("dna_chart_empty", default: "No tagged books yet.") %></p>
+    <% end %>
+  </div>
+
+  <%# ---- World composition: donut ----------------------------------------- %>
+  <div class="rounded-2xl border border-border bg-background p-3">
+    <h4 class="mb-2 text-xs font-bold uppercase tracking-wide text-content-subtle">
+      <%= t("dna_chart_regions", default: "World composition") %>
+    </h4>
+    <% region_total = regions.values.sum %>
+    <% if regions.any? && region_total > 0 %>
+      <% r = 38; c = 2 * Math::PI * r %>
+      <div class="flex items-center gap-4">
+        <svg viewBox="0 0 100 100" class="h-24 w-24 shrink-0" role="img" aria-label="Books by region">
+          <% offset = 0 %>
+          <% regions.each_with_index do |(name, count), idx| %>
+            <% len = count.to_f / region_total * c %>
+            <circle
+              cx="50" cy="50" r="<%= r %>"
+              fill="none"
+              stroke="<%= idx.zero? ? "var(--color-accent)" : "var(--color-accent)" %>"
+              stroke-opacity="<%= [1.0, 0.65, 0.45, 0.3][idx] || 0.3 %>"
+              stroke-width="12"
+              stroke-dasharray="<%= len.round(2) %> <%= (c - len).round(2) %>"
+              stroke-dashoffset="<%= -offset.round(2) %>"
+              transform="rotate(-90 50 50)">
+            </circle>
+            <% offset += len %>
+          <% end %>
+          <text x="50" y="47" text-anchor="middle" class="fill-[var(--color-content)] text-[14px] font-black"><%= region_total %></text>
+          <text x="50" y="60" text-anchor="middle" class="fill-[var(--color-content-subtle)] text-[6px]"><%= t("books_word", default: "books") %></text>
+        </svg>
+        <div class="space-y-1 text-[11px]">
+          <% regions.each_with_index do |(name, count), idx| %>
+            <div class="flex items-center gap-1.5">
+              <span class="inline-block h-2.5 w-2.5 rounded-sm bg-accent" style="opacity: <%= [1.0, 0.65, 0.45, 0.3][idx] || 0.3 %>;"></span>
+              <span class="text-content"><%= name %></span>
+              <span class="font-bold text-accent"><%= count %></span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% else %>
+      <p class="text-xs text-content-subtle"><%= t("dna_chart_empty", default: "No country data yet.") %></p>
+    <% end %>
+  </div>
+
+  <%# ---- Reads over time: mini month bars ---------------------------------- %>
+  <div class="sm:col-span-2 rounded-2xl border border-border bg-background p-3">
+    <h4 class="mb-2 text-xs font-bold uppercase tracking-wide text-content-subtle">
+      <%= t("dna_chart_timeline", default: "Reading rhythm") %>
+    </h4>
+    <% chart_months = months.first(12) %>
+    <% max_month = [chart_months.map(&:last).max || 1, 1].max %>
+    <% if chart_months.any? %>
+      <div class="flex items-end gap-1.5" style="height: 64px;">
+        <% chart_months.each do |key, count| %>
+          <% label = Date.strptime(key, "%Y-%m").strftime("%b") %>
+          <div class="flex flex-1 flex-col items-center justify-end gap-1" title="<%= label %> <%= key[0, 4] %>: <%= count %>">
+            <span class="text-[10px] font-bold text-accent"><%= count %></span>
+            <div class="w-full rounded-md bg-accent" style="height: <%= [(count * 40.0 / max_month).round, 4].max %>px; opacity: <%= count == max_month ? 1 : 0.65 %>;"></div>
+            <span class="text-[9px] text-content-subtle"><%= label %></span>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-xs text-content-subtle"><%= t("dna_chart_empty", default: "No sessions yet.") %></p>
+    <% end %>
+  </div>
+</div>
