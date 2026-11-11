@@ -14,7 +14,8 @@ namespace :clubs do
       result = ClubLiteratureDna.new(club: club).generate!
       if result.dna
         club.update!(literature_dna: result.dna, dna_generated_at: Time.current)
-        puts "✓ highlights=#{result.dna.dig('narrative', 'highlights').to_a.size}"
+        chart_note = result.dna.dig("charts", "bytes").present? ? "chart=#{result.dna.dig('charts', 'bytes')}B" : "chart=none"
+        puts "✓ #{chart_note}"
       else
         puts "skipped (no past reads)"
       end
