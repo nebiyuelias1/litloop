@@ -30,7 +30,8 @@ class BookClubDnaJobTest < ActiveSupport::TestCase
     end
 
     assert_not_nil @club.reload.dna_generated_at
-    assert_equal "Text history lovers club.", @club.literature_dna.dig("narrative", "identity")
+    assert_equal 1, @club.literature_dna.dig("dataset", "reads", "past")
+    assert_nil @club.literature_dna["narrative"] # narrative is gone; the board is Ruby-derived
   end
 
   test "does not overwrite an existing dna silently" do

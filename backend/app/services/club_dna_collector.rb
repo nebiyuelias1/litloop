@@ -36,6 +36,7 @@ class ClubDnaCollector
       "engagement" => engagement(past),
       "discussion" => discussion(past),
       "pages" => pages(read_books),
+      "ratings" => ratings(read_books),
       "weekday" => weekday(past),
       "time_of_day" => time_of_day(past),
       "locations" => locations(past),
@@ -122,14 +123,38 @@ class ClubDnaCollector
     per = past_reads.map { |r| r.discussion_questions.size }
     {
       "total" => per.sum, "max" => per.max || 0,
-      "avg_per_meetup" => per.empty? ? nil : (per.sum.to_f / per.size).round(1)
+      "avg_per_meetup" => per.empty? ? nil : (per.sum.to_f / per.size).round(1),
+      "per_session" => per
     }
   end
 
   # Books table page_count where it exists (not AI-maintained — read-only).
   def pages(books)
-    known = books.filter_map(&:page_count).reject(&:zero?)
-    known.any? ? { "avg" => (known.sum.to_f / known.size).round, "min" => known.min, "max" => known.max } : nil
+    known = books.filter_map do |book|
+      next if book.page_count.blank? || book.page_count.zero?
+
+      [ book.title, book.page_count ]
+    end
+    return nil if known.empty?
+
+    counts = known.map(&:last)
+    {
+      "avg" => (counts.sum.to_f / counts.size).round,
+      "min" => counts.min,
+      "max" => counts.max,
+      "per_book" => known.sort_by(&:last).reverse.to_h
+    }
+  end
+
+  # Average user rating per read book (read-only from the ratings table).
+  def ratings(books)
+    counts = Hash.new(0.0)
+    books.each do |book|
+      next if book.ratings.empty?
+
+      counts[book.title] = book.ratings.average(:score).round(1)
+    end
+    counts.sort_by { |_title, score| -score }.to_h
   end
 
   def weekday(past_reads)

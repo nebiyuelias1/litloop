@@ -1,8 +1,8 @@
 <%#
-  Literature DNA tab: visual-first board. Every number on it is derived in
-  Ruby from the club's own data; the model only contributes the (collapsed)
-  commentary and, when it succeeds, one chart image rendered by its code in
-  Otari's sandbox. Generate/Regenerate is owner/club-admin only.
+  Literature DNA tab: a visual-only board. Every number is derived in Ruby
+  from the club's own data; the model's only visible contribution is one
+  chart image it drew with its own code in Otari's sandbox (neutral card).
+  Owner/club-admin can (re)generate.
 
   Locals:
     - club: BookClub
@@ -15,38 +15,48 @@
     <% dataset = dna["dataset"] || {} %>
     <% countries = dataset["countries"] || {} %>
 
-    <%# ---- Headline stats (deterministic, Ruby-derived) -------------------- %>
-    <div class="mb-4 grid grid-cols-3 gap-2">
-      <% stats = {
-        t("dna_stat_reads", default: "reads<br>finished") => dataset.dig("reads", "past"),
-        t("dna_stat_countries", default: "countries<br>read") => countries.size,
-        t("dna_stat_members", default: "club<br>members") => dataset.dig("club", "member_count"),
-        t("dna_stat_turnout", default: "avg<br>attendance") => dataset.dig("engagement", "avg_turnout") || t("none_word", default: "–"),
-        t("dna_stat_questions", default: "questions<br>asked") => dataset.dig("discussion", "total"),
-        dataset.dig("pages", "avg").present? ? t("dna_stat_pages", default: "avg<br>pages") : t("dna_stat_tags", default: "themes<br>read") =>
-          dataset.dig("pages", "avg").present? ? dataset.dig("pages", "avg") : dataset.dig("tags").to_a.size
-      } %>
-      <% stats.each do |label, value| %>
-        <div class="rounded-2xl border border-border bg-surface p-2.5 shadow-card text-center">
-          <div class="text-xl font-black leading-none text-accent"><%= value %></div>
-          <div class="mt-1 text-[10px] leading-tight text-content-subtle"><%= label.html_safe %></div>
+    <%# ---- Reading journey: chronological cover strip ---------------------- %>
+    <% journey = club.book_reads.includes(:book).where("meetup_time < ?", Time.current).order(:meetup_time) %>
+    <% if journey.any? %>
+      <article class="mb-4 rounded-2xl border border-border bg-background p-4">
+        <h3 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
+          <%= t("dna_journey", default: "The reading journey") %>
+        </h3>
+        <div class="flex gap-3 overflow-x-auto pb-1">
+          <% journey.each do |read| %>
+            <div class="shrink-0 text-center" title="<%= [read.book&.title, read.meetup_time.strftime("%b %Y")].compact.join(" — ") %>">
+              <div class="h-28 w-20 overflow-hidden rounded-lg border border-border bg-surface">
+                <% if read.book&.cover_image.present? %>
+                  <img src="<%= cover_book_path(read.book) %>" alt="<%= read.book.title %>"
+                    class="h-full w-full object-cover" loading="lazy">
+                <% else %>
+                  <div class="flex h-full w-full items-center justify-center text-content-muted">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                  </div>
+                <% end %>
+              </div>
+              <div class="mt-1 w-20 truncate text-[10px] text-content-subtle"><%= read.meetup_time.strftime("%b %-d") %></div>
+            </div>
+          <% end %>
         </div>
-      <% end %>
-    </div>
+      </article>
+    <% end %>
 
-    <%# ---- World map (deterministic shading) ------------------------------- %>
+    <%# ---- World map -------------------------------------------------------- %>
     <% if countries.any? %>
-      <article class="rounded-3xl border border-border bg-surface p-4 shadow-card">
-        <h3 class="mb-2 text-base font-bold text-content">
+      <article class="mb-4 rounded-2xl border border-border bg-background p-4">
+        <h3 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
           <%= t("dna_countries_title", default: "Where these stories come from") %>
         </h3>
-        <div class="rounded-2xl border border-border bg-background p-3">
+        <div class="rounded-xl border border-border bg-surface p-3">
           <%= render "book_clubs/dna_map", countries: countries %>
         </div>
         <div class="mt-3 flex flex-wrap gap-2">
           <% countries.each do |code, info| %>
             <span data-dna-country="<%= code %>" title="<%= info["titles"].to_a.join(" · ") %>"
-              class="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-xs text-content">
+              class="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2.5 py-1 text-xs text-content">
               <%= info["flag"] %> <%= info["name"] %>
               <span class="font-bold text-accent"><%= info["count"] %></span>
             </span>
@@ -55,78 +65,36 @@
       </article>
     <% end %>
 
-    <%# ---- Sandbox-rendered chart (visual only; no plumbing story) --------- %>
+    <%# ---- Sandbox-drawn chart (neutral; the model's visual contribution) -- %>
     <% chart = dna["charts"] %>
     <% if chart.present? %>
-      <article class="mt-4 rounded-3xl border border-border bg-surface p-4 shadow-card">
-        <h3 class="mb-2 text-base font-bold text-content">
-          <%= t("dna_ai_chart_title", default: "✨ Chart rendered by the model's own code in Otari's sandbox") %>
+      <article class="mb-4 rounded-2xl border border-border bg-background p-4">
+        <h3 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
+          <%= t("dna_ai_chart_title", default: "The club chart") %>
         </h3>
         <img src="<%= chart["data_uri"] %>" alt="<%= t("dna_ai_chart_alt", default: "Chart generated from the club's verified stats" ) %>"
           class="mx-auto max-w-full rounded-xl border border-border bg-white" loading="lazy" width="720" height="480">
       </article>
     <% end %>
 
-    <%# ---- Charts ----------------------------------------------------------- %>
-    <div class="mt-4">
+    <%# ---- The analytical board -------------------------------------------- %>
+    <div class="mb-4">
       <%= render "book_clubs/dna_charts",
             tags: dataset["tags"] || {},
             regions: dataset["regions"] || {},
+            languages: dataset["languages"] || {},
             months: dataset["months"] || {},
             engagement: dataset["engagement"] || {},
             discussion: dataset["discussion"] || {},
             weekday: dataset["weekday"] || {},
             time_of_day: dataset["time_of_day"] || {},
             locations: dataset["locations"] || {},
-            cadence_days: dataset["cadence_days"] %>
+            cadence_days: dataset["cadence_days"],
+            ratings: dataset["ratings"] || {},
+            pages: dataset["pages"] %>
     </div>
 
-    <%# ---- AI commentary: collapsed by default ------------------------------ %>
-    <% narrative = dna["narrative"] || {} %>
-    <% has_voice = narrative["identity"].present? || narrative["signatures"].to_a.any? || narrative["recommendation"].present? %>
-    <% if has_voice %>
-      <details class="mt-4 rounded-2xl border border-dashed border-border bg-surface p-3">
-        <summary class="cursor-pointer select-none text-xs font-semibold text-content">
-          💬 <%= t("dna_commentary", default: "The AI's commentary on this DNA") %>
-        </summary>
-        <div class="mt-2">
-          <% if narrative["identity"].present? %>
-            <p class="text-sm leading-relaxed text-content"><%= narrative["identity"] %></p>
-          <% end %>
-          <% if narrative["signatures"].to_a.any? %>
-            <div class="mt-2 flex flex-wrap gap-2">
-              <% narrative["signatures"].to_a.each do |sig| %>
-                <span class="rounded-full bg-accent/10 px-3 py-1 text-xs text-content" title="<%= sig["note"] %>">
-                  ✦ <%= sig["title"] %>
-                </span>
-              <% end %>
-            </div>
-          <% end %>
-          <% if narrative["recommendation"].present? %>
-            <p class="mt-2 text-sm italic text-content"><%= narrative["recommendation"] %></p>
-          <% end %>
-          <% if narrative["highlights"].to_a.any? %>
-            <div class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-              <% narrative["highlights"].each do |hl| %>
-                <div class="rounded-xl border border-border bg-background p-2">
-                  <div class="text-lg font-black text-accent"><%= hl["value"] %></div>
-                  <div class="text-[10px] leading-snug text-content-subtle"><%= hl["comment"].presence || hl["dataset_path"] %></div>
-                </div>
-              <% end %>
-            </div>
-          <% end %>
-          <% if narrative["gaps"].to_a.any? %>
-            <div class="mt-2 space-y-0.5">
-              <% narrative["gaps"].each do |gap| %>
-                <p class="text-xs text-content-muted">◦ <%= gap %></p>
-              <% end %>
-            </div>
-          <% end %>
-        </div>
-      </details>
-    <% end %>
-
-    <%# ---- Footer provenance (one quiet line) + admin regenerate ----------- %>
+    <%# ---- Quiet provenance footer + admin regenerate ----------------------- %>
     <p class="mt-3 text-[11px] text-content-subtle">
       <%= t("dna_footer",
             default: "Generated %{at} · %{model} via Otari · every number on this board is verified against the club's own database",
@@ -141,12 +109,11 @@
       <% end %>
     </p>
   <% elsif can_manage_dna %>
-    <div class="rounded-3xl border border-dashed border-border bg-surface p-8 text-center">
+    <div class="rounded-2xl border border-dashed border-border bg-background p-8 text-center">
       <h3 class="mb-1 text-lg font-medium text-content"><%= t("dna_empty_title", default: "No Literature DNA yet") %></h3>
       <p class="mb-4 text-content-subtle">
         <%= t("dna_empty_hint", count: past_count,
-              default: "Generate the club's Literature DNA: the AI reads through the %{count} past read(s) — every stat verified in Otari's code sandbox.",
-              count: past_count) %>
+              default: "Generate the club's Literature DNA: the AI draws its chart in the sandbox while every number below is verified against the club's own data.") %>
       </p>
       <div class="flex flex-col items-center gap-2">
         <%= button_to t("dna_generate", default: "✨ Generate Literature DNA"),
@@ -158,7 +125,7 @@
       </div>
     </div>
   <% else %>
-    <div class="rounded-3xl border border-border bg-surface p-6 text-center text-sm text-content-subtle">
+    <div class="rounded-2xl border border-border bg-background p-6 text-center text-sm text-content-subtle">
       <%= t("dna_pending_public", default: "This club hasn't generated its Literature DNA yet.") %>
     </div>
   <% end %>

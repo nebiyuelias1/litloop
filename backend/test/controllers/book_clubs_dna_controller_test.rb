@@ -56,10 +56,19 @@ class BookClubsDnaControllerTest < ActionDispatch::IntegrationTest
         "dataset" => {
           "reads" => { "total" => 3, "past" => 3, "upcoming" => 0, "first_meetup" => nil,
             "last_meetup" => nil, "poll_only" => 0, "avg_turnout" => nil },
+          "months" => { "2026-10" => 2, "2026-11" => 1 },
+          "engagement" => { "per_session" => [ 2, 3, 1 ], "total_going" => 6, "avg_turnout" => 2.0 },
+          "discussion" => { "total" => 5, "max" => 3, "avg_per_meetup" => 1.7, "per_session" => [ 2, 3, 0 ] },
+          "weekday" => { "Sat" => 2, "Sun" => 1 },
+          "time_of_day" => { "afternoon" => 3 },
+          "locations" => { "Cafe" => 3 },
+          "cadence_days" => 12.0,
           "countries" => { "ET" => { "name" => "Ethiopia", "flag" => "🇪🇹", "count" => 3, "titles" => [] } },
           "regions" => { "Africa" => 3 },
+          "languages" => { "am" => 2, "en" => 1 },
           "tags" => { "history" => 2 },
-          "languages" => { "am" => 3 },
+          "pages" => { "avg" => 205, "min" => 200, "max" => 209, "per_book" => { "ኦሮማይ" => 200, "Things Fall Apart" => 209 } },
+          "ratings" => { "Things Fall Apart" => 4.5 },
           "authors" => {}
         },
         "model" => "openai/gpt-oss-120b",
@@ -69,28 +78,34 @@ class BookClubsDnaControllerTest < ActionDispatch::IntegrationTest
       dna_generated_at: Time.current
     )
 
+    BookRead.new(
+      book: Book.create!(title: "ኦሮማይ", author: "በዓሉ ግርማ", description: "x", language: "am",
+        country_of_origin: "ET", cover_image: "https://images.example/oromay.jpg"),
+      book_club: @club, host: users(:one), meetup_time: 30.days.ago, meetup_location: "Cafe"
+    ).tap { |r| r.save!(validate: false) }
+
     sign_in users(:one)
     get book_club_url(@club)
     assert_response :success
 
     body = response.body
     assert_includes body, "Literature DNA"
-    assert_includes body, "A club that reads Ethiopian history in translation."
+    assert_includes body, "The reading journey"
+    assert_includes body, "Where these stories come from"
     assert_includes body, "data-dna-country=\"ET\""
-    assert_includes body, "Ethiopia"
-    assert_includes body, "openai/gpt-oss-120b"
-    # visual analytics: all chart cards rendered, no python-speak on page
     assert_includes body, "Recurring themes"
     assert_includes body, "World composition"
     assert_includes body, "Reading rhythm"
     assert_includes body, "Attendance"
     assert_includes body, "When the club meets"
     assert_includes body, "Conversation depth"
-    assert_includes body, "Where these stories come from"
-    refute_includes body, "python"
+    assert_includes body, "Book length"
+    assert_includes body, "How members rated them"
 
-    # AI commentary is collapsed behind a <details> element
-    assert_includes body, "<details"
-    assert_includes body, "commentary on this DNA"
+    # no stat tiles, no AI commentary, no python-speak
+    refute_includes body, "python"
+    refute_includes body, "At a glance"
+    refute_includes body, "commentary on this DNA"
+    refute_includes body, "At a glance"
   end
 end
