@@ -89,6 +89,26 @@ class OtariClientTest < ActiveSupport::TestCase
     assert_equal "book_tags", rf["json_schema"]["name"]
   end
 
+  test "chat sends mcp_server_ids as top-level request field" do
+    body = { "choices" => [ { "message" => { "role" => "assistant", "content" => "found books" } } ] }.to_json
+
+    result = nil
+    captured = stub_http(body) do
+      client = OtariClient.new
+      result = client.chat(
+        model: "openai/gpt-oss-120b",
+        messages: [ { role: "user", content: "find books about cryptography" } ],
+        mcp_server_ids: [ "books" ]
+      )
+    end
+
+    assert_equal "found books", result.dig("choices", 0, "message", "content")
+    payload = JSON.parse(captured.body)
+    assert_equal [ "books" ], payload["mcp_server_ids"]
+    # MCP servers are a top-level field, never a tools entry
+    assert_nil payload["tools"]
+  end
+
   test "raises ConfigurationError without credentials" do
     ENV.delete("OTARI_BASE_URL")
     ENV.delete("OTARI_API_KEY")

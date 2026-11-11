@@ -63,6 +63,35 @@ module CountryCodes
 
   CODES = NAMES_TO_CODES.values.uniq.freeze
 
+  # ISO alpha-2 code -> region name. Used by the club "Literature DNA" to talk
+  # about taste in regional terms ("you've barely touched Latin America").
+  def self.region_for(code)
+    return nil unless /\A[A-Z]{2}\z/.match?(code.to_s)
+
+    REGION_BY_CODE[code]
+  end
+
+  def self.build_region_map
+    africa = %w[AO BF BI BJ BW CD CF CG CI CM CV DJ DZ EG EH ER ET GA GH GM GN GQ GW KE KM LR LS LY MA MG ML MR MU MW MZ NA NE NG RE RW SC SD SL SN SO SS ST SZ TD TG TN TZ UG YT ZA ZM ZW]
+    europe = %w[AD AL AT AX BA BE BG BY CH CY CZ DE DK EE ES FI FO FR GB GG GI GR HR HU IE IM IS IT JE LI LT LU LV MC MD ME MK MT NL NO PL PT RS RU SE SI SK SM UA VA XK]
+    asia = %w[AE AF AM AZ BD BH BN BT CN GE HK ID IL IN IQ IR JO JP KG KH KP KR KW KZ LA LB LK MM MN MO MV MY NP OM PH PK PS QA SA SG SY TH TJ TL TM TR TW UZ VN YE]
+    north_america = %w[AG AI AW BB BL BM BQ BS BZ CA CR CU CW DM DO GD GL GT HN HT JM KN KY LC MF MQ MX MS NI PA PM PR SV SX TC TT US VC VG VI]
+    south_america = %w[AR BO BR CL CO EC FK GF GY PE PY SR UY VE]
+    oceania = %w[AS AU CK FJ FM GU KI MH MP NC NF NR NU NZ PF PG PN PW SB TF TK TO TV UM VU WF WS]
+
+    map = {}
+    africa.each { |c| map[c] = "Africa" }
+    europe.each { |c| map[c] = "Europe" }
+    asia.each { |c| map[c] = "Asia" }
+    north_america.each { |c| map[c] = "North America" }
+    south_america.each { |c| map[c] = "South America" }
+    oceania.each { |c| map[c] = "Oceania" }
+    map
+  end
+  private_class_method :build_region_map
+
+  REGION_BY_CODE = build_region_map.freeze
+
   # Official English name -> ISO 3166-1 alpha-2 code, nil when not a real country
   def self.code_for(name)
     NAMES_TO_CODES[name.to_s.strip]

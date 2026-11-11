@@ -3,6 +3,8 @@
   Locals:
     - club: BookClub
     - past_count: Integer
+    - show_dna_tab: Boolean (only render the Literature DNA tab for clubs that
+      generated one, or where the viewer can generate it)
 %>
 <div class="mt-6 border-b border-border">
   <div role="tablist" aria-label="<%= t("club_sections", default: "Club sections") %>" class="-mb-px flex gap-6 overflow-x-auto">
@@ -27,5 +29,20 @@
       <%= t("past_reads_deck", default: "Past Reads Deck") %>
       <span class="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold text-accent"><%= past_count %></span>
     </button>
+    <% if local_assigns.fetch(:show_dna_tab, true) %>
+    <button
+      type="button"
+      role="tab"
+      data-club-tabs-target="tab"
+      data-tab="dna"
+      data-action="click->club-tabs#select"
+      aria-selected="false"
+      class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 border-transparent pb-3 pt-1 text-sm font-medium text-content-subtle transition-colors hover:text-content focus:outline-none aria-selected:border-content aria-selected:font-semibold aria-selected:text-content">
+      <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9.75 21.75h4.5l-.063-5.846m1.063-2.423 3.28 4.503m-8.94-3.952-2.276 4.26M4.5 12a7.5 7.5 0 1 1 15 0m0 0a7.5 7.5 0 0 1-7.5 7.5m7.5-7.5H21m-15.75 0H3m12 0V9.75m0 2.25-.001 2.25m0-2.25h-4.5m4.5 0H15M9.75 6H9m4.5 0h.75" />
+      </svg>
+      <%= t("literature_dna_tab", default: "Literature DNA") %>
+    </button>
+    <% end %>
   </div>
 </div>

@@ -127,6 +127,64 @@ class BookMetadataEnricherTest < ActiveSupport::TestCase
     assert_match(/Okonkwo/, @book.reload.description)
   end
 
+  test "wrong source_url does not veto a verbatim quote for descriptions" do
+    @book = Book.create!(title: "Some Book", author: "Nobody", description: "Original desc.")
+
+    # Source not on the whitelist, but the quote IS verbatim in the facts —
+    # mirrors sanitize_country's medium-confidence path.
+    result = enrich_with(ground, judgment(
+      desc_action: "update",
+      desc_value: "Set in pre-colonial Nigeria, the novel follows Okonkwo whose world is dismantled by British missionaries in Chinua Achebe's landmark fiction.",
+      desc_source: "https://made-up.example/review",
+      quote: "novel by Nigerian author Chinua Achebe"
+    ))
+
+    assert_match(/Okonkwo/, @book.reload.description)
+    assert_equal "medium", @book.enrichment["description_confidence"]
+    assert_equal "https://made-up.example/review", @book.enrichment["description_source_url"]
+    assert result.description_changed
+  end
+
+  test "description whitelisted source applies with high confidence" do
+    @book = Book.create!(title: "Some Book", author: "Nobody", description: "Original desc.")
+
+    result = enrich_with(ground, judgment(
+      desc_action: "update",
+      desc_value: "Set in pre-colonial Nigeria, the novel follows Okonkwo whose world is dismantled by British missionaries in Chinua Achebe's landmark fiction.",
+      desc_source: WIKI
+    ))
+
+    assert result.description_changed
+    assert_equal "high", @book.enrichment["description_confidence"]
+    assert_equal WIKI, @book.enrichment["description_source_url"]
+  end
+
+  test "MCP tool outputs are harvested into the consulted-source whitelist" do
+    @book = Book.create!(title: "So Long a Letter", author: "Mariama Bâ")
+
+    response = {
+      "choices" => [ { "message" => { "role" => "assistant", "content" => "Facts about the book. Source: https://openlibrary.org/books/OL51587863M" } } ],
+      "otari_tool_calls" => [
+        { "type" => "mcp", "status" => "completed", "server" => "books", "name" => "get_book",
+          "output" => { urls: [ "http://openlibrary.org/books/OL51587863M", "http://books.google.com/books?id=zA51b1qCgCEC" ] }.to_json },
+        { "type" => "tool", "status" => "completed", "name" => "otari_web_search",
+          "sources" => [ "https://en.wikipedia.org/wiki/Mariama_B%C3%A2" ] }
+      ]
+    }
+
+    ground = nil
+    fake_client = Object.new
+    fake_client.define_singleton_method(:chat) { |**_kwargs| response }
+    OtariClient.stub(:new, fake_client) do
+      ground = BookMetadataEnricher.new(book: @book).send(:ground_with_web_search, BookMetadataEnricher::DEFAULT_MODEL)
+    end
+
+    consulted = ground[:sources]
+    assert_includes consulted, "https://openlibrary.org/books/OL51587863M"   # from MCP output (scheme normalized)
+    assert_includes consulted, "https://books.google.com/books"              # from MCP output, query stripped
+    assert_includes consulted, "https://en.wikipedia.org/wiki/Mariama_B%C3%A2" # from web-search sources
+  end
+
   test "judge errors escalate to the fallback model" do
     @book = Book.create!(title: "Test Book", author: "Author", description: "Desc long enough to exist.")
 

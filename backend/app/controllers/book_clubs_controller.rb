@@ -35,6 +35,32 @@ class BookClubsController < ApplicationController
       .order(meetup_time: :desc)
   end
 
+  # Kicks off the Literature DNA flow (deterministic collector + sandboxed AI
+  # analysis) in the background and returns immediately.
+  def generate_dna
+    club = BookClub.find(params[:id])
+    return head :forbidden unless club_manageable_by?(club)
+
+    if ENV["OTARI_API_KEY"].blank?
+      return redirect_to book_club_path(club),
+        alert: "Otari is not configured — set OTARI_BASE_URL and OTARI_API_KEY."
+    end
+
+    # Per-owner monthly budget for Otari usage. Site admins are exempt.
+    unless OtariBudget.allow?(current_user, feature: "dna_generation")
+      return redirect_to book_club_path(club),
+        alert: "You've used all #{OtariBudget.monthly_quota(current_user)} Otari credits for this month — the budget resets on the 1st."
+    end
+
+    begin
+      BookClubDnaJob.perform_later(club.id, current_user.id)
+    rescue StandardError => e
+      return redirect_to book_club_path(club), alert: "DNA generation failed: #{e.message}"
+    end
+    redirect_to book_club_path(club),
+      notice: "Literature DNA queued for “#{club.name}” — it runs in the background (usually under a minute). Refresh to see the tab."
+  end
+
   def new
     @club = BookClub.new
   end
@@ -67,6 +93,12 @@ class BookClubsController < ApplicationController
   end
 
   private
+
+  # Mirrors ApplicationController#authorize_club_owner!'s condition, without
+  # the redirect (this action answers the Turbo/button request directly).
+  def club_manageable_by?(club)
+    club.owner == current_user || club.book_club_members.exists?(user: current_user, role: :admin)
+  end
 
   def set_book_clubs
     # TODO: Filter by city or have search by city, by name, topic mechanism

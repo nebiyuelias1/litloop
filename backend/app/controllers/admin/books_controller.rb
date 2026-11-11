@@ -12,7 +12,7 @@ module Admin
       end
 
       begin
-        BookEnrichmentJob.perform_later(book.id)
+        BookEnrichmentJob.perform_later(book.id, current_user.id)
       rescue StandardError => e
         return redirect_to admin_book_path(book),
           alert: "Enrichment failed: #{e.message}"
