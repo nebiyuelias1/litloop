@@ -88,7 +88,9 @@
               <span class="text-sm font-semibold text-primary whitespace-nowrap"><%= OtariBudget.remaining(current_user) %> of <%= otari_quota %> left</span>
             <% end %>
           </div>
-          <% unless current_user.admin? %>
+          <% if current_user.admin? %>
+            <p class="mt-1 text-right text-[11px] text-content-subtle"><%= otari_used %> <%= "use".pluralize(otari_used) %> this month</p>
+          <% else %>
             <div class="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-surface border border-border">
               <div class="h-full rounded-full bg-accent" style="width: <%= [(otari_used.to_f / otari_quota * 100).round, 100].min %>%;"></div>
             </div>

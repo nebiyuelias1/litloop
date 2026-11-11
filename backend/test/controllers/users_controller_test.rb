@@ -37,6 +37,7 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     assert_includes response.body, "Unlimited"
+    assert_includes response.body, "0 uses this month"
     refute_includes response.body, "left</span>"
   end
 end
