@@ -1,0 +1,36 @@
+<%#
+  Collective taste: per-book member rating aggregates from the ratings
+  table — average plus min-max spread. Books are ordered by disagreement
+  (spread) so the divisive picks surface first. Aggregates only; no member
+  identities are shown. Fully verified data.
+
+  Locals:
+    taste: [{"title","avg","min","max","n"}...] ordered by spread desc
+%>
+<% max_spread = taste.map { |r| r["max"] - r["min"] }.max || 0 %>
+<div class="space-y-2.5">
+  <% taste.first(10).each do |row| %>
+    <% spread = row["max"] - row["min"] %>
+    <div class="flex items-center gap-2">
+      <span class="w-28 shrink-0 truncate text-right text-[11px] text-content-muted" title="<%= row["title"] %>"><%= row["title"] %></span>
+      <%# The spread bar: a track from min to max on a 0-5 scale, avg marked %>
+      <div class="relative h-3.5 flex-1 overflow-hidden rounded-full bg-accent/10">
+        <div class="absolute inset-y-0 rounded-full bg-accent/30"
+          style="left: <%= (row["min"] * 100.0 / 5).round %>%; width: <%= [(spread * 100.0 / 5).round, 3].max %>%;"></div>
+        <div class="absolute inset-y-0 w-0.5 bg-accent"
+          style="left: <%= (row["avg"] * 100.0 / 5).round %>%;"></div>
+      </div>
+      <span class="w-14 shrink-0 text-right text-[11px] font-bold text-accent"><%= row["avg"] %>★</span>
+      <span class="w-16 shrink-0 text-right text-[10px] text-content-subtle" title="<%= t("dna_spread", default: "rating spread") %>">
+        <% if spread > 0 %><%= row["min"] %>–<%= row["max"] %><% else %><%= t("dna_unanimous", default: "unanimous") %><% end %>
+      </span>
+    </div>
+  <% end %>
+</div>
+<div class="mt-2 flex items-center gap-x-3 text-[10px] text-content-subtle">
+  <span class="inline-flex items-center gap-1"><span class="inline-block h-2 w-3 rounded-full bg-accent/30"></span><%= t("dna_spread_legend", default: "min–max spread") %></span>
+  <span class="inline-flex items-center gap-1"><span class="inline-block h-2 w-0.5 bg-accent"></span><%= t("dna_avg_legend", default: "average") %></span>
+  <% if max_spread >= 2 %>
+    · <%= t("dna_divisive_hint", default: "widest spreads first — the club's most debated books") %>
+  <% end %>
+</div>

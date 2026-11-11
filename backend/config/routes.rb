@@ -1,6 +1,8 @@
 Rails.application.routes.draw do
   namespace :admin do
-    resources :books
+    resources :books do
+      member { post :enrich }
+    end
     resources :book_clubs
     resources :book_club_members
     resources :book_reads
@@ -57,6 +59,9 @@ Rails.application.routes.draw do
   resources :book_clubs do
     collection do
       get :discover
+    end
+    member do
+      post :generate_dna
     end
 
     resource :membership, controller: "book_club_members", only: [ :create, :destroy ]

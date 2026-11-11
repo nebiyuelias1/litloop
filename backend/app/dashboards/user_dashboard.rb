@@ -24,6 +24,7 @@ class UserDashboard < Administrate::BaseDashboard
     reviews: Field::HasMany,
     telegram_id: Field::String,
     username: Field::String,
+    otari_monthly_quota: Field::Number,
     created_at: Field::DateTime,
     updated_at: Field::DateTime
   }.freeze
@@ -55,6 +56,7 @@ class UserDashboard < Administrate::BaseDashboard
     reviews
     telegram_id
     username
+    otari_monthly_quota
     created_at
     updated_at
   ].freeze
@@ -77,6 +79,7 @@ class UserDashboard < Administrate::BaseDashboard
     reviews
     telegram_id
     username
+    otari_monthly_quota
   ].freeze
 
   # COLLECTION_FILTERS

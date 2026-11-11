@@ -129,7 +129,8 @@ class BooksController < ApplicationController
     params.require(:book).permit(
       :title, :author, :description, :published_at, :language,
       :cover_image, :publisher, :isbn, :source, :source_url,
-      :title_en, :title_romanized, :author_romanized, :page_count
+      :title_en, :title_romanized, :author_romanized, :page_count,
+      :country_of_origin
     )
   end
 end

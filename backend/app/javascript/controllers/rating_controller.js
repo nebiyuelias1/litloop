@@ -40,7 +40,7 @@ export default class extends Controller {
 
       if (response.ok) {
         const data = await response.json()
-        toast(`Rating with score ${data.rating.score} saved.`, { type: 'success' })
+        toast('Rating saved.', { type: 'success' })
       } else {
         console.error('Failed to save rating')
       }
@@ -53,11 +53,11 @@ export default class extends Controller {
     this.starTargets.forEach((star, index) => {
       const svg = star.querySelector('svg')
       if (index < value) {
-        svg.classList.remove('text-gray-300')
-        svg.classList.add('text-yellow-400')
+        svg.classList.remove('text-content-muted')
+        svg.classList.add('text-accent')
       } else {
-        svg.classList.remove('text-yellow-400')
-        svg.classList.add('text-gray-300')
+        svg.classList.remove('text-accent')
+        svg.classList.add('text-content-muted')
       }
     })
   }

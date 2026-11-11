@@ -17,7 +17,9 @@ class BookDashboard < Administrate::BaseDashboard
     book_reads: Field::HasMany,
     book_tags: Field::HasMany,
     cover_image: Field::String,
+    country_of_origin: Field::String,
     description: Field::Text,
+    enriched_at: Field::DateTime,
     isbn: Field::String,
     language: Field::String,
     page_count: Field::Number,
@@ -61,6 +63,7 @@ class BookDashboard < Administrate::BaseDashboard
     reviews_count
     description
     cover_image
+    country_of_origin
     isbn
     language
     page_count
@@ -69,6 +72,7 @@ class BookDashboard < Administrate::BaseDashboard
     tags
     book_clubs
     created_at
+    enriched_at
     updated_at
   ].freeze
 
@@ -86,6 +90,7 @@ class BookDashboard < Administrate::BaseDashboard
     page_count
     published_at
     publisher
+    country_of_origin
     tags
   ].freeze
 

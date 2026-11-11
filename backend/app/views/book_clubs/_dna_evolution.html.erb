@@ -1,0 +1,47 @@
+<%#
+  Literary evolution: one column per read, in meetup order, split into that
+  book's theme segments. Colors follow the app's accent-opacity ladder,
+  assigned by theme rank (global count desc, then name) so a theme keeps
+  the same shade across the whole strip — the eye can follow its rise or
+  fade. Everything derives from verified BookTag data.
+
+  Locals:
+    sequence: [{"title","month","pages","region","tags"}...] in meetup order
+%>
+<% theme_order = sequence.flat_map { |s| s["tags"] || [] }
+     .tally
+     .sort_by { |name, count| [-count, name] }
+     .map(&:first) %>
+<% palette = [1.0, 0.78, 0.58, 0.42, 0.3, 0.21, 0.15] %>
+<% shade = theme_order.each_with_index.to_h { |name, i| [name, palette[i] || 0.1] } %>
+<% shown = theme_order.first(6) %>
+<% height = 90 %>
+<div class="flex items-end gap-1" style="height: <%= height %>px;">
+  <% sequence.first(24).each_with_index do |entry, idx| %>
+    <div class="flex flex-1 flex-col items-center justify-end gap-1" style="min-width: 0;"
+      title="<%= [entry["title"], entry["month"], (entry["tags"] || []).join(", ")].compact_blank.join(" — ") %>">
+      <%# The book's theme segments, stacked bottom-up %>
+      <% segments = shown & (entry["tags"] || []) %>
+      <% segments = (entry["tags"] || []).first(1) if segments.empty? && entry["tags"].present? %>
+      <% if segments.empty? %>
+        <div class="w-full rounded-sm bg-accent/10" style="height: 6px;"></div>
+      <% else %>
+        <% segments.each do |theme| %>
+          <div class="w-full" style="height: <%= [(height - 20) / segments.size, 5].min.round %>px; background: var(--color-accent); opacity: <%= shade[theme] || 0.1 %>; border-radius: 2px;"></div>
+        <% end %>
+      <% end %>
+      <span class="w-full truncate text-center text-[9px] text-content-subtle"><%= idx + 1 %></span>
+    </div>
+  <% end %>
+</div>
+<div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-content-muted">
+  <% shown.each do |theme| %>
+    <span class="inline-flex items-center gap-1">
+      <span class="inline-block h-2 w-2 rounded-sm bg-accent" style="opacity: <%= shade[theme] %>;"></span>
+      <%= theme %>
+    </span>
+  <% end %>
+</div>
+<p class="mt-1 text-[10px] text-content-subtle">
+  <%= t("dna_evolution_hint", default: "1–%{n}: reads in order — watch a theme's shade thicken or fade", n: [sequence.size, 24].min) %>
+</p>

@@ -1,0 +1,194 @@
+<%#
+  Server-rendered visual analytics for the Literature DNA panel. Flat panels
+  matching the club page style; no chart library, no JS. Every value comes
+  from the verified dataset (Ruby), never from the model — except the two
+  clearly-labeled AI-assisted panels (difficulty estimates, question clusters).
+
+  Locals:
+    - tags:              Hash<tag, count>
+    - regions:           Hash<region, count>
+    - languages:         Hash<lang code, count>
+    - engagement:        {"per_session" => [], "avg_turnout" => f}
+    - discussion:        {"total" => n, "max" => n, "per_session" => []}
+    - weekday:           Hash<"Mon", n>
+    - time_of_day:       Hash<"morning", n>
+    - locations:         Hash<location, n>
+    - cadence_days:      Float|nil
+    - sequence:          [{"title","month","pages","region","tags"}...] (verified)
+    - taste:             [{"title","avg","min","max","n"}...] (verified)
+    - estimates:         Hash<title, {"complexity","language"}> | nil (AI)
+    - question_clusters: [{"name","questions":[...]}] | nil (AI-organized)
+%>
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+  <%# ---- Theme composition: treemap -------------------------------------- %>
+  <% if tags.any? %>
+    <div class="rounded-2xl border border-border bg-background p-4">
+      <h4 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
+        <%= t("dna_chart_themes", default: "Theme composition") %>
+      </h4>
+      <%= render "book_clubs/dna_treemap", tags: tags %>
+    </div>
+  <% end %>
+
+  <%# ---- World composition: pie ------------------------------------------ %>
+  <% region_total = regions.values.sum %>
+  <% if regions.any? && region_total > 0 %>
+    <div class="rounded-2xl border border-border bg-background p-4">
+      <h4 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
+        <%= t("dna_chart_regions", default: "World composition") %>
+      </h4>
+      <%= render "book_clubs/dna_donut", series: regions, unit: t("books_word", default: "books") %>
+    </div>
+  <% end %>
+
+  <%# ---- Literary evolution: theme mix across the read sequence ----------- %>
+  <% if sequence.is_a?(Array) && sequence.size >= 2 %>
+    <div class="sm:col-span-2 rounded-2xl border border-border bg-background p-4">
+      <h4 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
+        <%= t("dna_chart_evolution", default: "Literary evolution") %>
+      </h4>
+      <%= render "book_clubs/dna_evolution", sequence: sequence %>
+    </div>
+  <% end %>
+
+  <%# ---- Attendance: going-RSVPs per session + trend line ---------------- %>
+  <% per_session = (engagement["per_session"] || []).first(12) %>
+  <% if per_session.any? %>
+    <div class="rounded-2xl border border-border bg-background p-4">
+      <h4 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
+        <%= t("dna_chart_engagement", default: "Attendance") %>
+      </h4>
+      <% max_going = [per_session.max, 1].max %>
+      <% avg = engagement["avg_turnout"] %>
+      <div class="relative flex items-end gap-1.5" style="height: 64px;">
+        <% if avg.present? %>
+          <% y = 64 - (avg * 44.0 / max_going).round %>
+          <div class="absolute inset-x-0 border-t border-dashed border-accent/50" style="top: <%= [y, 6].max %>px;"></div>
+        <% end %>
+        <% per_session.each do |going| %>
+          <div class="relative flex flex-1 flex-col items-center justify-end gap-1" title="<%= going %> <%= t("attended_word", default: "RSVPed") %>">
+            <span class="text-[10px] font-bold text-accent"><%= going %></span>
+            <div class="w-full rounded-md bg-accent" style="height: <%= [(going * 44.0 / max_going).round, 4].max %>px; opacity: <%= going == max_going ? 1 : 0.65 %>;"></div>
+          </div>
+        <% end %>
+      </div>
+      <% if avg.present? %>
+        <div class="mt-2 flex items-baseline gap-1 text-xs text-content-muted">
+          <span class="font-bold text-accent text-base"><%= avg %></span>
+          <%= t("dna_avg_turnout", default: "average attendance per meetup") %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# ---- Meeting clock: weekday donut + time-of-day + cadence ------------ %>
+  <% if weekday.any? %>
+    <div class="rounded-2xl border border-border bg-background p-4">
+      <h4 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
+        <%= t("dna_chart_when", default: "When the club meets") %>
+      </h4>
+      <div class="flex items-start gap-4">
+        <div class="w-32 shrink-0">
+          <%= render "book_clubs/dna_donut", series: weekday, unit: t("meetup_word", default: "meetups"), compact: true %>
+        </div>
+        <div class="space-y-1.5 text-[11px]">
+          <% time_of_day.each do |tname, count| %>
+            <div class="flex items-center gap-1.5 text-content">
+              <span class="font-bold text-accent"><%= count %></span>
+              <%= t("dna_tod_#{tname}", default: tname.capitalize) %>
+            </div>
+          <% end %>
+          <% if cadence_days %>
+            <div class="border-t border-border pt-1.5 text-content-muted">
+              <%= cadence_days %> <%= t("dna_cadence", default: "days between meetups (avg)") %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <%# ---- Reading difficulty: pages (verified) + AI-estimated scores ------- %>
+  <% if sequence.is_a?(Array) && sequence.any? { |s| s["pages"].present? } %>
+    <div class="rounded-2xl border border-border bg-background p-4">
+      <h4 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
+        <%= t("dna_chart_difficulty", default: "Reading difficulty") %>
+      </h4>
+      <%= render "book_clubs/dna_difficulty", sequence: sequence, estimates: estimates %>
+    </div>
+  <% end %>
+
+  <%# ---- Conversation depth: questions per session ----------------------- %>
+  <% dq_session = (discussion["per_session"] || []).first(12) %>
+  <% if dq_session.any? && discussion["total"].to_i > 0 %>
+    <div class="rounded-2xl border border-border bg-background p-4">
+      <h4 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
+        <%= t("dna_chart_questions", default: "Conversation depth") %>
+      </h4>
+      <% max_dq = [dq_session.max, 1].max %>
+      <div class="flex items-end gap-1.5" style="height: 64px;">
+        <% dq_session.each do |dq| %>
+          <div class="flex flex-1 flex-col items-center justify-end gap-1" title="<%= dq %> <%= t("questions_word", default: "questions") %>">
+            <span class="text-[10px] font-bold text-accent"><%= dq %></span>
+            <div class="w-full rounded-md bg-accent" style="height: <%= [(dq * 40.0 / max_dq).round, 4].max %>px; opacity: <%= dq == max_dq ? 1 : 0.65 %>;"></div>
+          </div>
+        <% end %>
+      </div>
+      <div class="mt-2 flex items-baseline gap-1 text-xs text-content-muted">
+        <span class="font-bold text-accent text-base"><%= discussion["total"] %></span>
+        <%= t("dna_questions_total", default: "discussion questions across past meets") %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# ---- Collective taste: per-book average + disagreement spread -------- %>
+  <% if taste.is_a?(Array) && taste.any? %>
+    <div class="sm:col-span-2 rounded-2xl border border-border bg-background p-4">
+      <h4 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
+        <%= t("dna_chart_taste", default: "Collective taste") %>
+      </h4>
+      <%= render "book_clubs/dna_taste", taste: taste %>
+    </div>
+  <% end %>
+
+  <%# ---- Language mix ----------------------------------------------------- %>
+  <% if languages.size > 1 %>
+    <div class="rounded-2xl border border-border bg-background p-4">
+      <h4 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
+        <%= t("dna_chart_languages", default: "Languages") %>
+      </h4>
+      <%= render "book_clubs/dna_donut", series: languages, unit: t("books_word", default: "books"), compact: true %>
+    </div>
+  <% end %>
+
+  <%# ---- Meetup places: chips row ---------------------------------------- %>
+  <% if locations.any? %>
+    <div class="rounded-2xl border border-border bg-background p-4">
+      <h4 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
+        <%= t("dna_chart_places", default: "Regular meetup spots") %>
+      </h4>
+      <div class="flex flex-wrap gap-2">
+        <% locations.each do |place, count| %>
+          <span class="rounded-full bg-accent/10 px-2.5 py-1 text-xs text-content">
+            📍 <%= place %>
+            <% if count > 1 %><span class="font-bold text-accent"><%= count %></span><% end %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# ---- Recurring questions: AI-organized, verbatim texts visible -------- %>
+  <% if question_clusters.is_a?(Array) && question_clusters.any? %>
+    <div class="sm:col-span-2 rounded-2xl border border-border bg-background p-4">
+      <div class="mb-3 flex items-baseline justify-between gap-2">
+        <h4 class="text-xs font-bold uppercase tracking-wide text-content-subtle">
+          <%= t("dna_chart_recurring", default: "Recurring questions") %>
+        </h4>
+        <span class="text-[10px] text-content-subtle"><%= t("dna_ai_organized", default: "AI-organized · grouping only, questions verbatim") %></span>
+      </div>
+      <%= render "book_clubs/dna_questions", clusters: question_clusters %>
+    </div>
+  <% end %>
+</div>

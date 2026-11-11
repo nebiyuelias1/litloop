@@ -3,24 +3,52 @@
 <% show_club_name = local_assigns.fetch(:show_club_name, true) %>
 <% can_see_details = club&.private_info_visible_to?(current_user) %>
 
-<div class="card card-side bg-surface shadow-sm border border-border hover:border-accent/40 transition-all group">
+<div
+  class="
+    card card-side bg-surface shadow-sm border border-border hover:border-accent/40
+    transition-all group
+  ">
   <figure class="w-32 shrink-0 relative overflow-hidden bg-background">
     <% if book&.cover_image.present? %>
       <img
-        src="<%= book.cover_image %>"
+        src="<%= cover_book_path(book) %>"
         alt="<%= book.title %>"
-        class="absolute inset-0 h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500">
+        loading="lazy"
+        class="
+          absolute inset-0 h-full w-full object-cover object-center group-hover:scale-105
+          transition-transform duration-500
+        ">
     <% elsif book_read.poll.present? && can_see_details %>
-      <div class="absolute inset-0 flex flex-col items-center justify-center text-accent p-2 text-center">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-1">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+      <div
+        class="
+          absolute inset-0 flex flex-col items-center justify-center text-accent p-2
+          text-center
+        ">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="w-8 h-8 mb-1">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
         </svg>
         <span class="text-[10px] font-bold uppercase tracking-wider"><%= t("poll", default: "Poll") %></span>
       </div>
     <% else %>
-      <div class="absolute inset-0 flex items-center justify-center text-content-muted">
+      <div
+        class="
+          absolute inset-0 flex items-center justify-center text-content-muted
+        ">
         <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.5"
+            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
         </svg>
       </div>
     <% end %>
@@ -32,27 +60,54 @@
       <% if show_club_name %>
         <div class="flex items-center gap-2 mb-1.5 min-w-0">
           <% if club&.photo&.attached? %>
-            <%= image_tag club.photo, alt: "", class: "w-7 h-7 aspect-square rounded-full object-cover shrink-0 ring-1 ring-border shadow-xs" %>
+            <%= image_tag club.photo,
+            alt: "",
+            class:
+              "w-7 h-7 aspect-square rounded-full object-cover shrink-0 ring-1 ring-border shadow-xs" %>
           <% else %>
-            <div aria-hidden="true" class="w-7 h-7 rounded-full bg-accent/15 text-accent font-bold text-xs flex items-center justify-center shrink-0">
+            <div
+              aria-hidden="true"
+              class="
+                w-7 h-7 rounded-full bg-accent/15 text-accent font-bold text-xs flex
+                items-center justify-center shrink-0
+              ">
               <%= club&.name_initial || "B" %>
             </div>
           <% end %>
-          <span class="text-xs font-bold uppercase tracking-wider text-accent truncate">
-            <%= club&.name || t("book_club", default: "Book Club") %>
-          </span>
+          <% if can_see_details && club&.persisted? %>
+            <span
+              class="
+                text-xs font-bold uppercase tracking-wider text-accent truncate hover:underline
+                underline-offset-2
+              ">
+              <%= club&.name || t("book_club", default: "Book Club") %>
+            </span>
+          <% else %>
+            <span class="text-xs font-bold uppercase tracking-wider text-accent truncate">
+              <%= club&.name || t("book_club", default: "Book Club") %>
+            </span>
+          <% end %>
         </div>
       <% end %>
 
       <%# Book Title / Session Header %>
-      <h2 class="title title-sm font-bold text-content leading-tight line-clamp-2 group-hover:text-accent transition-colors">
-        <%= book&.title || (can_see_details ? book_read.poll&.text : nil) || t("new_reading_session", default: "New Reading Session") %>
+      <h2
+        class="
+          title title-sm font-bold text-content leading-tight line-clamp-2
+          group-hover:text-accent transition-colors
+        ">
+        <%= book&.title || (can_see_details ? book_read.poll&.text : nil) ||
+          t("new_reading_session", default: "New Reading Session") %>
       </h2>
 
       <%# Author / Subtext %>
       <p class="text-xs sm:text-sm text-content-subtle mt-0.5 truncate">
         <% if book.present? %>
-          <%= t("by_author", author: book.author.presence || t("unknown_author", default: "Unknown Author")) %>
+          <%= t(
+            "by_author",
+            author:
+              book.author.presence || t("unknown_author", default: "Unknown Author"),
+          ) %>
         <% elsif book_read.poll.present? && can_see_details %>
           <%= t("voting_in_progress", default: "Voting in Progress") %>
         <% end %>
@@ -63,9 +118,24 @@
         <% if can_see_details %>
           <%# Time %>
           <div class="flex items-center gap-1.5 min-w-0">
-            <svg class="w-3.5 h-3.5 text-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" stroke-width="1.7"></rect>
-              <path d="M3 9h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+            <svg
+              class="w-3.5 h-3.5 text-accent shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor">
+              <rect
+                x="3"
+                y="5"
+                width="18"
+                height="16"
+                rx="3"
+                stroke="currentColor"
+                stroke-width="1.7"></rect>
+              <path
+                d="M3 9h18M8 3v4M16 3v4"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"></path>
             </svg>
             <span class="truncate">
               <%= book_read.meetup_time&.strftime("%b %d, %Y at %l:%M %p") %>
@@ -74,9 +144,21 @@
 
           <%# Location %>
           <div class="flex items-center gap-1.5 min-w-0">
-            <svg class="w-3.5 h-3.5 text-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            <svg
+              class="w-3.5 h-3.5 text-accent shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.7"
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.7"
+                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
             <span class="truncate">
               <%= book_read.meetup_location.presence || t("tbd", default: "TBD") %>
@@ -84,14 +166,30 @@
           </div>
         <% else %>
           <div class="flex items-center gap-1.5 text-content-muted">
-            <svg class="w-3.5 h-3.5 shrink-0 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M16.5 10.5V6.75a4.5 4.5 0 00-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            <svg
+              class="w-3.5 h-3.5 shrink-0 text-accent"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.7"
+                d="M16.5 10.5V6.75a4.5 4.5 0 00-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
             </svg>
             <span class="font-medium text-content"><%= t("private_reading_session", default: "Private Reading Session") %></span>
           </div>
           <div class="flex items-center gap-1.5 text-content-subtle">
-            <svg class="w-3.5 h-3.5 shrink-0 text-content-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            <svg
+              class="w-3.5 h-3.5 shrink-0 text-content-muted"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.7"
+                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
             </svg>
             <span class="truncate"><%= t("join_club_to_view_details", default: "Join club to view meetup details") %></span>
           </div>
@@ -103,11 +201,22 @@
     <% if can_see_details %>
       <%= render "shared/book_read_card_rsvp", club: club, book_read: book_read %>
     <% else %>
-      <div class="card-actions justify-self-end w-full mt-4 flex items-center gap-2 relative z-20">
+      <div
+        class="
+          card-actions justify-self-end w-full mt-4 flex items-center gap-2 relative z-20
+        ">
         <div class="flex-1 min-w-0">
-          <span class="w-full btn btn-outline btn-disabled opacity-70 text-xs font-semibold cursor-default pointer-events-none flex items-center justify-center gap-1.5">
+          <span
+            class="
+              w-full btn btn-outline btn-disabled opacity-70 text-xs font-semibold
+              cursor-default pointer-events-none flex items-center justify-center gap-1.5
+            ">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
             <%= t("members_only", default: "Members only") %>
           </span>

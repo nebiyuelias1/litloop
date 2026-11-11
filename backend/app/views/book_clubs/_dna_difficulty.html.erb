@@ -1,0 +1,44 @@
+<%#
+  Reading difficulty across the read sequence. Pages are VERIFIED (books
+  table); complexity and language scores are AI estimates and render only
+  when present, always with the "AI estimate" badge. Dots share one 0-10
+  vertical scale so the three lines are comparable.
+
+  Locals:
+    sequence:  [{"title","month","pages","region","tags"}...] in meetup order
+    estimates: Hash<title, {"complexity"=>n, "language"=>n}> | nil (AI)
+%>
+<% rows = sequence.first(24).filter_map do |s|
+     pages = s["pages"].presence
+     est = estimates.is_a?(Hash) ? estimates[s["title"]] : nil
+     next if pages.blank? && est.blank?
+     { title: s["title"], pages: pages, est: est }
+   end %>
+<% max_pages = rows.filter_map { |r| r[:pages] }.max || 1 %>
+<% has_estimates = rows.any? { |r| r[:est].present? } %>
+<% height = 80 %>
+<div class="flex items-end gap-1" style="height: <%= height %>px;">
+  <% rows.each do |row| %>
+    <div class="flex flex-1 flex-col items-center justify-end gap-0.5" style="min-width: 0;"
+      title="<%= row[:title] %> — <%= row[:pages] ? "#{row[:pages]} pages" : "" %><%= row[:est] ? ", complexity #{row[:est]['complexity']}/10, language #{row[:est]['language']}/10 (AI estimate)" : "" %>">
+      <% if row[:est] %>
+        <div class="flex w-full items-end justify-center gap-[1px]">
+          <span class="w-1.5 rounded-t-sm bg-accent/40" style="height: <%= [(row[:est]["complexity"].to_f / 10 * (height - 26)).round, 3].max %>px;"></span>
+          <span class="w-1.5 rounded-t-sm bg-accent/60" style="height: <%= [(row[:est]["language"].to_f / 10 * (height - 26)).round, 3].max %>px;"></span>
+        </div>
+      <% end %>
+      <% if row[:pages] %>
+        <div class="w-full rounded-sm bg-accent" style="height: <%= [(row[:pages].to_f / max_pages * (height - (has_estimates ? 26 : 12))).round, 3].max %>px; opacity: <%= row[:pages] == max_pages ? 1 : 0.7 %>;"></div>
+      <% end %>
+      <span class="w-full truncate text-center text-[9px] text-content-subtle"><%= row[:pages] %></span>
+    </div>
+  <% end %>
+</div>
+<div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-content-muted">
+  <span class="inline-flex items-center gap-1"><span class="inline-block h-2 w-3 rounded-sm bg-accent" style="opacity: 0.8;"></span><%= t("dna_pages_word", default: "pages (verified)") %></span>
+  <% if has_estimates %>
+    <span class="inline-flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-accent" style="opacity: 0.4;"></span><%= t("dna_complexity_word", default: "complexity") %></span>
+    <span class="inline-flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-accent" style="opacity: 0.6;"></span><%= t("dna_language_word", default: "language difficulty") %></span>
+    <span class="text-content-subtle"><%= t("dna_ai_estimates", default: "scored 1–10 · AI estimate, not database data") %></span>
+  <% end %>
+</div>

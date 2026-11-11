@@ -4,10 +4,11 @@
 <div class="mx-auto max-w-2xl" data-controller="club-tabs">
   <%= render "book_clubs/hero_banner", club: @club %>
   <%= render "book_clubs/identity", club: @club, can_see_private: can_see_private %>
-  <%= render "book_clubs/tabs", club: @club, past_count: @past_reads.size %>
+  <% can_manage_dna = user_signed_in? && (@club.owner == current_user || @club.book_club_members.exists?(user: current_user, role: :admin)) %>
+  <%= render "book_clubs/tabs", club: @club, past_count: @past_reads.size,
+        show_dna_tab: @club.dna_generated_at.present? || can_manage_dna %>
 
-  <%# Current Reading %>
-  <section data-club-tabs-target="panel" data-tab="overview" class="pt-5">
+  <%# Current Reading %>  <section data-club-tabs-target="panel" data-tab="overview" class="pt-5">
     <% if @current_read %>
       <%= render "book_clubs/current_reading_card", club: @club, book_read: @current_read %>
     <% else %>
@@ -37,6 +38,12 @@
   </section>
 
   <%= render "book_clubs/past_reads_panel", club: @club, past_reads: @past_reads %>
+  <% if @club.dna_generated_at.present? || can_manage_dna %>
+    <% otari_exempt = can_manage_dna && current_user.admin? %>
+    <%= render "book_clubs/dna_panel", club: @club, past_count: @past_reads.size, can_manage_dna: can_manage_dna,
+          otari_remaining: (OtariBudget.remaining(current_user) unless otari_exempt),
+          otari_quota: (OtariBudget.monthly_quota(current_user) unless otari_exempt) %>
+  <% end %>
 </div>
 
 <%# Swapped by the join/leave/request turbo streams. The container exists only on this page, so stream updates are no-ops on carousels where the replaced card already carries its own dialog - no duplicate IDs. %>
