@@ -1,41 +1,55 @@
 <%#
-# Show BookClub Admin View
+# Show
+
+Customized for book clubs: appends a "Literature DNA audit" section with the
+full generated DNA payload (dataset, sandbox-drawn chart metadata, and the
+model's sandbox code + stdout). Otherwise identical to Administrate's default
+show view.
 %>
+
+<% content_for(:title) { t("administrate.actions.show_resource", name: page.page_title) } %>
 
 <header class="main-content__header">
   <h1 class="main-content__page-title">
-    <%= page.page_title %>
+    <%= content_for(:title) %>
   </h1>
+
+  <%= content_for(:header_middle) %>
 
   <div>
     <%= link_to(
       t("administrate.actions.edit_resource", name: page.page_title),
       [:edit, namespace, page.resource],
       class: "button",
-    ) %>
-    <%= link_to(
+    ) if accessible_action?(page.resource, :edit) %>
+
+    <%= button_to(
       t("administrate.actions.destroy"),
       [namespace, page.resource],
       class: "button button--danger",
       method: :delete,
-      data: { confirm: t("administrate.actions.confirm") }
-    ) %>
+      data: { turbo_confirm: t("administrate.actions.confirm") }
+    ) if accessible_action?(page.resource, :destroy) %>
   </div>
+
+  <%= content_for(:header_last) %>
 </header>
+
+<%= content_for(:before_main) %>
 
 <section class="main-content__body">
   <dl>
     <% page.attributes.each do |title, attributes| %>
-      <fieldset class="<%= "fieldset--#{title.parameterize}" if title.present? %>">
+      <fieldset class="<%= "field-unit--nested" if title.present? %>">
         <% if title.present? %>
-          <legend><h2><%= title %></h2></legend>
+          <legend><%= t "helpers.label.#{page.resource_name}.#{title}", default: title %></legend>
         <% end %>
 
         <% attributes.each do |attribute| %>
           <dt class="attribute-label" id="<%= attribute.name %>">
           <%= t(
-            "helpers.label.#{page.resource_name}.#{attribute.name}",
-            default: attribute.name.titleize,
+            "helpers.label.#{resource_name}.#{attribute.name}",
+            default: page.resource.class.human_attribute_name(attribute.name),
           ) %>
           </dt>
 
@@ -43,27 +57,34 @@
         <% end %>
       </fieldset>
     <% end %>
-
-    <fieldset>
-      <legend><h2>Attachments</h2></legend>
-
-      <dt class="attribute-label">Club Avatar Photo</dt>
-      <dd class="attribute-data">
-        <% if page.resource.photo.attached? %>
-          <%= image_tag page.resource.photo, alt: "", style: "width: 64px; height: 64px; border-radius: 9999px; object-fit: cover;" %>
-        <% else %>
-          <span style="color: #666;">No avatar photo attached</span>
-        <% end %>
-      </dd>
-
-      <dt class="attribute-label" style="margin-top: 1rem;">Cover Photo</dt>
-      <dd class="attribute-data">
-        <% if page.resource.cover_photo.attached? %>
-          <%= image_tag page.resource.cover_photo, alt: "", style: "height: 100px; width: 200px; border-radius: 4px; object-fit: cover;" %>
-        <% else %>
-          <span style="color: #666;">No cover photo attached</span>
-        <% end %>
-      </dd>
-    </fieldset>
   </dl>
 </section>
+
+<% dna = page.resource.literature_dna %>
+<% if dna.present? || page.resource.dna_generated_at.present? %>
+  <section class="main-content__body">
+    <h2 style="font-weight: 600; margin-bottom: 8px;">Literature DNA audit</h2>
+    <% chart = dna["charts"] %>
+    <% if chart.present? %>
+      <p style="margin-bottom: 8px; font-size: 12px;">
+        Sandbox-drawn chart: <%= chart["bytes"] %> bytes via
+        <code><%= chart["file_id"] %></code>
+        (<%= dna["model"] %>, <%= page.resource.dna_generated_at&.strftime("%b %-d %Y %H:%M") %>)
+      </p>
+      <img src="<%= chart["data_uri"] %>" alt="Club chart drawn in the Otari sandbox"
+        style="max-width: 640px; border: 1px solid #d0d0d0; border-radius: 4px; margin-bottom: 12px; background: #fff;">
+    <% end %>
+    <%# The base64 data URI is binary noise in a text audit — show the image
+        above and keep it out of the JSON dump. %>
+    <% json_view = (dna || {}).merge("dna_generated_at" => page.resource.dna_generated_at&.iso8601) %>
+    <% json_view = json_view["charts"].is_a?(Hash) ? json_view.merge("charts" => json_view["charts"].except("data_uri")) : json_view %>
+    <pre
+      style="
+        background: #f6f6f6; border: 1px solid #d0d0d0; border-radius: 4px;
+        padding: 12px; font-size: 12px; overflow: auto; white-space: pre-wrap;
+        max-height: 480px;
+      "><%= JSON.pretty_generate(json_view) %></pre>
+  </section>
+<% end %>
+
+<%= content_for(:after_main) %>
