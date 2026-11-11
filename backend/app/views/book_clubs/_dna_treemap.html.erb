@@ -1,0 +1,43 @@
+<%#
+  Theme composition as a squarified treemap. Layout by DnaTreemap (Ruby,
+  deterministic); rendering is plain SVG rects. Color follows the app's
+  accent-opacity ladder by rank (largest theme = strongest oxblood).
+
+  Locals:
+    tags: Hash<tag, count>
+%>
+<% rows = tags.first(8) %>
+<% rects = DnaTreemap.squarify(rows, width: 300, height: 180) %>
+<% palette = [1.0, 0.8, 0.62, 0.46, 0.34, 0.25, 0.18, 0.13] %>
+<svg viewBox="0 0 300 180" class="h-auto w-full" role="img" aria-label="<%= t("dna_treemap_aria", default: "Treemap of recurring themes, area proportional to how often they appear") %>">
+  <% rects.each_with_index do |rect, idx| %>
+    <rect x="<%= rect["x"] + 0.75 %>" y="<%= rect["y"] + 0.75 %>"
+      width="<%= [rect["w"] - 1.5, 0].max %>" height="<%= [rect["h"] - 1.5, 0].max %>"
+      rx="3" style="fill: var(--color-accent); fill-opacity: <%= palette[idx] || 0.1 %>;">
+      <title><%= rect["label"] %> — <%= rows.to_h[rect["label"]] %></title>
+    </rect>
+    <%# Labels only where the cell is big enough to hold one; dark cells get
+        white text, light cells get ink text %>
+    <% if rect["w"] >= 44 && rect["h"] >= 22 %>
+      <% dark_cell = palette[idx].to_f >= 0.55 %>
+      <text x="<%= rect["x"] + rect["w"] / 2 %>" y="<%= rect["y"] + rect["h"] / 2 - 1 %>"
+        text-anchor="middle" dominant-baseline="middle"
+        style="fill: <%= dark_cell ? "var(--color-accent-contrast)" : "var(--color-content)" %>;" class="text-[10px] font-bold">
+        <%= truncate(rect["label"], length: 14) %>
+      </text>
+      <% if rect["h"] >= 36 %>
+        <text x="<%= rect["x"] + rect["w"] / 2 %>" y="<%= rect["y"] + rect["h"] / 2 + 11 %>"
+          text-anchor="middle" dominant-baseline="middle"
+          style="fill: <%= dark_cell ? "var(--color-accent-contrast)" : "var(--color-content-muted)" %>;" class="text-[9px]"><%= rows.to_h[rect["label"]] %></text>
+      <% end %>
+    <% end %>
+  <% end %>
+</svg>
+<div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-content-muted">
+  <% rows.each_with_index do |(name, count), idx| %>
+    <span class="inline-flex items-center gap-1">
+      <span class="inline-block h-2 w-2 rounded-sm bg-accent" style="opacity: <%= palette[idx] || 0.1 %>;"></span>
+      <%= name %> <span class="font-bold text-accent"><%= count %></span>
+    </span>
+  <% end %>
+</div>

@@ -17,13 +17,43 @@ class BookClubsDnaControllerTest < ActionDispatch::IntegrationTest
   test "queues generation for the club owner" do
     sign_in users(:one)
     queued = []
-    BookClubDnaJob.stub(:perform_later, ->(club_id) { queued << club_id }) do
+    BookClubDnaJob.stub(:perform_later, ->(club_id, user_id) { queued << [ club_id, user_id ] }) do
       post generate_dna_book_club_url(@club)
     end
 
     assert_redirected_to book_club_url(@club)
     assert_match(/queued/, flash[:notice])
-    assert_equal [ @club.id ], queued
+    assert_equal [ [ @club.id, users(:one).id ] ], queued
+  end
+
+  test "redirects with alert when the monthly budget is exhausted" do
+    owner = users(:two) # non-admin
+    club = BookClub.create!(name: "Budgeted Club", owner: owner)
+    5.times { OtariBudget.record!(user: owner, feature: "dna_generation") }
+
+    sign_in owner
+    queued = []
+    BookClubDnaJob.stub(:perform_later, ->(*_args) { queued << _args }) do
+      post generate_dna_book_club_url(club)
+    end
+
+    assert_redirected_to book_club_url(club)
+    assert_match(/budget/i, flash[:alert])
+    assert_empty queued
+  end
+
+  test "admin is exempt from the budget" do
+    5.times { OtariBudget.record!(user: users(:one), feature: "dna_generation") }
+
+    sign_in users(:one)
+    queued = []
+    BookClubDnaJob.stub(:perform_later, ->(*_args) { queued << _args }) do
+      post generate_dna_book_club_url(@club)
+    end
+
+    assert_redirected_to book_club_url(@club)
+    assert_match(/queued/, flash[:notice])
+    assert_not_empty queued
   end
 
   test "forbids non-owner members" do
@@ -90,17 +120,21 @@ class BookClubsDnaControllerTest < ActionDispatch::IntegrationTest
 
     body = response.body
     assert_includes body, "Literature DNA"
-    assert_includes body, "The reading journey"
+    # the cover strip was removed in v4 — DNA is analytics only
+    refute_includes body, "The reading journey"
     assert_includes body, "Where these stories come from"
     assert_includes body, "data-dna-country=\"ET\""
-    assert_includes body, "Recurring themes"
+    assert_includes body, "dna-map" # zoom/pan controller hook
+    assert_includes body, "Theme composition"
     assert_includes body, "World composition"
-    assert_includes body, "Reading rhythm"
     assert_includes body, "Attendance"
     assert_includes body, "When the club meets"
     assert_includes body, "Conversation depth"
-    assert_includes body, "Book length"
-    assert_includes body, "How members rated them"
+    # rhythm month-bars were folded into "When the club meets"; the page-bars
+    # and rating-bars were replaced by the difficulty and taste panels
+    refute_includes body, "Reading rhythm"
+    refute_includes body, "Book length"
+    refute_includes body, "How members rated them"
 
     # no stat tiles, no AI commentary, no python-speak
     refute_includes body, "python"

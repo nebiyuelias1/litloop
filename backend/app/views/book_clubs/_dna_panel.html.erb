@@ -2,47 +2,23 @@
   Literature DNA tab: a visual-only board. Every number is derived in Ruby
   from the club's own data; the model's only visible contribution is one
   chart image it drew with its own code in Otari's sandbox (neutral card).
-  Owner/club-admin can (re)generate.
+  Owner/club-admin can (re)generate, within their monthly Otari budget
+  (admins are exempt and see no budget line).
 
   Locals:
     - club: BookClub
     - past_count: Integer (past reads count)
     - can_manage_dna: Boolean
+    - otari_remaining: Integer|nil (nil = exempt/unknown, no budget shown)
+    - otari_quota: Integer|nil
 %>
+<% dna_budget_left = local_assigns[:otari_remaining].present? ? [ local_assigns[:otari_remaining].to_i, 0 ].max : nil %>
+<% dna_budget_exhausted = dna_budget_left.present? && dna_budget_left <= 0 %>
 <section data-club-tabs-target="panel" data-tab="dna" hidden class="pt-5">
   <% dna = club.literature_dna %>
   <% if dna.present? %>
     <% dataset = dna["dataset"] || {} %>
     <% countries = dataset["countries"] || {} %>
-
-    <%# ---- Reading journey: chronological cover strip ---------------------- %>
-    <% journey = club.book_reads.includes(:book).where("meetup_time < ?", Time.current).order(:meetup_time) %>
-    <% if journey.any? %>
-      <article class="mb-4 rounded-2xl border border-border bg-background p-4">
-        <h3 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
-          <%= t("dna_journey", default: "The reading journey") %>
-        </h3>
-        <div class="flex gap-3 overflow-x-auto pb-1">
-          <% journey.each do |read| %>
-            <div class="shrink-0 text-center" title="<%= [read.book&.title, read.meetup_time.strftime("%b %Y")].compact.join(" — ") %>">
-              <div class="h-28 w-20 overflow-hidden rounded-lg border border-border bg-surface">
-                <% if read.book&.cover_image.present? %>
-                  <img src="<%= cover_book_path(read.book) %>" alt="<%= read.book.title %>"
-                    class="h-full w-full object-cover" loading="lazy">
-                <% else %>
-                  <div class="flex h-full w-full items-center justify-center text-content-muted">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                  </div>
-                <% end %>
-              </div>
-              <div class="mt-1 w-20 truncate text-[10px] text-content-subtle"><%= read.meetup_time.strftime("%b %-d") %></div>
-            </div>
-          <% end %>
-        </div>
-      </article>
-    <% end %>
 
     <%# ---- World map -------------------------------------------------------- %>
     <% if countries.any? %>
@@ -83,15 +59,16 @@
             tags: dataset["tags"] || {},
             regions: dataset["regions"] || {},
             languages: dataset["languages"] || {},
-            months: dataset["months"] || {},
             engagement: dataset["engagement"] || {},
             discussion: dataset["discussion"] || {},
             weekday: dataset["weekday"] || {},
             time_of_day: dataset["time_of_day"] || {},
             locations: dataset["locations"] || {},
             cadence_days: dataset["cadence_days"],
-            ratings: dataset["ratings"] || {},
-            pages: dataset["pages"] %>
+            sequence: dataset["sequence"] || [],
+            taste: dataset["taste"] || [],
+            estimates: dna["estimates"],
+            question_clusters: dna["question_clusters"] %>
     </div>
 
     <%# ---- Quiet provenance footer + admin regenerate ----------------------- %>
@@ -100,12 +77,20 @@
             default: "Generated %{at} · %{model} via Otari · every number on this board is verified against the club's own database",
             at: club.dna_generated_at&.strftime("%b %-d, %Y %H:%M"), model: dna["model"]) %>
       <% if can_manage_dna %>
-        · <%= button_to t("dna_regenerate", default: "Regenerate"),
-              generate_dna_book_club_path(club),
-              method: :post,
-              form_class: "inline",
-              class: "text-xs underline text-accent hover:opacity-80",
-              data: { turbo_confirm: t("dna_regenerate_confirm", default: "Regenerate the club's Literature DNA with AI?") } %>
+        <% if dna_budget_exhausted %>
+          · <%= t("dna_budget_exhausted", default: "monthly Otari budget used up — resets on the 1st") %>
+        <% else %>
+          <% if dna_budget_left.present? %>
+            · <%= t("dna_budget_left", count: dna_budget_left, quota: local_assigns[:otari_quota],
+                  default: "%{count} of %{quota} Otari credits left this month") %>
+          <% end %>
+          · <%= button_to t("dna_regenerate", default: "Regenerate"),
+                generate_dna_book_club_path(club),
+                method: :post,
+                form_class: "inline",
+                class: "text-xs underline text-accent hover:opacity-80",
+                data: { turbo_confirm: t("dna_regenerate_confirm", default: "Regenerate the club's Literature DNA with AI?") } %>
+        <% end %>
       <% end %>
     </p>
   <% elsif can_manage_dna %>
@@ -116,12 +101,22 @@
               default: "Generate the club's Literature DNA: the AI draws its chart in the sandbox while every number below is verified against the club's own data.") %>
       </p>
       <div class="flex flex-col items-center gap-2">
-        <%= button_to t("dna_generate", default: "✨ Generate Literature DNA"),
-              generate_dna_book_club_path(club),
-              method: :post,
-              class: "btn btn-primary",
-              data: { turbo_confirm: t("dna_generate_confirm", default: "Generate the club's Literature DNA with AI? This runs in the background (usually under a minute).") } %>
-        <span class="text-[11px] text-content-subtle"><%= t("dna_hint_model", default: "Runs on open-weight models via Otari — no content is sent beyond club statistics and book metadata.") %></span>
+        <% if dna_budget_exhausted %>
+          <span class="text-sm text-content-subtle"><%= t("dna_budget_exhausted", default: "Monthly Otari budget used up — it resets on the 1st.") %></span>
+        <% else %>
+          <%= button_to t("dna_generate", default: "✨ Generate Literature DNA"),
+                generate_dna_book_club_path(club),
+                method: :post,
+                class: "btn btn-primary",
+                data: { turbo_confirm: t("dna_generate_confirm", default: "Generate the club's Literature DNA with AI? This runs in the background (usually under a minute).") } %>
+        <% end %>
+        <span class="text-[11px] text-content-subtle">
+          <%= t("dna_hint_model", default: "Runs on open-weight models via Otari — no content is sent beyond club statistics and book metadata.") %>
+          <% if dna_budget_left.present? %>
+            · <%= t("dna_budget_left", count: dna_budget_left, quota: local_assigns[:otari_quota],
+                  default: "%{count} of %{quota} Otari credits left this month") %>
+          <% end %>
+        </span>
       </div>
     </div>
   <% else %>

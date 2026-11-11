@@ -191,6 +191,57 @@ class BookCoverImproverTest < ActiveSupport::TestCase
     end
   end
 
+  test "annotated model proposals are cleaned to their bare URL" do
+    book = Book.create!(title: "So Long a Letter", author: "Mariama Bâ", cover_image: "https://images.unsplash.com/old")
+    improver = BookCoverImprover.new(book: book)
+
+    CoverVisionJudge.stub(:new, fake_vision) do
+      # The AI proposal carries a unicode annotation; the improver must fetch
+      # only the bare URL (used to die with "URI must be ascii only").
+      improver.stub(:page_image_url, ->(_u) { nil }) do
+        improver.stub(:http_get_text, lambda { |u|
+          flunk "fetched annotated URL: #{u}" unless u.ascii_only?
+          '<meta property="og:image" content="https://cdn.example/cover.jpg">'
+        }) do
+          improver.stub(:fetch_image_bytes, ->(_u) { fetch_result(80_000) }) do
+            improver.stub(:wikipedia_search_title, -> { nil }) do
+              OtariClient.stub(:new, fake_client({ "wikipedia_page" => "", "commons_file_pages" => [],
+                "cover_pages" => [ "https://publisher.example/page (Penguin Classics – official cover)" ] })) do
+                result = improver.improve!
+
+                assert result.improved, "reason: #{result.reason}"
+                assert_equal "https://cdn.example/cover.jpg", book.reload.cover_image
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  test "cited Open Library cover id is upgraded to the large size" do
+    book = Book.create!(title: "So Long a Letter", author: "Mariama Bâ", cover_image: "https://images.unsplash.com/old")
+    improver = BookCoverImprover.new(book: book, cited_cover_url: "https://covers.openlibrary.org/b/id/14338907-M.jpg")
+
+    candidates = improver.send(:cited_cover_candidates)
+
+    assert_equal 1, candidates.size
+    assert_equal "https://covers.openlibrary.org/b/id/14338907-L.jpg", candidates.first[:url]
+  end
+
+  test "cited extensionless Google Books cover URL is tried as a direct image" do
+    book = Book.create!(title: "Things Fall Apart", author: "Chinua Achebe", cover_image: "https://images.unsplash.com/old")
+    cited = "https://books.google.com/books/content?id=2plPEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api"
+    improver = BookCoverImprover.new(book: book, cited_cover_url: cited)
+
+    candidates = improver.send(:cited_cover_candidates)
+    urls = candidates.map { |c| c[:url] }
+
+    # Full URL kept (query params select the image) plus a larger-render variant
+    assert_includes urls, cited
+    assert_includes urls, cited.sub(/zoom=\d+/, "zoom=2")
+  end
+
   test "gateway errors are swallowed into a kept result" do
     book = Book.create!(title: "Test Book", author: "Test Author", cover_image: "https://a.example/old.jpg")
     improver = BookCoverImprover.new(book: book)

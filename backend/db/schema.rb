@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_11_10_154413) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_11_090000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -153,6 +153,22 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_10_154413) do
     t.index ["user_id"], name: "index_membership_requests_on_user_id"
   end
 
+  create_table "otari_usages", force: :cascade do |t|
+    t.integer "user_id"
+    t.integer "book_club_id"
+    t.string "feature", null: false
+    t.string "model"
+    t.integer "cost", default: 1, null: false
+    t.integer "input_tokens", default: 0, null: false
+    t.integer "output_tokens", default: 0, null: false
+    t.integer "total_tokens", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.index ["book_club_id"], name: "index_otari_usages_on_book_club_id"
+    t.index ["created_at"], name: "index_otari_usages_on_created_at"
+    t.index ["feature"], name: "index_otari_usages_on_feature"
+    t.index ["user_id"], name: "index_otari_usages_on_user_id"
+  end
+
   create_table "poll_options", force: :cascade do |t|
     t.integer "poll_id", null: false
     t.string "content", null: false
@@ -256,6 +272,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_10_154413) do
     t.datetime "confirmed_at"
     t.datetime "confirmation_sent_at"
     t.string "unconfirmed_email"
+    t.integer "otari_monthly_quota"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["line_id"], name: "index_users_on_line_id", unique: true
@@ -278,6 +295,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_10_154413) do
   add_foreign_key "discussion_questions", "users"
   add_foreign_key "membership_requests", "book_clubs"
   add_foreign_key "membership_requests", "users"
+  add_foreign_key "otari_usages", "book_clubs"
+  add_foreign_key "otari_usages", "users"
   add_foreign_key "poll_options", "books"
   add_foreign_key "poll_options", "polls"
   add_foreign_key "poll_options", "users", column: "suggested_by_id"

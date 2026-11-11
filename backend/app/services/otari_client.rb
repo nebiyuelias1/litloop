@@ -80,17 +80,23 @@ class OtariClient
   # See https://platform.openai.com/docs/api-reference/chat for the shape.
   # `tools` takes Otari built-in tool declarations, e.g.
   #   [{ "type" => "otari_web_search", "max_uses" => 3 }]
+  # `mcp_server_ids` takes ids of MCP servers registered in the Otari
+  # workspace (dashboard: Tools -> MCP servers), e.g. ["books"]. Sent as a
+  # top-level request field, never inside `tools`; composes freely with
+  # built-in tools.
   # Chat completion with Otari's built-in tools (gateway-run search / code
   # execution) and an optional read timeout — the tool + sandbox loop can
   # legitimately outlast a plain completion.
-  def chat(model:, messages:, response_format: nil, temperature: nil, max_tokens: nil, tools: nil, read_timeout: nil)
+  def chat(model:, messages:, response_format: nil, temperature: nil, max_tokens: nil,
+           tools: nil, mcp_server_ids: nil, read_timeout: nil)
     body = { model: model, messages: messages }
     body[:response_format] = response_format if response_format
     body[:temperature] = temperature if temperature
     body[:max_tokens] = max_tokens if max_tokens
     body[:tools] = tools if tools
+    body[:mcp_server_ids] = mcp_server_ids if mcp_server_ids
 
-    post("/chat/completions", body, read_timeout: read_timeout || (tools.present? ? TOOL_LOOP_READ_TIMEOUT : DEFAULT_READ_TIMEOUT))
+    post("/chat/completions", body, read_timeout: read_timeout || ((tools.present? || mcp_server_ids.present?) ? TOOL_LOOP_READ_TIMEOUT : DEFAULT_READ_TIMEOUT))
   end
 
   # Runs Python directly in the gateway's sandbox — no model involved
@@ -121,7 +127,7 @@ class OtariClient
 
   # Chat completion with OpenAI structured output. Returns the parsed JSON
   # object the model produced (raises RequestError if it is not an object).
-  def chat_structured(model:, messages:, name:, schema:, temperature: nil)
+  def chat_structured(model:, messages:, name:, schema:, temperature: nil, read_timeout: nil)
     response = chat(
       model: model,
       messages: messages,
@@ -133,7 +139,8 @@ class OtariClient
           schema: schema
         }
       },
-      temperature: temperature
+      temperature: temperature,
+      read_timeout: read_timeout
     )
 
     content = response.dig("choices", 0, "message", "content")

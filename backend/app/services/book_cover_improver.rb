@@ -24,7 +24,7 @@ class BookCoverImprover
   # improvement attempt regardless of LLM verdicts.
   COVER_PLACEHOLDER_HOSTS = %w[images.unsplash.com unsplash.com source.unsplash.com].freeze
   Result = Struct.new(:improved, :old_cover, :new_cover, :reason, keyword_init: true)
-  MAX_VISION_CHECKS = 3
+  MAX_VISION_CHECKS = 5
 
   # Verified working on the hosted gateway (mozilla-hosted account):
   # https://api.otari.ai/api/v1/models
@@ -151,19 +151,15 @@ class BookCoverImprover
   # nil when the URL is dead/non-image/oversized. Single network pass — probes
   # and vision consume the same bytes.
   def fetch_image_bytes(url)
-    uri = URI(url)
-    request = Net::HTTP::Get.new(uri)
-    Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https", open_timeout: VERIFY_OPEN_TIMEOUT, read_timeout: VERIFY_READ_TIMEOUT) do |http|
-      response = http.request(request)
-      return nil unless response.is_a?(Net::HTTPSuccess)
-      return nil unless response["content-type"].to_s.start_with?("image/")
+    response = http_get_following_redirects(URI(url))
+    return nil unless response.is_a?(Net::HTTPSuccess)
+    return nil unless response["content-type"].to_s.start_with?("image/")
 
-      bytes = response.body.to_s
-      return nil if bytes.bytesize > MAX_IMAGE_BYTES
+    bytes = response.body.to_s
+    return nil if bytes.bytesize > MAX_IMAGE_BYTES
 
-      { bytes: bytes, size: response["content-length"] ? response["content-length"].to_i : bytes.bytesize,
-        content_type: response["content-type"].to_s.split(";").first }
-    end
+    { bytes: bytes, size: response["content-length"] ? response["content-length"].to_i : bytes.bytesize,
+      content_type: response["content-type"].to_s.split(";").first }
   rescue => e
     Rails.logger.warn("BookCoverImprover image fetch failed for #{url}: #{e.message}")
     nil
@@ -179,7 +175,12 @@ class BookCoverImprover
     Result.new(improved: false, old_cover: @book.cover_image, new_cover: nil, reason: reason)
   end
 
-  RELEVANCE = { cited_source: 110, wiki_article: 100, openlibrary: 80, cited_page: 50, commons_proposal: 40 }.freeze
+  RELEVANCE = { cited_source: 110, wiki_article: 100, openlibrary: 80, cited_page: 60, commons_proposal: 40 }.freeze
+
+  # Site chrome and placeholder images mined from arbitrary web pages. None of
+  # these can be a book cover; rejecting them keeps the vision budget for
+  # plausible candidates instead of spending it on category icons and loaders.
+  SITE_CHROME_FILE = /logo|icon|spinner|avatar|banner|sprite|\.svg\z|analytics|pixel|tracking|placeholder|no[-_]cover|loader|ajax|cleardot|spacer|social|facebook|twitter|bsky|github|tweet|pantheon|triad|favicon/i
 
   # Collects relevance-tagged candidate URLs:
   #  - Wikipedia article file (resolved title-match) — 100
@@ -207,6 +208,13 @@ class BookCoverImprover
     cited = @cited_cover_url.to_s
     return [] if cited.blank? || cited == @book.cover_image
 
+    # Open Library cover-by-id URLs: the enrichment judge (grounded by the
+    # books MCP) cites e.g. covers.openlibrary.org/b/id/14338907-M.jpg. Upgrade
+    # to the large rendering — the -M variant is often under the minimum size.
+    if (m = cited.match(%r{covers\.openlibrary\.org/b/id/(\d+)-[SML]\.jpe?g}i))
+      return [ { url: "https://covers.openlibrary.org/b/id/#{m[1]}-L.jpg", relevance: RELEVANCE[:cited_source] } ]
+    end
+
     if cited.include?("wikipedia.org/wiki/") && !cited.include?("/File:")
       [ { url: page_image_url(cited), relevance: RELEVANCE[:wiki_article] } ]
     elsif cited.include?("commons.wikimedia.org/wiki/File:")
@@ -214,7 +222,16 @@ class BookCoverImprover
     elsif cited.match?(/\.(jpe?g|png|webp|gif)(\?.*)?\z/i)
       [ { url: strip_query(cited), relevance: RELEVANCE[:cited_source] } ]
     else
-      html_page_cover_candidates(cited)
+      candidates = [ { url: cited, relevance: RELEVANCE[:cited_source] } ]
+      # Google Books cover endpoints have no file extension and their default
+      # zoom renders small; a larger render exists at the same path. Judge the
+      # URL as an image directly — if it is HTML instead, fetch_image_bytes
+      # rejects it on content-type and nothing is lost.
+      if cited.include?("books.google.") && cited.include?("/books/content")
+        candidates << { url: cited.sub(/zoom=\d+/, "zoom=2"), relevance: RELEVANCE[:cited_source] }
+      end
+      candidates.concat(html_page_cover_candidates(cited))
+      candidates
     end
   end
 
@@ -237,7 +254,7 @@ class BookCoverImprover
     img_urls = html.scan(/<img[^>]+src=["']([^"']+)["']/i).flatten
                    .map { |src| absolute_uri(page_url, src) }
                    .select { |u| /\Ahttps?:/.match?(u) }
-                   .reject { |u| /logo|icon|spinner|avatar|banner|sprite|\.svg\z|analytics|pixel|tracking/i.match?(u) }
+                   .reject { |u| SITE_CHROME_FILE.match?(u) }
                    .reject { |u| u == @book.cover_image }
                    .reject { |u| u.include?("$") || u.include?("{{") }
     # Images whose filenames mention the book or "cover" outrank the rest
@@ -245,7 +262,7 @@ class BookCoverImprover
     img_urls.sort_by { |u|
       u_name = File.basename(URI.parse(u).path.to_s).downcase
       (u_name.include?(title_key) || u_name.include?("cover") ? "0" : "1") + u
-    }.first(8).each { |u| candidates << { url: u, relevance: RELEVANCE[:cited_source] } }
+    }.first(8).each { |u| candidates << { url: u, relevance: RELEVANCE[:cited_page] } }
 
     cover_log("cited page #{page_url[0, 80]} -> og=#{og ? og[0, 60].inspect : 'none'}, imgs=#{img_urls.size} (#{candidates.size} candidates)")
     candidates
@@ -299,23 +316,34 @@ class BookCoverImprover
     )
 
     tagged = []
-    wiki = payload["wikipedia_page"].to_s
+    wiki = clean_proposal_url(payload["wikipedia_page"]).to_s
     if wiki.include?("wikipedia.org/wiki/")
       tagged << { url: page_image_url(wiki), relevance: RELEVANCE[:wiki_article] }
     end
 
     Array(payload["commons_file_pages"]).each do |file_page|
-      tagged << { url: commons_image_url(file_page), relevance: RELEVANCE[:commons_proposal] }
+      tagged << { url: commons_image_url(clean_proposal_url(file_page).to_s), relevance: RELEVANCE[:commons_proposal] }
     end
 
     Array(payload["cover_pages"]).each do |page_url|
-      cover_log("cover_page proposal: #{page_url[0, 90]}")
-      tagged.concat(html_page_cover_candidates(page_url))
+      clean = clean_proposal_url(page_url).to_s
+      next if clean.blank?
+      cover_log("cover_page proposal: #{clean[0, 90]}")
+      tagged.concat(html_page_cover_candidates(clean))
     end
     tagged
   rescue OtariClient::Error => e
     Rails.logger.warn("BookCoverImprover AI candidates failed: #{e.message}")
     []
+  end
+
+  # Model-proposed URLs often arrive annotated:
+  #   "https://openlibrary.org/works/OL158896W (Open Library – multiple edition
+  #    covers, including the original...)"
+  # The unicode annotation makes URI() refuse the whole string ("URI must be
+  # ascii only"). Extract the bare leading URL instead.
+  def clean_proposal_url(value)
+    URI.extract(value.to_s, %w[http https]).first
   end
 
   # Deterministic fallback: Wikipedia's own search API finds the article, and
@@ -423,30 +451,21 @@ class BookCoverImprover
 
   # Fetches a web page for og:image / <img> mining; drops anything past 2 MiB.
   def http_get_text(url)
-    uri = URI(url)
-    request = Net::HTTP::Get.new(uri)
-    request["User-Agent"] = WIKIMEDIA_USER_AGENT
-    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https", open_timeout: VERIFY_OPEN_TIMEOUT, read_timeout: VERIFY_READ_TIMEOUT) do |http|
-      http.request(request)
+    response = http_get_following_redirects(URI(url))
+    unless response.is_a?(Net::HTTPSuccess)
+      cover_log("page fetch #{url.to_s[0, 80]} -> HTTP #{response&.code || "error"}")
+      return nil
     end
-    return nil unless response.is_a?(Net::HTTPSuccess)
     return nil unless /html|text/i.match?(response["content-type"].to_s)
 
     response.body.to_s[0, 2_000_000]
-  rescue => e
-    Rails.logger.warn("BookCoverImprover page fetch failed for #{url}: #{e.message}")
-    nil
   end
 
   def http_get_json(uri, retries: 1)
-    request = Net::HTTP::Get.new(uri)
-    request["User-Agent"] = WIKIMEDIA_USER_AGENT
-    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true, open_timeout: VERIFY_OPEN_TIMEOUT, read_timeout: VERIFY_READ_TIMEOUT) do |http|
-      http.request(request)
-    end
+    response = http_get_following_redirects(uri)
 
     # Wikimedia rate-limits bursts; one polite retry after a pause
-    if response.code.to_i == 429 && retries.positive?
+    if response&.code.to_i == 429 && retries.positive?
       sleep(2)
       return http_get_json(uri, retries: retries - 1)
     end
@@ -461,21 +480,39 @@ class BookCoverImprover
 
   # Downloads the URL and reports size/content type; nil unless really an image.
   def probe_image(url)
-    uri = URI(url)
+    response = http_get_following_redirects(URI(url))
+    return nil unless response.is_a?(Net::HTTPSuccess)
+
+    content_type = response["content-type"].to_s
+    return nil unless content_type.start_with?("image/")
+
+    size = response["content-length"] ? response["content-length"].to_i : response.body.bytesize
+    { size: size, content_type: content_type }
+  end
+
+  # GET with manual redirect following — Net::HTTP does not follow redirects,
+  # and Open Library's cover endpoints 302 to archive.org while work pages 301
+  # to their canonical path. Returns the final Net::HTTPResponse, or nil on a
+  # transport error (which is logged).
+  def http_get_following_redirects(uri, limit: 4)
     request = Net::HTTP::Get.new(uri)
+    request["User-Agent"] = WIKIMEDIA_USER_AGENT
 
-    Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https", open_timeout: VERIFY_OPEN_TIMEOUT, read_timeout: VERIFY_READ_TIMEOUT) do |http|
-      response = http.request(request)
-      return nil unless response.is_a?(Net::HTTPSuccess)
+    limit.times do
+      response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https",
+        open_timeout: VERIFY_OPEN_TIMEOUT, read_timeout: VERIFY_READ_TIMEOUT) { |http| http.request(request) }
+      return response unless response.is_a?(Net::HTTPRedirection)
 
-      content_type = response["content-type"].to_s
-      return nil unless content_type.start_with?("image/")
-
-      size = response["content-length"] ? response["content-length"].to_i : response.body.bytesize
-      { size: size, content_type: content_type }
+      location = response["location"].to_s
+      cover_log("redirect (#{response.code}) #{uri.to_s[0, 70]} -> #{location[0, 70]}")
+      uri = URI.join(uri, location)
+      request = Net::HTTP::Get.new(uri)
+      request["User-Agent"] = WIKIMEDIA_USER_AGENT
     end
+    cover_log("redirect limit (#{limit}) reached at #{uri.to_s[0, 80]}")
+    nil
   rescue => e
-    Rails.logger.warn("BookCoverImprover probe failed for #{url}: #{e.message}")
+    Rails.logger.warn("BookCoverImprover request failed for #{uri}: #{e.message}")
     nil
   end
 end

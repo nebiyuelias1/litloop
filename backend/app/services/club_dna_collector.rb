@@ -45,7 +45,10 @@ class ClubDnaCollector
       "regions" => regions(read_books),
       "tags" => tags(read_books),
       "languages" => languages(read_books),
-      "authors" => authors(read_books)
+      "authors" => authors(read_books),
+      "sequence" => sequence(reads),
+      "taste" => taste(read_books),
+      "questions" => questions(past)
     })
   end
 
@@ -196,5 +199,58 @@ class ClubDnaCollector
 
     total = past_reads.sum { |r| r.book_read_rsvps.size }
     (total.to_f / past_reads.size).round(1)
+  end
+
+  # The reading sequence in meetup order: what was read when, with the
+  # verified attributes (pages, tags, region) that power the literary
+  # evolution stream and the length curve. Re-reads appear again — the
+  # evolution is about the journey, not unique titles.
+  def sequence(reads)
+    reads.filter_map do |read|
+      book = read.book
+      next if book.blank?
+
+      {
+        "title" => book.title,
+        "month" => read.meetup_time.strftime("%Y-%m"),
+        "pages" => book.page_count.presence,
+        "region" => book.country_of_origin.present? ? CountryCodes.region_for(book.country_of_origin) : nil,
+        "tags" => book.tags.order(:name).pluck(:name)
+      }
+    end
+  end
+
+  # Per-book member rating aggregates (read-only from the ratings table),
+  # ordered by disagreement (max-min spread) so the divisive books surface.
+  # Aggregates only — no member identities leave this method.
+  def taste(books)
+    rows = books.filter_map do |book|
+      scores = book.ratings.pluck(:score).compact
+      next if scores.empty?
+
+      {
+        "title" => book.title,
+        "avg" => (scores.sum / scores.size).round(1),
+        "min" => scores.min,
+        "max" => scores.max,
+        "n" => scores.size
+      }
+    end
+    rows.sort_by { |r| [ -(r["max"] - r["min"]), -r["n"] ] }
+  end
+
+  # The club's own discussion questions, verbatim, with the read they belong
+  # to. Rendered only inside AI-organized clusters (each cluster shows its
+  # texts so members can verify the grouping); never summarized or invented.
+  def questions(past_reads)
+    past_reads.flat_map do |read|
+      read.discussion_questions.order(:position, :id).map do |question|
+        {
+          "text" => question.content.to_s.strip,
+          "book" => read.book&.title,
+          "month" => read.meetup_time.strftime("%Y-%m")
+        }
+      end
+    end.reject { |q| q["text"].blank? }
   end
 end

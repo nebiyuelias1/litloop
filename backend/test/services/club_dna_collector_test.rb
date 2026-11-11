@@ -59,4 +59,47 @@ class ClubDnaCollectorTest < ActiveSupport::TestCase
     assert_equal 1, data["countries"]["IL"]["count"]
     assert_equal({ "Asia" => 1 }, data["regions"])
   end
+
+  test "sequence, taste and questions feed the new panels from verified data" do
+    club = BookClub.create!(name: "Panels Club", owner: users(:one))
+
+    first = Book.create!(title: "First", author: "A", description: "x", language: "en", page_count: 200)
+    second = Book.create!(title: "Second", author: "B", description: "x", language: "en", page_count: 400)
+    tag = Tag.create!(name: "war")
+    BookTag.create!(book: first, tag: tag)
+    BookTag.create!(book: second, tag: tag)
+
+    read1 = BookRead.new(book: first, book_club: club, host: users(:one), meetup_time: 40.days.ago).tap { |r| r.save!(validate: false) }
+    read2 = BookRead.new(book: second, book_club: club, host: users(:one), meetup_time: 10.days.ago).tap { |r| r.save!(validate: false) }
+
+    DiscussionQuestion.create!(book_read: read1, content: "What is home?", position: 1)
+    DiscussionQuestion.create!(book_read: read2, content: "Who decides?", position: 1)
+
+    Rating.create!(user: users(:one), book: second, score: 2.0)
+    Rating.create!(user: users(:two), book: second, score: 5.0)
+    Rating.create!(user: users(:one), book: first, score: 4.0)
+    Rating.create!(user: users(:two), book: first, score: 4.0)
+
+    data = ClubDnaCollector.new(club: club).collect!.data
+
+    # sequence: meetup order, verified attributes only
+    assert_equal %w[First Second], data["sequence"].map { |s| s["title"] }
+    assert_equal 200, data["sequence"][0]["pages"]
+    assert_equal 400, data["sequence"][1]["pages"]
+    assert_equal [ "war" ], data["sequence"][0]["tags"]
+
+    # taste: ordered by disagreement, aggregates only
+    assert_equal "Second", data["taste"].first["title"]
+    assert_equal 2.0, data["taste"].first["min"]
+    assert_equal 5.0, data["taste"].first["max"]
+    assert_equal 3.5, data["taste"].first["avg"]
+    assert_equal 2, data["taste"].first["n"]
+    assert_equal 4.0, data["taste"].second["avg"]
+
+    # questions: verbatim text, grouped with their read
+    texts = data["questions"].map { |q| q["text"] }
+    assert_includes texts, "What is home?"
+    assert_includes texts, "Who decides?"
+    assert_equal "First", data["questions"].first["book"]
+  end
 end

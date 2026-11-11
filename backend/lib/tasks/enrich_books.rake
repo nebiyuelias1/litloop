@@ -11,7 +11,7 @@ namespace :books do
 
     books.find_each do |book|
       result = BookMetadataEnricher.new(book: book).enrich!
-      puts "#{book.title} — tags=#{result.tags_added.join(', ')} country=#{result.country_of_origin} confidence=#{result.confidence}"
+      puts "#{book.title} — tags=#{result.tags_added.join(', ')} country=#{result.country_of_origin} confidence=#{book.enrichment["country_confidence"]}"
       enriched += 1
     rescue OtariClient::RequestError, OtariClient::ConfigurationError => e
       puts "FAILED #{book.title}: #{e.message}"

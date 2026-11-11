@@ -46,8 +46,14 @@ class BookClubsController < ApplicationController
         alert: "Otari is not configured — set OTARI_BASE_URL and OTARI_API_KEY."
     end
 
+    # Per-owner monthly budget for Otari usage. Site admins are exempt.
+    unless OtariBudget.allow?(current_user, feature: "dna_generation")
+      return redirect_to book_club_path(club),
+        alert: "You've used all #{OtariBudget.monthly_quota(current_user)} Otari credits for this month — the budget resets on the 1st."
+    end
+
     begin
-      BookClubDnaJob.perform_later(club.id)
+      BookClubDnaJob.perform_later(club.id, current_user.id)
     rescue StandardError => e
       return redirect_to book_club_path(club), alert: "DNA generation failed: #{e.message}"
     end

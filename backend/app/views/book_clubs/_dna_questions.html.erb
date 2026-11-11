@@ -1,0 +1,24 @@
+<%#
+  Recurring questions: AI-organized clusters of the club's actual discussion
+  questions. The model only groups and names — every question shown is the
+  verbatim text stored in the database, so members can verify the grouping
+  at a glance. Labeled "AI-organized" by the parent panel.
+
+  Locals:
+    clusters: [{"name","questions":[verbatim text...]}...]
+%>
+<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+  <% clusters.each do |cluster| %>
+    <div class="rounded-xl border border-border bg-surface p-3">
+      <h5 class="mb-2 flex items-center justify-between gap-2 text-xs font-bold text-accent">
+        <%= cluster["name"] %>
+        <span class="text-[10px] font-normal text-content-subtle"><%= cluster["questions"].size %></span>
+      </h5>
+      <ul class="space-y-1.5 text-[11px] leading-snug text-content">
+        <% cluster["questions"].each do |question| %>
+          <li class="border-l-2 border-accent/25 pl-2">“<%= question %>”</li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+</div>

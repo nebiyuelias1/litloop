@@ -2,32 +2,56 @@
   World map of the countries the club has read from. Each country with reads
   is shaded by read-count; everything else stays neutral. Rendered purely
   from CountryCodes data — never from AI output (the AI may only narrate it).
+  Zoom & pan run client-side via the dna_map Stimulus controller (viewBox).
 
   Locals:
     countries: Hash<iso2 code, {"name","flag","count","titles"}>
 %>
-<svg
-  viewBox="0 0 <%= WorldMapPaths::WIDTH %> <%= WorldMapPaths::HEIGHT %>"
-  class="h-auto w-full max-w-[540px]"
-  role="img"
-  aria-label="<%= t("dna_map_aria", default: "World map highlighting countries the club has read from") %>">
-  <% WorldMapPaths::PATHS.each do |code, d| %>
-    <% info = countries[code] %>
-    <% if info %>
-      <path
-        d="<%= d %>"
-        style="fill: var(--color-accent); fill-opacity: <%= info["count"] >= 4 ? 1.0 : 0.35 + info["count"] * 0.15 %>;"
-        stroke="transparent"
-        stroke-width="0.4">
-        <title><%= "#{info["flag"]} #{info["name"]} — #{info["count"]} #{info["count"] == 1 ? "book" : "books"}" %></title>
-      </path>
-    <% else %>
-      <path
-        d="<%= d %>"
-        style="fill: var(--color-content-subtle); fill-opacity: 0.30;"
-        stroke="transparent"
-        stroke-width="0.4">
-      </path>
-    <% end %>
-  <% end %>
-</svg>
+<div data-controller="dna-map" class="relative">
+  <div class="overflow-hidden rounded-lg bg-surface">
+    <svg
+      data-dna-map-target="svg"
+      viewBox="0 0 <%= WorldMapPaths::WIDTH %> <%= WorldMapPaths::HEIGHT %>"
+      class="mx-auto block h-auto w-full max-w-[540px] select-none"
+      role="img"
+      aria-label="<%= t("dna_map_aria", default: "World map highlighting countries the club has read from") %>">
+      <% WorldMapPaths::PATHS.each do |code, d| %>
+        <% info = countries[code] %>
+        <% if info %>
+          <path
+            d="<%= d %>"
+            style="fill: var(--color-accent); fill-opacity: <%= info["count"] >= 4 ? 1.0 : 0.35 + info["count"] * 0.15 %>;"
+            stroke="transparent"
+            stroke-width="0.4">
+            <title><%= "#{info["flag"]} #{info["name"]} — #{info["count"]} #{info["count"] == 1 ? "book" : "books"}" %></title>
+          </path>
+        <% else %>
+          <path
+            d="<%= d %>"
+            style="fill: var(--color-content-subtle); fill-opacity: 0.30;"
+            stroke="transparent"
+            stroke-width="0.4">
+          </path>
+        <% end %>
+      <% end %>
+    </svg>
+  </div>
+
+  <div class="absolute bottom-2 right-2 flex flex-col gap-1">
+    <button type="button" data-action="dna-map#zoomIn" aria-label="<%= t("dna_map_zoom_in", default: "Zoom in") %>"
+      class="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background/90 text-content shadow-sm hover:bg-surface">
+      <span class="text-sm leading-none font-bold">+</span>
+    </button>
+    <button type="button" data-action="dna-map#zoomOut" aria-label="<%= t("dna_map_zoom_out", default: "Zoom out") %>"
+      class="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background/90 text-content shadow-sm hover:bg-surface">
+      <span class="text-sm leading-none font-bold">−</span>
+    </button>
+    <button type="button" data-action="dna-map#reset" aria-label="<%= t("dna_map_reset", default: "Reset zoom") %>"
+      class="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background/90 text-content shadow-sm hover:bg-surface">
+      <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M15 9h4.5M15 9V4.5M9 15v4.5M9 15H4.5M15 15v4.5M15 15h4.5" />
+      </svg>
+    </button>
+  </div>
+  <p class="mt-1 text-right text-[10px] text-content-subtle"><%= t("dna_map_hint", default: "scroll to zoom · drag to pan") %></p>
+</div>

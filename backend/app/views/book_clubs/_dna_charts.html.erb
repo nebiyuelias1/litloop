@@ -1,43 +1,33 @@
 <%#
   Server-rendered visual analytics for the Literature DNA panel. Flat panels
   matching the club page style; no chart library, no JS. Every value comes
-  from the verified dataset (Ruby), never from the model.
+  from the verified dataset (Ruby), never from the model — except the two
+  clearly-labeled AI-assisted panels (difficulty estimates, question clusters).
 
   Locals:
-    - tags:      Hash<tag, count>
-    - regions:   Hash<region, count>
-    - languages: Hash<lang code, count>
-    - months:    Hash<"YYYY-MM", count>
-    - engagement: {"per_session" => [], "avg_turnout" => f}
-    - discussion: {"total" => n, "max" => n, "per_session" => []}
-    - weekday:   Hash<"Mon", n>
-    - time_of_day: Hash<"morning", n>
-    - locations: Hash<location, n>
-    - cadence_days: Float|nil
-    - ratings:   Hash<title, avg score>
-    - pages:     {"avg" =>, "per_book" => Hash<title, count>} | nil
+    - tags:              Hash<tag, count>
+    - regions:           Hash<region, count>
+    - languages:         Hash<lang code, count>
+    - engagement:        {"per_session" => [], "avg_turnout" => f}
+    - discussion:        {"total" => n, "max" => n, "per_session" => []}
+    - weekday:           Hash<"Mon", n>
+    - time_of_day:       Hash<"morning", n>
+    - locations:         Hash<location, n>
+    - cadence_days:      Float|nil
+    - sequence:          [{"title","month","pages","region","tags"}...] (verified)
+    - taste:             [{"title","avg","min","max","n"}...] (verified)
+    - estimates:         Hash<title, {"complexity","language"}> | nil (AI)
+    - question_clusters: [{"name","questions":[...]}] | nil (AI-organized)
 %>
 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 
-  <%# ---- Recurring themes: horizontal bars ------------------------------- %>
-  <% chart_tags = tags.first(6) %>
-  <% if chart_tags.any? %>
+  <%# ---- Theme composition: treemap -------------------------------------- %>
+  <% if tags.any? %>
     <div class="rounded-2xl border border-border bg-background p-4">
       <h4 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
-        <%= t("dna_chart_themes", default: "Recurring themes") %>
+        <%= t("dna_chart_themes", default: "Theme composition") %>
       </h4>
-      <% max_tag = chart_tags.map(&:last).max %>
-      <div class="space-y-2.5">
-        <% chart_tags.each do |name, count| %>
-          <div class="flex items-center gap-2">
-            <span class="w-24 shrink-0 truncate text-right text-[11px] text-content-muted" title="<%= name %>"><%= name %></span>
-            <div class="h-3.5 flex-1 overflow-hidden rounded-full bg-accent/10">
-              <div class="h-full rounded-full bg-accent" style="width: <%= (count * 100.0 / max_tag).round %>%;"></div>
-            </div>
-            <span class="w-5 text-right text-[11px] font-bold text-accent"><%= count %></span>
-          </div>
-        <% end %>
-      </div>
+      <%= render "book_clubs/dna_treemap", tags: tags %>
     </div>
   <% end %>
 
@@ -52,24 +42,13 @@
     </div>
   <% end %>
 
-  <%# ---- Reading rhythm: month bars --------------------------------------- %>
-  <% chart_months = months.first(12) %>
-  <% if chart_months.any? %>
-    <div class="rounded-2xl border border-border bg-background p-4">
+  <%# ---- Literary evolution: theme mix across the read sequence ----------- %>
+  <% if sequence.is_a?(Array) && sequence.size >= 2 %>
+    <div class="sm:col-span-2 rounded-2xl border border-border bg-background p-4">
       <h4 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
-        <%= t("dna_chart_timeline", default: "Reading rhythm") %>
+        <%= t("dna_chart_evolution", default: "Literary evolution") %>
       </h4>
-      <% max_month = chart_months.map(&:last).max %>
-      <div class="flex items-end gap-1.5" style="height: 64px;">
-        <% chart_months.each do |key, count| %>
-          <% label = Date.strptime(key, "%Y-%m").strftime("%b") %>
-          <div class="flex flex-1 flex-col items-center justify-end gap-1" title="<%= label %> <%= key[0, 4] %>: <%= count %>">
-            <span class="text-[10px] font-bold text-accent"><%= count %></span>
-            <div class="w-full rounded-md bg-accent" style="height: <%= [(count * 40.0 / max_month).round, 4].max %>px; opacity: <%= count == max_month ? 1 : 0.65 %>;"></div>
-            <span class="text-[9px] text-content-subtle"><%= label %></span>
-          </div>
-        <% end %>
-      </div>
+      <%= render "book_clubs/dna_evolution", sequence: sequence %>
     </div>
   <% end %>
 
@@ -130,6 +109,16 @@
     </div>
   <% end %>
 
+  <%# ---- Reading difficulty: pages (verified) + AI-estimated scores ------- %>
+  <% if sequence.is_a?(Array) && sequence.any? { |s| s["pages"].present? } %>
+    <div class="rounded-2xl border border-border bg-background p-4">
+      <h4 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
+        <%= t("dna_chart_difficulty", default: "Reading difficulty") %>
+      </h4>
+      <%= render "book_clubs/dna_difficulty", sequence: sequence, estimates: estimates %>
+    </div>
+  <% end %>
+
   <%# ---- Conversation depth: questions per session ----------------------- %>
   <% dq_session = (discussion["per_session"] || []).first(12) %>
   <% if dq_session.any? && discussion["total"].to_i > 0 %>
@@ -153,46 +142,13 @@
     </div>
   <% end %>
 
-  <%# ---- Book length: pages per book -------------------------------------- %>
-  <% per_book = (pages && pages["per_book"]).to_a.first(8) %>
-  <% if per_book.any? %>
-    <div class="rounded-2xl border border-border bg-background p-4">
+  <%# ---- Collective taste: per-book average + disagreement spread -------- %>
+  <% if taste.is_a?(Array) && taste.any? %>
+    <div class="sm:col-span-2 rounded-2xl border border-border bg-background p-4">
       <h4 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
-        <%= t("dna_chart_pages", default: "Book length") %>
+        <%= t("dna_chart_taste", default: "Collective taste") %>
       </h4>
-      <% max_pages = per_book.map(&:last).max %>
-      <div class="space-y-2.5">
-        <% per_book.each do |title, count| %>
-          <div class="flex items-center gap-2">
-            <span class="w-24 shrink-0 truncate text-right text-[11px] text-content-muted" title="<%= title %>"><%= title %></span>
-            <div class="h-3.5 flex-1 overflow-hidden rounded-full bg-accent/10">
-              <div class="h-full rounded-full bg-accent" style="width: <%= (count * 100.0 / max_pages).round %>%;"></div>
-            </div>
-            <span class="w-9 text-right text-[11px] font-bold text-accent"><%= count %>p</span>
-          </div>
-        <% end %>
-      </div>
-    </div>
-  <% end %>
-
-  <%# ---- Reader ratings: bars per book ----------------------------------- %>
-  <% rating_rows = ratings.first(8) %>
-  <% if rating_rows.any? %>
-    <div class="rounded-2xl border border-border bg-background p-4">
-      <h4 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
-        <%= t("dna_chart_ratings", default: "How members rated them") %>
-      </h4>
-      <div class="space-y-2.5">
-        <% rating_rows.each do |title, score| %>
-          <div class="flex items-center gap-2">
-            <span class="w-24 shrink-0 truncate text-right text-[11px] text-content-muted" title="<%= title %>"><%= title %></span>
-            <div class="h-3.5 flex-1 overflow-hidden rounded-full bg-accent/10">
-              <div class="h-full rounded-full bg-accent" style="width: <%= (score * 100.0 / 5).round %>%;"></div>
-            </div>
-            <span class="w-7 text-right text-[11px] font-bold text-accent"><%= score %>★</span>
-          </div>
-        <% end %>
-      </div>
+      <%= render "book_clubs/dna_taste", taste: taste %>
     </div>
   <% end %>
 
@@ -208,7 +164,7 @@
 
   <%# ---- Meetup places: chips row ---------------------------------------- %>
   <% if locations.any? %>
-    <div class="sm:col-span-2 rounded-2xl border border-border bg-background p-4">
+    <div class="rounded-2xl border border-border bg-background p-4">
       <h4 class="mb-3 text-xs font-bold uppercase tracking-wide text-content-subtle">
         <%= t("dna_chart_places", default: "Regular meetup spots") %>
       </h4>
@@ -220,6 +176,19 @@
           </span>
         <% end %>
       </div>
+    </div>
+  <% end %>
+
+  <%# ---- Recurring questions: AI-organized, verbatim texts visible -------- %>
+  <% if question_clusters.is_a?(Array) && question_clusters.any? %>
+    <div class="sm:col-span-2 rounded-2xl border border-border bg-background p-4">
+      <div class="mb-3 flex items-baseline justify-between gap-2">
+        <h4 class="text-xs font-bold uppercase tracking-wide text-content-subtle">
+          <%= t("dna_chart_recurring", default: "Recurring questions") %>
+        </h4>
+        <span class="text-[10px] text-content-subtle"><%= t("dna_ai_organized", default: "AI-organized · grouping only, questions verbatim") %></span>
+      </div>
+      <%= render "book_clubs/dna_questions", clusters: question_clusters %>
     </div>
   <% end %>
 </div>

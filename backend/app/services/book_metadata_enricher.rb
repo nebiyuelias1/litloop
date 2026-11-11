@@ -148,29 +148,64 @@ class BookMetadataEnricher
     nil
   end
 
+  # Grounding prompt. When a books MCP server is configured in the Otari
+  # workspace (OTARI_MCP_BOOK_SERVER_ID), the model is told to prefer its
+  # structured lookups (search_books / get_book) over web search — exact
+  # metadata by ISBN/title/author, no hallucinated titles, and each record
+  # already carries source URLs (openlibrary.org, books.google.com).
+  def grounding_prompt(mcp_ids)
+    mcp_note = mcp_ids.present? ? <<~MCP : ""
+      You also have book MCP tools available. PREFER them over web search for this book:
+      - search_books with q="<title> <author>" to find the book and its identifiers;
+      - get_book with isbn=<ISBN> (if you have one) for the richest merged record.
+      Treat the returned description, subjects, ratings, publisher, page count and
+      release date as facts, and use the record's openlibrary.org / books.google.com
+      URLs as the source URLs. Only fall back to web search if the MCP tools
+      find no match.
+    MCP
+
+    <<~PROMPT
+      Research this book and report bullet-point FACTS, each on its own line, each ending with the source URL you used:
+      description/plot summary, country of origin of the author/work, and where its real cover image can be found.
+      Only state what the searched sources support.
+      Non-Latin-script titles: also try searching a transliteration (e.g. Amharic "የተቆለፈበት ቁልፍ" -> "Yeteqolefetebet Kulf")
+      and include the URL of any page whose cover photo is the real book cover.
+      #{mcp_note}
+      Book: "#{@book.title}" by #{@book.author}
+      Current metadata: language=#{@book.language}, country=#{@book.country_of_origin || "unknown"}, cover=#{@book.cover_image || "none"}
+    PROMPT
+  end
+
+  # Otari workspace MCP server ids for structured book lookups, e.g.
+  # "OTARI_MCP_BOOK_SERVER_ID=uuid1,uuid2". Empty when not configured, in
+  # which case grounding relies on otari_web_search alone.
+  def book_mcp_server_ids
+    ENV["OTARI_MCP_BOOK_SERVER_ID"].to_s.split(",").map(&:strip).reject(&:blank?)
+  end
+
   def ground_via_web_search(model)
+    mcp_ids = book_mcp_server_ids
     response = OtariClient.new.chat(
       model: model,
       tools: [ { type: "otari_web_search", max_uses: 3 } ],
+      mcp_server_ids: mcp_ids.presence,
       temperature: 0.0,
       messages: [
-        { role: "user", content: <<~PROMPT }
-          Research this book and report bullet-point FACTS, each on its own line, each ending with the source URL you used:
-          description/plot summary, country of origin of the author/work, and where its real cover image can be found.
-          Only state what the searched sources support.
-          Non-Latin-script titles: also try searching a transliteration (e.g. Amharic "የተቆለፈበት ቁልፍ" -> "Yeteqolefetebet Kulf")
-          and include the URL of any page whose cover photo is the real book cover.
-
-          Book: "#{@book.title}" by #{@book.author}
-          Current metadata: language=#{@book.language}, country=#{@book.country_of_origin || "unknown"}, cover=#{@book.cover_image || "none"}
-        PROMPT
+        { role: "user", content: grounding_prompt(mcp_ids) }
       ]
     )
 
     facts = response.dig("choices", 0, "message", "content").to_s
     tool_urls = (response["otari_tool_calls"] || [])
-      .flat_map { |call| call["sources"] || [] }
-      .map { |s| s.is_a?(String) ? s : (s["url"] || s["href"]) }
+      .flat_map { |call|
+        # Web-search calls carry a sources list; MCP tool calls don't — their
+        # output (merged book records, search results) is full of source URLs
+        # (openlibrary.org, books.google.com) that are the citation whitelist
+        # for MCP-grounded facts.
+        web = Array(call["sources"]).map { |s| s.is_a?(String) ? s : (s["url"] || s["href"]) }
+        mcp = call["type"] == "mcp" ? URI.extract(call["output"].to_s, %w[http https]) : []
+        web + mcp
+      }
       .compact
       .map { |s| strip_query(s) }
 
@@ -334,7 +369,9 @@ class BookMetadataEnricher
 
     audit["original_description"] = @book.description if @book.description.present?
     if (description = sanitize_description(judgment.dig("description"), ground))
-      changes[:description] = description
+      changes[:description] = description[:value]
+      audit["description_source_url"] = description[:source_url]
+      audit["description_confidence"] = description[:confidence]
     end
 
     audit["original_tags"] = @book.tags.order(:name).pluck(:name) if @book.tags.any?
@@ -415,8 +452,12 @@ class BookMetadataEnricher
     text.to_s.gsub(/\s+/, " ").strip
   end
 
-  # A description rewrite is accepted when cited like a fact update: a source
-  # on the harvested whitelist, or a verbatim quote present in the facts.
+  # A description rewrite is accepted when cited like a fact update:
+  #   * source_url on the harvested whitelist  -> { confidence: "high" } -> apply
+  #   * no/unknown source_url but the verbatim quote
+  #     appears verbatim in the grounded facts -> { confidence: "medium" } -> apply
+  #     (a wrong source_url does not veto a verifiable quote)
+  #   * otherwise                               -> never applied
   def sanitize_description(judgment, ground)
     return nil unless judgment.is_a?(Hash) && judgment["action"] == "update"
 
@@ -426,17 +467,16 @@ class BookMetadataEnricher
 
     source_url = strip_query(judgment["source_url"].to_s)
     quote = judgment["quote"].to_s.strip
+    cited = Array(ground[:cited_sources]).map { |u| strip_query(u) }
+    consulted = Array(ground[:sources]).map { |u| strip_query(u) }
 
-    if source_url.present?
-      in_cited = Array(ground[:cited_sources]).include?(source_url)
-      in_consulted = ground[:sources].include?(source_url)
-      return nil unless in_cited || in_consulted
-    elsif quote.blank?
-      return nil
+    if source_url.present? && (cited.include?(source_url) || consulted.include?(source_url))
+      { value: value, source_url: source_url, confidence: "high" }
+    elsif quote.present? && normalize_space(ground[:facts].to_s).include?(normalize_space(quote))
+      { value: value, source_url: source_url.presence || "quote-verified", confidence: "medium" }
+    else
+      nil
     end
-    return nil unless quote.blank? || normalize_space(ground[:facts].to_s).include?(normalize_space(quote))
-
-    value
   end
 
   def normalize_tags(values)
@@ -488,6 +528,9 @@ class BookMetadataEnricher
   end
 
   def strip_query(url)
-    url.to_s.gsub(/\?.*\z/, "")
+    # Query params differ per source request; scheme differs between the
+    # record (http://books.google.com/...) and the judge's citation
+    # (https://...). Normalize both so citation matching is stable.
+    url.to_s.gsub(/\?.*\z/, "").sub(/\Ahttp:\/\//, "https://")
   end
 end

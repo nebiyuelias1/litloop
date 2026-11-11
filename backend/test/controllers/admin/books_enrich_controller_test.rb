@@ -110,7 +110,7 @@ class Admin::BooksEnrichControllerTest < ActionDispatch::IntegrationTest
   test "enqueue failures surface as flash alert" do
     sign_in @user
 
-    BookEnrichmentJob.stub(:perform_later, ->(_book_id) { raise OtariClient::RequestError, "boom" }) do
+    BookEnrichmentJob.stub(:perform_later, ->(_book_id, _user_id) { raise OtariClient::RequestError, "boom" }) do
       post enrich_admin_book_url(@book)
     end
 
