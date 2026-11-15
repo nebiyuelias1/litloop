@@ -67,6 +67,7 @@ jobs:
           # which the built-in GITHUB_TOKEN can't read — requires a PAT with read:packages.
           GITHUB_USERNAME: ${{ secrets.GPR_USERNAME }}
           GITHUB_TOKEN: ${{ secrets.GPR_TOKEN }}
+          TELEGRAM_LOGIN_CLIENT_ID: ${{ vars.TELEGRAM_LOGIN_CLIENT_ID }}
         run: bin/android_screenshots.sh
 
       - name: List screenshots

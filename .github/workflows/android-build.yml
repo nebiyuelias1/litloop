@@ -22,6 +22,9 @@ jobs:
       # which the built-in GITHUB_TOKEN can't read — requires a PAT with read:packages.
       GITHUB_USERNAME: ${{ secrets.GPR_USERNAME }}
       GITHUB_TOKEN: ${{ secrets.GPR_TOKEN }}
+      # The OIDC client id is the bot's numeric id (TELEGRAM_BOT_TOKEN prefix).
+      # If empty, in-app Telegram login is a no-op.
+      TELEGRAM_LOGIN_CLIENT_ID: ${{ vars.TELEGRAM_LOGIN_CLIENT_ID }}
     defaults:
       run:
         working-directory: ./android
@@ -58,6 +61,9 @@ jobs:
       # which the built-in GITHUB_TOKEN can't read — requires a PAT with read:packages.
       GITHUB_USERNAME: ${{ secrets.GPR_USERNAME }}
       GITHUB_TOKEN: ${{ secrets.GPR_TOKEN }}
+      # The OIDC client id is the bot's numeric id (TELEGRAM_BOT_TOKEN prefix).
+      # If empty, in-app Telegram login is a no-op.
+      TELEGRAM_LOGIN_CLIENT_ID: ${{ vars.TELEGRAM_LOGIN_CLIENT_ID }}
     defaults:
       run:
         working-directory: ./android
