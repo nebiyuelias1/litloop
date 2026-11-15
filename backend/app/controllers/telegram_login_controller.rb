@@ -27,7 +27,7 @@ class TelegramLoginController < ApplicationController
     if nonce.present?
       claims = TelegramOidcValidator.validate(
         id_token: params[:id_token],
-        client_id: ENV["TELEGRAM_LOGIN_CLIENT_ID"],
+        client_id: telegram_client_id,
         nonce: nonce
       )
     end
@@ -55,5 +55,11 @@ class TelegramLoginController < ApplicationController
 
   def telegram_params
     params.permit(:id, :first_name, :last_name, :username, :photo_url, :auth_date, :hash)
+  end
+
+  # The OIDC client id is the bot's numeric id — the bot token's prefix
+  # (the JWT audience claim equals it, per core.telegram.org/bots/telegram-login).
+  def telegram_client_id
+    ENV["TELEGRAM_BOT_TOKEN"].to_s.split(":").first
   end
 end

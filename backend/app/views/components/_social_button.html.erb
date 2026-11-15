@@ -28,7 +28,8 @@
       the cached-authorization one-tap path works there. The official native
       SDKs (https://core.telegram.org/bots/telegram-login#native-sdks) replace
       it for full in-app support later. %>
-  <% if hotwire_native_app? || ENV["TELEGRAM_LOGIN_CLIENT_ID"].blank? %>
+  <% telegram_client_id = ENV["TELEGRAM_BOT_TOKEN"].to_s.split(":").first.presence %>
+  <% if hotwire_native_app? || telegram_client_id.blank? %>
     <div class="<%= ["w-full flex items-center justify-center min-h-[40px] h-[40px]", classes].join(" ") %>">
       <script async src="https://telegram.org/js/telegram-widget.js?22"
               data-telegram-login="<%= telegram_bot %>"
@@ -40,14 +41,15 @@
   <% else %>
     <%# Telegram Login (OIDC): our own button, styled like the other social
         buttons (NEB-100). The library opens the auth popup; the id_token it
-        returns is validated server-side (TelegramLoginController#oidc). %>
+        returns is validated server-side (TelegramLoginController#oidc). The
+        OIDC client id is the bot's numeric id — the bot token's prefix. %>
     <%= button_tag type: "button",
                    class: ["btn border-0 font-medium text-sm h-[40px] min-h-[40px] rounded-xl flex items-center justify-center gap-2.5 shadow-xs hover:opacity-90 active:scale-[0.98] transition-all w-full text-white", classes].join(" "),
                    style: "background-color: #229ED9; color: #ffffff;",
                    data: {
                      controller: "telegram-oidc",
                      action: "click->telegram-oidc#open",
-                     telegram_oidc_client_id_value: ENV["TELEGRAM_LOGIN_CLIENT_ID"],
+                     telegram_oidc_client_id_value: telegram_client_id,
                      telegram_oidc_nonce_value: telegram_oidc_nonce
                    } do %>
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" class="w-5 h-5 flex-shrink-0">
