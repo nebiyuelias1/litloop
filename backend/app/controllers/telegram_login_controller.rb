@@ -20,6 +20,14 @@ class TelegramLoginController < ApplicationController
 
     if claims
       session.delete(:telegram_oidc_nonce)
+      begin
+        TelegramSignInNonce.consume!(nonce) if nonce
+      rescue TelegramSignInNonce::AlreadyUsed
+        claims = nil
+      end
+    end
+
+    if claims
       user = User.from_oidc(claims)
 
       user.remember_me = true

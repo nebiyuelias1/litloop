@@ -11,7 +11,13 @@ export default class extends Controller {
     scope: { type: String, default: "profile" },
   }
 
+  static POLL_INTERVAL_MS = 200
+  static POLL_MAX_ATTEMPTS = 30
+
   connect() {
+    // Disabled until the SDK is available, so clicks are never silently dropped.
+    this.element.disabled = true
+    this.attempts = 0
     this.waitForLibrary()
   }
 
@@ -21,23 +27,36 @@ export default class extends Controller {
 
   waitForLibrary() {
     if (window.Telegram?.Login) {
-      window.Telegram.Login.init(
-        {
-          client_id: this.clientIdValue,
-          scope: this.scopeValue.split(" "),
-          nonce: this.nonceValue,
-        },
-        (result) => this.onAuth(result),
-      )
+      this.initLibrary()
       this.ready = true
+      this.element.disabled = false
+    } else if (++this.attempts >= this.constructor.POLL_MAX_ATTEMPTS) {
+      // The script failed to load or is blocked — stop retrying and say so.
+      this.notify("Telegram sign-in could not load. Please refresh and try again.")
     } else {
       // telegram-login.js is loaded with `async`, so retry until it is available
-      this.retryTimeout = setTimeout(() => this.waitForLibrary(), 100)
+      this.retryTimeout = setTimeout(() => this.waitForLibrary(), this.constructor.POLL_INTERVAL_MS)
     }
   }
 
   open() {
-    if (this.ready) window.Telegram.Login.open()
+    if (!this.ready) return
+    // The SDK script can run again after this controller connected (e.g. a Turbo
+    // visit re-executes the script tag) and replace window.Telegram.Login, so
+    // (re-)apply our options and callback to the current object.
+    this.initLibrary()
+    window.Telegram.Login.open()
+  }
+
+  initLibrary() {
+    window.Telegram.Login.init(
+      {
+        client_id: this.clientIdValue,
+        scope: this.scopeValue.split(" "),
+        nonce: this.nonceValue,
+      },
+      (result) => this.onAuth(result),
+    )
   }
 
   async onAuth(result) {
@@ -61,10 +80,10 @@ export default class extends Controller {
       if (data.status === "ok" && data.redirect_url) {
         window.location.href = data.redirect_url
       } else {
-        this.notify(data.error || "Telegram sign-in failed.", "error")
+        this.notify(data.error || "Telegram sign-in failed.")
       }
     } catch {
-      this.notify("Network error, please try again.", "error")
+      this.notify("Network error, please try again.")
     }
   }
 

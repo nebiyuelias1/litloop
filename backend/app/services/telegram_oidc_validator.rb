@@ -13,7 +13,9 @@ class TelegramOidcValidator
   class << self
     # Returns the validated claims hash, or nil when the token is not a valid,
     # current Telegram id_token for this client.
-    def validate(id_token:, client_id:, nonce: nil, jwks: nil)
+    # `jwks_loader` may be a JWKS hash, or a callable that receives the JWT
+    # loader options (used by tests to simulate key rotation).
+    def validate(id_token:, client_id:, nonce: nil, jwks_loader: nil)
       return nil if id_token.blank? || client_id.blank?
 
       claims, = JWT.decode(
@@ -26,7 +28,7 @@ class TelegramOidcValidator
         aud: client_id,
         verify_aud: true,
         verify_expiration: true,
-        jwks: jwks_loader(jwks)
+        jwks: jwks_loader_for(jwks_loader)
       )
 
       return nil if nonce.present? && claims["nonce"].to_s != nonce
@@ -39,12 +41,16 @@ class TelegramOidcValidator
 
     private
 
-    def jwks_loader(jwks)
-      if jwks
-        ->(_options) { jwks }
+    def jwks_loader_for(jwks_loader)
+      if jwks_loader.respond_to?(:call)
+        jwks_loader
+      elsif jwks_loader
+        ->(_options) { jwks_loader }
       else
         ->(options) {
-          Rails.cache.delete(JWKS_CACHE_KEY) if options && options[:invalidated]
+          # ruby-jwt calls the loader with invalidate: true when the token's kid
+          # is missing from the cached keys (signing key rotation).
+          Rails.cache.delete(JWKS_CACHE_KEY) if options && (options[:invalidate] || options[:invalidated])
           cached_jwks
         }
       end
