@@ -19,6 +19,12 @@ android {
         .orElse("")
         .get()
 
+    // LINE Login SDK: the channel id, matching the Rails LINE_CHANNEL_ID.
+    val lineChannelId = providers.gradleProperty("LINE_CHANNEL_ID")
+        .orElse(providers.environmentVariable("LINE_CHANNEL_ID"))
+        .orElse("")
+        .get()
+
     defaultConfig {
         applicationId = "et.netale.litloop"
         minSdk = 28
@@ -28,6 +34,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "TELEGRAM_LOGIN_CLIENT_ID", "\"$telegramLoginClientId\"")
+        buildConfigField("String", "LINE_CHANNEL_ID", "\"$lineChannelId\"")
     }
 
     val uploadKeystore = System.getenv("LITLOOP_UPLOAD_KEYSTORE")
@@ -70,6 +77,7 @@ dependencies {
     implementation("dev.hotwire:core:1.2.0")
     implementation("dev.hotwire:navigation-fragments:1.2.0")
     implementation("org.telegram:login-sdk:1.0.0")
+    implementation("com.linecorp.linesdk:linesdk:5.13.0")
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)

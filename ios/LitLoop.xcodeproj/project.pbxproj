@@ -132,6 +132,7 @@
 			packageProductDependencies = (
 				791C02C02FEF86B2004964BA /* HotwireNative */,
 				791C02D12FEF8A00004964BA /* TelegramLogin */,
+				791C02D52FEF8A00004964BA /* LineSDK */,
 			);
 			productName = LitLoop;
 			productReference = 791C02752FEF8341004964BA /* LitLoop.app */;
@@ -218,6 +219,7 @@
 			packageReferences = (
 				791C02BF2FEF838E004964BA /* XCRemoteSwiftPackageReference "hotwire-native-ios" */,
 				791C02D02FEF8A00004964BA /* XCRemoteSwiftPackageReference "telegram-login-ios" */,
+				791C02D42FEF8A00004964BA /* XCRemoteSwiftPackageReference "line-sdk-ios-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 791C02762FEF8341004964BA /* Products */;
@@ -612,6 +614,19 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 791C02D02FEF8A00004964BA /* XCRemoteSwiftPackageReference "telegram-login-ios" */;
 			productName = TelegramLogin;
+		};
+		791C02D42FEF8A00004964BA /* XCRemoteSwiftPackageReference "line-sdk-ios-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/line/line-sdk-ios-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.13.0;
+			};
+		};
+		791C02D52FEF8A00004964BA /* LineSDK */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 791C02D42FEF8A00004964BA /* XCRemoteSwiftPackageReference "line-sdk-ios-swift" */;
+			productName = LineSDK;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

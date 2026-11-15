@@ -10,6 +10,7 @@ class LineLoginController < ApplicationController
 
   LINE_AUTH_URL = "https://access.line.me/oauth2/v2.1/authorize"
   LINE_TOKEN_URL = "https://api.line.me/oauth2/v2.1/token"
+  LINE_TOKEN_VERIFY_URL = "https://api.line.me/oauth2/v2.1/verify"
   LINE_PROFILE_URL = "https://api.line.me/v2/profile"
 
   def authorize
@@ -45,7 +46,26 @@ class LineLoginController < ApplicationController
       return
     end
 
-    profile = fetch_profile(access_token)
+    sign_in_with_verified_profile(access_token)
+  end
+
+  # Native app flow: the LINE SDK returns the access token through the OS app
+  # channel. The profile is fetched server-side with the token — client-sent
+  # profile data is never trusted.
+  def native
+    profile = verified_native_profile(params[:access_token])
+
+    if profile
+      sign_in_with_verified_profile(profile)
+    else
+      redirect_to new_user_session_path, alert: "LINE authentication failed."
+    end
+  end
+
+  private
+
+  def sign_in_with_verified_profile(profile_or_token)
+    profile = profile_or_token.is_a?(Hash) ? profile_or_token : fetch_profile(profile_or_token)
 
     if profile.nil?
       redirect_to new_user_session_path, alert: "LINE authentication failed: Could not fetch profile."
@@ -58,7 +78,21 @@ class LineLoginController < ApplicationController
     redirect_to root_path, notice: "Successfully logged in with LINE."
   end
 
-  private
+  # Verifies the access token against LINE's API (token belongs to our channel
+  # and has not expired), then returns the profile it resolves to.
+  def verified_native_profile(access_token)
+    return nil if access_token.blank? || ENV["LINE_CHANNEL_ID"].blank?
+
+    verify_uri = URI("#{LINE_TOKEN_VERIFY_URL}?access_token=#{CGI.escape(access_token)}")
+    verification = JSON.parse(Net::HTTP.get(verify_uri))
+    return nil unless verification["client_id"] == ENV["LINE_CHANNEL_ID"]
+    return nil if verification["expires_in"].to_i <= 0
+
+    fetch_profile(access_token)
+  rescue => e
+    Rails.logger.warn "LINE native token verification failed: #{e.class}: #{e.message}"
+    nil
+  end
 
   def exchange_code_for_token(code)
     uri = URI(LINE_TOKEN_URL)
