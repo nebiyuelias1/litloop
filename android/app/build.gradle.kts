@@ -12,6 +12,13 @@ android {
 
     val buildVersionCode = System.getenv("LITLOOP_VERSION_CODE")?.toIntOrNull()
 
+    // Telegram Login SDK: the client id is the bot's numeric id
+    // (the TELEGRAM_BOT_TOKEN prefix, matching the Rails side).
+    val telegramLoginClientId = providers.gradleProperty("TELEGRAM_LOGIN_CLIENT_ID")
+        .orElse(providers.environmentVariable("TELEGRAM_LOGIN_CLIENT_ID"))
+        .orElse("")
+        .get()
+
     defaultConfig {
         applicationId = "et.netale.litloop"
         minSdk = 28
@@ -24,13 +31,6 @@ android {
     }
 
     val uploadKeystore = System.getenv("LITLOOP_UPLOAD_KEYSTORE")
-
-    // Telegram Login SDK: the client id is the bot's numeric id
-    // (the TELEGRAM_BOT_TOKEN prefix, matching the Rails side).
-    val telegramLoginClientId = providers.gradleProperty("TELEGRAM_LOGIN_CLIENT_ID")
-        .orElse(providers.environmentVariable("TELEGRAM_LOGIN_CLIENT_ID"))
-        .orElse("")
-        .get()
 
     buildFeatures {
         buildConfig = true
