@@ -18,7 +18,6 @@ import et.netale.litloop.BuildConfig
 import et.netale.litloop.R
 import et.netale.litloop.models.mainTabs
 import android.util.Log
-import com.linecorp.linesdk.LineApiResponseCode
 import com.linecorp.linesdk.Scope
 import com.linecorp.linesdk.auth.LineAuthenticationParams
 import com.linecorp.linesdk.auth.LineLoginApi
@@ -225,7 +224,8 @@ class MainActivity : HotwireActivity() {
         if (requestCode != LINE_LOGIN_REQUEST_CODE) return
 
         val result = LineLoginApi.getLoginResultFromIntent(data)
-        if (result.responseCode != LineApiResponseCode.SUCCESS || result.accessToken == null) {
+        val accessToken = result.lineCredential?.accessToken?.tokenString
+        if (!result.isSuccess || accessToken == null) {
             Log.e("LineLogin", "Login failed: ${result.errorData?.message ?: "unknown error"}")
             return
         }
@@ -233,7 +233,7 @@ class MainActivity : HotwireActivity() {
         // Complete the sign-in inside the app's own WebView, so the session
         // cookie lands in the app. The server verifies the token with LINE's API.
         val url = Uri.parse("$baseURL/line_login/native").buildUpon()
-            .appendQueryParameter("access_token", result.accessToken.accessToken)
+            .appendQueryParameter("access_token", accessToken)
             .build()
         val targetUrl = resolveTargetUrl(url) ?: return
         val pending = DeepLink(targetUrl, findTargetTabIndex(targetUrl))

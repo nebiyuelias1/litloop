@@ -113,7 +113,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             LoginManager.shared.login(permissions: [.profile], in: self.window?.rootViewController) { [weak self] result in
                 switch result {
                 case .success(let loginResult):
-                    self?.routeLineSignIn(accessToken: loginResult.accessToken.token)
+                    self?.routeLineSignIn(accessToken: loginResult.accessToken.value)
                 case .failure(let error):
                     NSLog("LineLogin failed: \(error.localizedDescription)")
                 }
