@@ -20,7 +20,10 @@ class ApplicationController < ActionController::Base
   end
 
   def set_time_zone(&block)
-    time_zone = cookies[:user_time_zone] || Time.zone.name
+    # Some browsers report a fixed-offset identifier (e.g. "Etc/GMT 5") from
+    # Intl.DateTimeFormat(), which is not a valid ActiveSupport::TimeZone name.
+    # Fall back to the app default zone instead of raising.
+    time_zone = Time.find_zone(cookies[:user_time_zone]) || Time.zone.name
     Time.use_zone(time_zone, &block)
   end
 
