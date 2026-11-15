@@ -131,6 +131,7 @@
 			name = LitLoop;
 			packageProductDependencies = (
 				791C02C02FEF86B2004964BA /* HotwireNative */,
+				791C02D12FEF8A00004964BA /* TelegramLogin */,
 			);
 			productName = LitLoop;
 			productReference = 791C02752FEF8341004964BA /* LitLoop.app */;
@@ -216,6 +217,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				791C02BF2FEF838E004964BA /* XCRemoteSwiftPackageReference "hotwire-native-ios" */,
+				791C02D02FEF8A00004964BA /* XCRemoteSwiftPackageReference "telegram-login-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 791C02762FEF8341004964BA /* Products */;
@@ -590,6 +592,14 @@
 				minimumVersion = 1.2.2;
 			};
 		};
+		791C02D02FEF8A00004964BA /* XCRemoteSwiftPackageReference "telegram-login-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/TelegramMessenger/telegram-login-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -597,6 +607,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 791C02BF2FEF838E004964BA /* XCRemoteSwiftPackageReference "hotwire-native-ios" */;
 			productName = HotwireNative;
+		};
+		791C02D12FEF8A00004964BA /* TelegramLogin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 791C02D02FEF8A00004964BA /* XCRemoteSwiftPackageReference "telegram-login-ios" */;
+			productName = TelegramLogin;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -18,6 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       LITLOOP_VERSION_CODE: ${{ github.run_number }}
+      # Telegram Login SDK resolves from GitHub Packages (TelegramMessenger org),
+      # which the built-in GITHUB_TOKEN can't read — requires a PAT with read:packages.
+      GITHUB_USERNAME: nebiyuelias1
+      GITHUB_TOKEN: ${{ secrets.GPR_TOKEN || secrets.KAMAL_REGISTRY_PASSWORD }}
+      # The OIDC client id is the bot's numeric id (TELEGRAM_BOT_TOKEN prefix).
+      # If empty, in-app Telegram login is a no-op.
+      TELEGRAM_LOGIN_CLIENT_ID: ${{ vars.TELEGRAM_LOGIN_CLIENT_ID }}
     defaults:
       run:
         working-directory: ./android
@@ -50,6 +57,13 @@ jobs:
     environment: staging
     env:
       LITLOOP_VERSION_CODE: ${{ github.run_number }}
+      # Telegram Login SDK resolves from GitHub Packages (TelegramMessenger org),
+      # which the built-in GITHUB_TOKEN can't read — requires a PAT with read:packages.
+      GITHUB_USERNAME: nebiyuelias1
+      GITHUB_TOKEN: ${{ secrets.GPR_TOKEN || secrets.KAMAL_REGISTRY_PASSWORD }}
+      # The OIDC client id is the bot's numeric id (TELEGRAM_BOT_TOKEN prefix).
+      # If empty, in-app Telegram login is a no-op.
+      TELEGRAM_LOGIN_CLIENT_ID: ${{ vars.TELEGRAM_LOGIN_CLIENT_ID }}
     defaults:
       run:
         working-directory: ./android

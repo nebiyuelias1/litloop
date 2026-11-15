@@ -6,18 +6,30 @@
 //
 
 import HotwireNative
+import TelegramLogin
 import UIKit
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
-
-
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
         Hotwire.loadPathConfiguration(from: [
             .server(baseURL.appending(path: "configurations/ios_v1.json"))
         ])
+
+        // Telegram Login SDK (https://core.telegram.org/bots/telegram-login#native-sdks).
+        // The client id is the bot's numeric id (the TELEGRAM_BOT_TOKEN prefix,
+        // matching the Rails side), read from Info.plist `TelegramLoginClientID`.
+        let clientId = Bundle.main.object(forInfoDictionaryKey: "TelegramLoginClientID") as? String ?? ""
+        if !clientId.isEmpty {
+            TelegramLogin.configure(
+                clientId: clientId,
+                redirectUri: "litloop://telegram-login",
+                scopes: ["profile"]
+            )
+        }
+
         return true
     }
 

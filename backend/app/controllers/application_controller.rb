@@ -3,11 +3,18 @@ class ApplicationController < ActionController::Base
   allow_browser versions: :modern
 
   around_action :set_time_zone
-  helper_method :user_device_language
+  helper_method :user_device_language, :telegram_oidc_nonce
 
   before_action :set_locale
 
   protected
+
+  # Telegram Login (OIDC) replay protection: a nonce generated for this session
+  # is included in the id_token and verified server-side on sign-in. It persists
+  # until consumed so Turbo-restored login pages still validate.
+  def telegram_oidc_nonce
+    session[:telegram_oidc_nonce] ||= SecureRandom.hex(16)
+  end
 
   def set_locale
     locale = params[:locale]

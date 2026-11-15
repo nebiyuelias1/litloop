@@ -63,6 +63,11 @@ jobs:
           SETS: ${{ inputs.sets }}
           HEADLESS: '1'
           LOAD_TIMEOUT: '90'
+          # Telegram Login SDK resolves from GitHub Packages (TelegramMessenger org),
+          # which the built-in GITHUB_TOKEN can't read — requires a PAT with read:packages.
+          GITHUB_USERNAME: nebiyuelias1
+          GITHUB_TOKEN: ${{ secrets.GPR_TOKEN || secrets.KAMAL_REGISTRY_PASSWORD }}
+          TELEGRAM_LOGIN_CLIENT_ID: ${{ vars.TELEGRAM_LOGIN_CLIENT_ID }}
         run: bin/android_screenshots.sh
 
       - name: List screenshots

@@ -6,6 +6,7 @@
 //
 
 import HotwireNative
+import TelegramLogin
 import UIKit
 
 let baseURL = URL(string: "https://litloop.club/")!
@@ -29,7 +30,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
            let url = userActivity.webpageURL {
             handleIncomingURL(url)
         } else if let urlContext = connectionOptions.urlContexts.first {
-            handleIncomingURL(urlContext.url)
+            if !handleTelegramLoginURL(urlContext.url) {
+                handleIncomingURL(urlContext.url)
+            }
         } else if let path = initialPathFromLaunchArguments() {
             let url = (path.hasPrefix("http://") || path.hasPrefix("https://"))
                 ? (URL(string: path) ?? baseURL)
@@ -58,7 +61,46 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         guard let url = URLContexts.first?.url else { return }
+        if handleTelegramLoginURL(url) { return }
         handleIncomingURL(url)
+    }
+
+    // Telegram Login (https://core.telegram.org/bots/telegram-login#native-sdks):
+    // the web button triggers litloop://telegram-login, which the WebView hands
+    // to the system and back into this app. Without a code it starts the flow
+    // (the SDK opens the Telegram app); with one it completes it.
+    private func handleTelegramLoginURL(_ url: URL) -> Bool {
+        guard url.scheme?.lowercased() == "litloop",
+              url.host?.lowercased() == "telegram-login" else {
+            return false
+        }
+
+        if url.query?.contains("code=") == true {
+            TelegramLogin.handle(url)
+            return true
+        }
+
+        TelegramLogin.login { [weak self] result in
+            switch result {
+            case .success(let loginData):
+                self?.routeTelegramSignIn(idToken: loginData.idToken)
+            case .failure(let error):
+                NSLog("TelegramLogin failed: \(error.localizedDescription)")
+            }
+        }
+        return true
+    }
+
+    // Complete the sign-in inside the app's own WebView, so the session cookie
+    // lands in the app.
+    private func routeTelegramSignIn(idToken: String) {
+        var components = URLComponents(url: baseURL.appending(path: "telegram_login/oidc"), resolvingAgainstBaseURL: false)!
+        components.queryItems = [URLQueryItem(name: "id_token", value: idToken)]
+
+        DispatchQueue.main.async {
+            guard let url = components.url else { return }
+            self.tabBarController.activeNavigator.route(url)
+        }
     }
 
     private func handleIncomingURL(_ url: URL) {
