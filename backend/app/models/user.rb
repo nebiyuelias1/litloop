@@ -30,6 +30,26 @@ class User < ApplicationRecord
     user
   end
 
+  # Sign-up/login via Telegram Login (OIDC id_token claims). Matches existing
+  # users on telegram_id, the same id the legacy widget reported.
+  def self.from_oidc(claims)
+    telegram_id = claims["id"] || claims["sub"]
+    given_name = claims["given_name"] || claims["name"].to_s.split(" ").first.to_s
+    family_name = claims["family_name"] || claims["name"].to_s.split(" ").drop(1).join(" ")
+    user = where(telegram_id: telegram_id).first_or_initialize do |u|
+      u.password = Devise.friendly_token[0, 20]
+      # TODO: Find ways of getting email address
+      u.email = "#{telegram_id}@telegram.com"
+      u.skip_confirmation!
+    end
+    user.name = [ given_name, family_name ].join(" ").strip
+    user.username = claims["preferred_username"]
+    user.avatar_url = claims["picture"] if claims["picture"].present?
+    user.telegram_id = telegram_id
+    user.save!
+    user
+  end
+
   def self.from_line_auth(auth)
     user = where(line_id: auth["userId"]).first_or_initialize do |u|
       u.password = Devise.friendly_token[0, 20]

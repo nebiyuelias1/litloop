@@ -179,6 +179,8 @@ GEM
       actionview (>= 7.0.0)
       activesupport (>= 7.0.0)
     json (2.21.2)
+    jwt (2.10.3)
+      base64
     kamal (2.12.0)
       activesupport (>= 7.0)
       base64 (~> 0.2)
@@ -550,6 +552,7 @@ DEPENDENCIES
   icalendar (~> 2.12)
   importmap-rails
   jbuilder
+  jwt (~> 2.10)
   kamal
   lefthook
   logtail-rails (~> 0.2.12)
