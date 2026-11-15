@@ -30,6 +30,9 @@ Rails.application.routes.draw do
   # Social logins
   get "/telegram_mini_app/login", to: "telegram_mini_app_login#create", as: :telegram_mini_app_login
   get "/telegram_login/callback", to: "telegram_login#callback", as: :telegram_login_callback
+  get "/telegram_login/native_return", to: "telegram_login#native_return", as: :telegram_login_native_return
+  post "/telegram_login/handoff", to: "telegram_login#handoff", as: :telegram_login_handoff
+  get "/telegram_login/poll", to: "telegram_login#poll", as: :telegram_login_poll
   get "/line_login/authorize", to: "line_login#authorize", as: :line_login_authorize
   get "/line_login/callback", to: "line_login#callback", as: :line_login_callback
   get "upcoming_book_reads", to: "home#upcoming", as: :upcoming_book_reads

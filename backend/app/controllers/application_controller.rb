@@ -3,11 +3,39 @@ class ApplicationController < ActionController::Base
   allow_browser versions: :modern
 
   around_action :set_time_zone
-  helper_method :user_device_language
+  helper_method :user_device_language, :register_telegram_auth_state!, :telegram_oauth_url
 
   before_action :set_locale
 
   protected
+
+  # Native Telegram sign-in: generates a nonce bound to this session, stored
+  # with the pending handoff after the user completes sign-in in the external
+  # browser. TelegramLoginController#poll only accepts nonces from this list,
+  # so a crafted state can't capture another user's authorization.
+  def register_telegram_auth_state!
+    session[:telegram_auth_states] ||= []
+    session[:telegram_auth_states] << SecureRandom.hex(16)
+    session[:telegram_auth_states] = session[:telegram_auth_states].last(10)
+    session[:telegram_auth_states].last
+  end
+
+  # The Telegram OAuth page opens in the external browser (Hotwire routes
+  # cross-origin urls there) and redirects back to the handoff page with the
+  # signed user data in the URL fragment.
+  def telegram_oauth_url(state:)
+    bot_id = ENV["TELEGRAM_BOT_TOKEN"].to_s.split(":").first
+    origin = request.base_url
+    return_to = telegram_login_native_return_url(state: state)
+
+    "https://oauth.telegram.org/auth?" + {
+      bot_id: bot_id,
+      origin: origin,
+      request_access: "write",
+      embed: 0,
+      return_to: return_to
+    }.to_query
+  end
 
   def set_locale
     locale = params[:locale]

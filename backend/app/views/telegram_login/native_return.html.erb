@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="<%= form_authenticity_token %>">
+    <title>Telegram sign-in — LitLoop</title>
+    <style>
+      body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+             background: #f6f1e7; color: #282219; }
+      main { text-align: center; padding: 2rem; max-width: 24rem; }
+      .spinner { width: 2rem; height: 2rem; margin: 0 auto 1rem; border: 3px solid #e3dbc9;
+                 border-top-color: #134e4a; border-radius: 50%; animation: spin 0.8s linear infinite; }
+      .spinner.hidden, .fallback.hidden { display: none; }
+      @keyframes spin { to { transform: rotate(360deg) } }
+      .fallback { font-size: 0.95rem; line-height: 1.5; }
+      .error { color: #8c3130; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="spinner" id="spinner"></div>
+      <p class="fallback" id="message">Completing Telegram sign-in…</p>
+    </main>
+    <script>
+      (function () {
+        var message = document.getElementById("message");
+        var spinner = document.getElementById("spinner");
+        var csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        var state = "<%= j params[:state].to_s %>";
+
+        // The signed user data arrives in the URL fragment, which never reaches
+        // the server — decode it here and relay it back into the app.
+        var match = window.location.hash.match(/tgAuthResult=([A-Za-z0-9\-_=]+)/);
+        if (!match) {
+          spinner.classList.add("hidden");
+          message.textContent = "Sign-in was cancelled. You can close this page and return to the app.";
+          return;
+        }
+
+        var base64 = match[1].replace(/-/g, "+").replace(/_/g, "/");
+        while (base64.length % 4 !== 0) base64 += "=";
+        var user;
+        try {
+          user = JSON.parse(atob(base64));
+        } catch (e) {
+          spinner.classList.add("hidden");
+          message.textContent = "Sign-in failed: invalid data from Telegram.";
+          return;
+        }
+
+        var params = new URLSearchParams();
+        Object.keys(user).forEach(function (key) {
+          params.append(key, user[key]);
+        });
+
+        // 1. Park the signed data for the app's polling fallback (needed where
+        //    deep links can't fire, e.g. the iOS in-app Safari modal).
+        var body = new URLSearchParams(params);
+        body.set("state", state);
+        body.set("authenticity_token", csrfToken);
+        fetch("/telegram_login/handoff", {
+          method: "POST",
+          headers: { "content-type": "application/x-www-form-urlencoded" },
+          body: body.toString()
+        }).then(function () { showFallback(); }).catch(function () { showFallback(); });
+
+        // 2. Fast path: deep link straight back into the app, which completes
+        //    the sign-in in the app's own WebView.
+        if (/android|iphone|ipad/i.test(navigator.userAgent)) {
+          window.location.href = "litloop://telegram_login/callback?" + params.toString();
+        }
+
+        function showFallback() {
+          spinner.classList.add("hidden");
+          message.textContent = "You're signed in. If the app didn't open by itself, close this page and return to the app.";
+        }
+      })();
+    </script>
+  </body>
+</html>
