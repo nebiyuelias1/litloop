@@ -6,6 +6,7 @@
 //
 
 import HotwireNative
+import LineSDK
 import TelegramLogin
 import UIKit
 
@@ -28,6 +29,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 redirectUri: "litloop://telegram-login",
                 scopes: ["profile"]
             )
+        }
+
+        // LINE Login SDK (https://developers.line.biz/en/docs/line-login-sdks/ios-sdk/).
+        // The channel id matches the Rails LINE_CHANNEL_ID, from Info.plist.
+        let lineChannelId = Bundle.main.object(forInfoDictionaryKey: "LineChannelID") as? String ?? ""
+        if !lineChannelId.isEmpty {
+            LoginManager.shared.setup(channelID: lineChannelId, universalLinkURL: nil)
         }
 
         return true

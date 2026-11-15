@@ -25,6 +25,7 @@ jobs:
       # The OIDC client id is the bot's numeric id (TELEGRAM_BOT_TOKEN prefix).
       # If empty, in-app Telegram login is a no-op.
       TELEGRAM_LOGIN_CLIENT_ID: ${{ vars.TELEGRAM_LOGIN_CLIENT_ID }}
+      LINE_CHANNEL_ID: ${{ vars.LINE_CHANNEL_ID }}
     defaults:
       run:
         working-directory: ./android
@@ -64,6 +65,7 @@ jobs:
       # The OIDC client id is the bot's numeric id (TELEGRAM_BOT_TOKEN prefix).
       # If empty, in-app Telegram login is a no-op.
       TELEGRAM_LOGIN_CLIENT_ID: ${{ vars.TELEGRAM_LOGIN_CLIENT_ID }}
+      LINE_CHANNEL_ID: ${{ vars.LINE_CHANNEL_ID }}
     defaults:
       run:
         working-directory: ./android

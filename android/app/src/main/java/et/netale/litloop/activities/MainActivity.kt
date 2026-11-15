@@ -18,6 +18,9 @@ import et.netale.litloop.BuildConfig
 import et.netale.litloop.R
 import et.netale.litloop.models.mainTabs
 import android.util.Log
+import com.linecorp.linesdk.Scope
+import com.linecorp.linesdk.auth.LineAuthenticationParams
+import com.linecorp.linesdk.auth.LineLoginApi
 import org.telegram.login.TelegramLogin
 
 const val baseURL = "https://litloop.club/"
@@ -27,6 +30,12 @@ const val baseURL = "https://litloop.club/"
 // OS hands back to this activity; the SDK then opens the Telegram app for
 // consent and delivers the id_token back through the same custom scheme.
 const val telegramLoginRedirectUri = "litloop://telegram-login"
+
+// LINE Login SDK (https://developers.line.biz/en/docs/line-login-sdks/android-sdk/).
+// Same hand-off pattern via litloop://line-login; the SDK opens the LINE app
+// (or an in-app login screen) and returns the access token through onActivityResult.
+const val lineLoginRedirectTrigger = "litloop://line-login"
+private const val LINE_LOGIN_REQUEST_CODE = 6094
 
 class MainActivity : HotwireActivity() {
     private lateinit var bottomNavigationController: HotwireBottomNavigationController
@@ -57,7 +66,6 @@ class MainActivity : HotwireActivity() {
                 scopes = listOf("profile")
             )
         }
-
         if (savedInstanceState == null) {
             queueDeepLink(intent)
         }
@@ -69,7 +77,8 @@ class MainActivity : HotwireActivity() {
 
         val uri = intent.data ?: return queueDeepLink(intent)
         when {
-            isTelegramLoginTrigger(uri) -> startTelegramLogin()
+            isSocialLoginTrigger(uri, "telegram-login") -> startTelegramLogin()
+            isSocialLoginTrigger(uri, "line-login") -> startLineLogin()
             isTelegramLoginResponse(uri) -> handleTelegramLoginResponse(uri)
             else -> queueDeepLink(intent)
         }
@@ -140,8 +149,12 @@ class MainActivity : HotwireActivity() {
     }
 
     private fun isTelegramLoginTrigger(uri: Uri): Boolean {
+        return isSocialLoginTrigger(uri, "telegram-login")
+    }
+
+    private fun isSocialLoginTrigger(uri: Uri, provider: String): Boolean {
         return uri.scheme?.lowercase() == "litloop" &&
-            uri.host == "telegram-login" &&
+            uri.host == provider &&
             uri.query.isNullOrBlank()
     }
 
@@ -181,6 +194,46 @@ class MainActivity : HotwireActivity() {
     private fun routeAfterTelegramLogin(idToken: String) {
         val url = Uri.parse("$baseURL/telegram_login/oidc").buildUpon()
             .appendQueryParameter("id_token", idToken)
+            .build()
+        val targetUrl = resolveTargetUrl(url) ?: return
+        val pending = DeepLink(targetUrl, findTargetTabIndex(targetUrl))
+        pendingDeepLink = pending
+        routeDeepLinkIfReady(pending)
+    }
+
+    private fun startLineLogin() {
+        if (BuildConfig.LINE_CHANNEL_ID.isBlank()) {
+            Log.w("LineLogin", "LINE_CHANNEL_ID is not configured")
+            return
+        }
+
+        try {
+            val intent = LineLoginApi.getLoginIntent(
+                this,
+                BuildConfig.LINE_CHANNEL_ID,
+                LineAuthenticationParams.Builder().scopes(listOf(Scope.PROFILE)).build()
+            )
+            startActivityForResult(intent, LINE_LOGIN_REQUEST_CODE)
+        } catch (e: Exception) {
+            Log.e("LineLogin", "startLogin failed", e)
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != LINE_LOGIN_REQUEST_CODE) return
+
+        val result = LineLoginApi.getLoginResultFromIntent(data)
+        val accessToken = result.lineCredential?.accessToken?.tokenString
+        if (!result.isSuccess || accessToken == null) {
+            Log.e("LineLogin", "Login failed: ${result.errorData?.message ?: "unknown error"}")
+            return
+        }
+
+        // Complete the sign-in inside the app's own WebView, so the session
+        // cookie lands in the app. The server verifies the token with LINE's API.
+        val url = Uri.parse("$baseURL/line_login/native").buildUpon()
+            .appendQueryParameter("access_token", accessToken)
             .build()
         val targetUrl = resolveTargetUrl(url) ?: return
         val pending = DeepLink(targetUrl, findTargetTabIndex(targetUrl))

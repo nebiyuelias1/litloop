@@ -17,6 +17,8 @@
 	</array>
 	<key>TelegramLoginClientID</key>
 	<string>8328170085</string>
+	<key>LineChannelID</key>
+	<string>2010637427</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -35,6 +35,7 @@ Rails.application.routes.draw do
   get "/telegram_login/oidc", to: "telegram_login#oidc"
   get "/line_login/authorize", to: "line_login#authorize", as: :line_login_authorize
   get "/line_login/callback", to: "line_login#callback", as: :line_login_callback
+  get "/line_login/native", to: "line_login#native", as: :line_login_native
   get "upcoming_book_reads", to: "home#upcoming", as: :upcoming_book_reads
 
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)

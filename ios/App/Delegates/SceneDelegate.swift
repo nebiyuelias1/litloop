@@ -6,6 +6,7 @@
 //
 
 import HotwireNative
+import LineSDK
 import TelegramLogin
 import UIKit
 
@@ -30,7 +31,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
            let url = userActivity.webpageURL {
             handleIncomingURL(url)
         } else if let urlContext = connectionOptions.urlContexts.first {
-            if !handleTelegramLoginURL(urlContext.url) {
+            if !handleSocialLoginURL(urlContext.url) {
                 handleIncomingURL(urlContext.url)
             }
         } else if let path = initialPathFromLaunchArguments() {
@@ -61,20 +62,30 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         guard let url = URLContexts.first?.url else { return }
-        if handleTelegramLoginURL(url) { return }
+        if handleSocialLoginURL(url) { return }
         handleIncomingURL(url)
     }
 
-    // Telegram Login (https://core.telegram.org/bots/telegram-login#native-sdks):
-    // the web button triggers litloop://telegram-login, which the WebView hands
-    // to the system and back into this app. Without a code it starts the flow
-    // (the SDK opens the Telegram app); with one it completes it.
-    private func handleTelegramLoginURL(_ url: URL) -> Bool {
-        guard url.scheme?.lowercased() == "litloop",
-              url.host?.lowercased() == "telegram-login" else {
+    // Social logins (https://core.telegram.org/bots/telegram-login#native-sdks,
+    // https://developers.line.biz/en/docs/line-login-sdks/ios-sdk/): the web
+    // buttons trigger litloop://telegram-login / litloop://line-login, which the
+    // WebView hands to the system and back into this app; the SDKs then take over.
+    private func handleSocialLoginURL(_ url: URL) -> Bool {
+        guard url.scheme?.lowercased() == "litloop" else { return false }
+
+        switch url.host?.lowercased() {
+        case "telegram-login":
+            handleTelegramLoginURL(url)
+            return true
+        case "line-login":
+            startLineLogin()
+            return true
+        default:
             return false
         }
+    }
 
+    private func handleTelegramLoginURL(_ url: URL) -> Bool {
         if url.query?.contains("code=") == true {
             TelegramLogin.handle(url)
             return true
@@ -91,11 +102,40 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         return true
     }
 
+    private func startLineLogin() {
+        let channelId = Bundle.main.object(forInfoDictionaryKey: "LineChannelID") as? String ?? ""
+        guard !channelId.isEmpty else {
+            NSLog("LineLogin: LineChannelID is not configured")
+            return
+        }
+
+        DispatchQueue.main.async {
+            LoginManager.shared.login(permissions: [.profile], in: self.window?.rootViewController) { [weak self] result in
+                switch result {
+                case .success(let loginResult):
+                    self?.routeLineSignIn(accessToken: loginResult.accessToken.value)
+                case .failure(let error):
+                    NSLog("LineLogin failed: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
     // Complete the sign-in inside the app's own WebView, so the session cookie
     // lands in the app.
     private func routeTelegramSignIn(idToken: String) {
         var components = URLComponents(url: baseURL.appending(path: "telegram_login/oidc"), resolvingAgainstBaseURL: false)!
         components.queryItems = [URLQueryItem(name: "id_token", value: idToken)]
+
+        DispatchQueue.main.async {
+            guard let url = components.url else { return }
+            self.tabBarController.activeNavigator.route(url)
+        }
+    }
+
+    private func routeLineSignIn(accessToken: String) {
+        var components = URLComponents(url: baseURL.appending(path: "line_login/native"), resolvingAgainstBaseURL: false)!
+        components.queryItems = [URLQueryItem(name: "access_token", value: accessToken)]
 
         DispatchQueue.main.async {
             guard let url = components.url else { return }
