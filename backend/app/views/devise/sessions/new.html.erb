@@ -76,7 +76,7 @@
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
       <%= render "components/social_button", provider: :line, url: line_login_authorize_path %>
-      <%= render "components/social_button", provider: :telegram, telegram_bot: ENV['TELEGRAM_BOT_NAME'], telegram_auth_url: telegram_login_callback_url %>
+      <%= render "components/social_button", provider: :telegram, telegram_auth_url: telegram_login_callback_url %>
     </div>
 
     <%= render "devise/shared/links" %>
