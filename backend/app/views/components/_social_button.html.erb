@@ -3,7 +3,6 @@
   Locals:
     - provider: Symbol/String (:line, :telegram)
     - url: String (destination URL for LINE)
-    - telegram_bot: String (ENV['TELEGRAM_BOT_NAME'])
     - telegram_auth_url: String (telegram_login_callback_url)
     - classes: String
 %>
@@ -11,7 +10,6 @@
 <%
   provider ||= :line
   url ||= "#"
-  telegram_bot ||= ENV['TELEGRAM_BOT_NAME']
   telegram_auth_url ||= "#"
   classes ||= ""
 %>
@@ -24,16 +22,26 @@
     <span>Log in with LINE</span>
   <% end %>
 <% elsif provider.to_sym == :telegram %>
-  <%# The widget iframe can't be styled from outside, but the embed supports
-      min_width/max_width attributes that pin its button width. A Stimulus
-      controller measures this slot and injects the widget with min = max, so
-      the button fills it exactly (NEB-100). The official widget is kept — not
-      a custom popup button — because its auth runs inside the cross-origin
-      iframe, which is what works within the Hotwire Native apps. %>
-  <% if telegram_bot.present? %>
-    <div class="w-full h-[40px]"
-         data-controller="telegram-widget"
-         data-telegram-widget-bot-value="<%= telegram_bot %>"
-         data-telegram-widget-auth-url-value="<%= telegram_auth_url %>"></div>
+  <%# The official login widget iframe has a fixed width and can't match the app's
+      button styles (NEB-100), so render a custom button that uses Telegram's
+      Telegram.Login API to open the auth popup. bot_id is the numeric prefix of
+      the bot token; the bot's domain whitelist applies the same as before. %>
+  <% telegram_bot_id = ENV["TELEGRAM_BOT_TOKEN"].to_s.split(":").first.presence %>
+  <% if telegram_bot_id %>
+    <script async src="https://telegram.org/js/telegram-widget.js?22"></script>
+    <%= button_tag type: "button",
+                   class: ["btn border-0 font-medium text-sm h-[40px] min-h-[40px] rounded-xl flex items-center justify-center gap-2.5 shadow-xs hover:opacity-90 active:scale-[0.98] transition-all w-full text-white", classes].join(" "),
+                   style: "background-color: #229ED9; color: #ffffff;",
+                   data: {
+                     controller: "telegram-login",
+                     action: "click->telegram-login#open",
+                     telegram_login_bot_id_value: telegram_bot_id,
+                     telegram_login_auth_url_value: telegram_auth_url
+                   } do %>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" class="w-5 h-5 flex-shrink-0">
+        <path d="M446.7 98.6l-67.6 318.8c-5.2 22.9-18.8 28.6-37.9 17.8l-104.8-77.1-50.5 48.5c-5.6 5.6-10.2 10.2-20.9 10.2l7.4-106.7 194.2-175.5c8.4-7.4-1.8-11.5-13-4.1L117.8 271.9 14.4 238.8c-22.4-7-22.8-22.4 4.7-33.1L412.4 66.7c18.7-6.8 35 4.1 34.3 31.9z" />
+      </svg>
+      <span>Log in with Telegram</span>
+    <% end %>
   <% end %>
 <% end %>
