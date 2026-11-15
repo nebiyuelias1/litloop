@@ -72,12 +72,14 @@
       </div>
     <% end %>
 
-    <div class="divider text-xs text-content-muted font-medium my-6">OR CONTINUE WITH</div>
+    <%# Social logins (LINE / Telegram) temporarily disabled while the native
+        flows are being verified — re-enable these three blocks (NEB-100). %1$>
+    <%# <div class="divider text-xs text-content-muted font-medium my-6">OR CONTINUE WITH</div> %1$>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-      <%= render "components/social_button", provider: :line, url: line_login_authorize_path %>
-      <%= render "components/social_button", provider: :telegram %>
-    </div>
+    <%# <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center"> %1$>
+    <%# <%= render "components/social_button", provider: :line, url: line_login_authorize_path %1$>
+    <%# <%= render "components/social_button", provider: :telegram %1$>
+    <%# </div> %1$>
 
     <%= render "devise/shared/links" %>
   </div>
