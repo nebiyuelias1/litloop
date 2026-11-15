@@ -68,6 +68,7 @@ jobs:
           GITHUB_USERNAME: nebiyuelias1
           GITHUB_TOKEN: ${{ secrets.GPR_TOKEN || secrets.KAMAL_REGISTRY_PASSWORD }}
           TELEGRAM_LOGIN_CLIENT_ID: ${{ vars.TELEGRAM_LOGIN_CLIENT_ID }}
+          LINE_CHANNEL_ID: ${{ vars.LINE_CHANNEL_ID }}
         run: bin/android_screenshots.sh
 
       - name: List screenshots
