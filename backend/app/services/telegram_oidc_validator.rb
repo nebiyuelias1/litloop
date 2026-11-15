@@ -8,7 +8,7 @@ require "json"
 class TelegramOidcValidator
   ISSUER = "https://oauth.telegram.org"
   JWKS_URL = ENV.fetch("TELEGRAM_OIDC_JWKS_URL", "https://oauth.telegram.org/.well-known/jwks.json")
-  JWKS_CACHE_KEY = "telegram_oidc:jwks"
+  JWKS_CACHE_KEY = "telegram_oidc:jwks:v2"
 
   class << self
     # Returns the validated claims hash, or nil when the token is not a valid,
@@ -52,7 +52,11 @@ class TelegramOidcValidator
 
     def cached_jwks
       Rails.cache.fetch(JWKS_CACHE_KEY, expires_in: 1.hour) do
-        JSON.parse(Net::HTTP.get(URI(JWKS_URL)))
+        jwks = JSON.parse(Net::HTTP.get(URI(JWKS_URL)))
+        # Telegram publishes RSA, EC and OKP keys; we verify RS256 tokens only,
+        # and ruby-jwt cannot import the other key types.
+        jwks["keys"] = jwks["keys"].select { |key| key["kty"] == "RSA" }
+        jwks
       end
     end
   end

@@ -16,8 +16,16 @@ import dev.hotwire.navigation.tabs.navigatorConfigurations
 import dev.hotwire.navigation.util.applyDefaultImeWindowInsets
 import et.netale.litloop.R
 import et.netale.litloop.models.mainTabs
+import android.util.Log
+import org.telegram.login.TelegramLogin
 
 const val baseURL = "https://litloop.club/"
+
+// Telegram Login SDK (https://core.telegram.org/bots/telegram-login#native-sdks).
+// The button on the web login page triggers litloop://telegram-login, which the
+// OS hands back to this activity; the SDK then opens the Telegram app for
+// consent and delivers the id_token back through the same custom scheme.
+const val telegramLoginRedirectUri = "litloop://telegram-login"
 
 class MainActivity : HotwireActivity() {
     private lateinit var bottomNavigationController: HotwireBottomNavigationController
@@ -41,6 +49,14 @@ class MainActivity : HotwireActivity() {
             )
         )
 
+        if (BuildConfig.TELEGRAM_LOGIN_CLIENT_ID.isNotBlank()) {
+            TelegramLogin.init(
+                clientId = BuildConfig.TELEGRAM_LOGIN_CLIENT_ID,
+                redirectUri = telegramLoginRedirectUri,
+                scopes = listOf("profile")
+            )
+        }
+
         if (savedInstanceState == null) {
             queueDeepLink(intent)
         }
@@ -49,7 +65,13 @@ class MainActivity : HotwireActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        queueDeepLink(intent)
+
+        val uri = intent.data ?: return queueDeepLink(intent)
+        when {
+            isTelegramLoginTrigger(uri) -> startTelegramLogin()
+            isTelegramLoginResponse(uri) -> handleTelegramLoginResponse(uri)
+            else -> queueDeepLink(intent)
+        }
     }
 
     override fun onNavigatorReady(navigator: Navigator) {
@@ -114,6 +136,55 @@ class MainActivity : HotwireActivity() {
             "http", "https" -> uri.toString()
             else -> null
         }
+    }
+
+    private fun isTelegramLoginTrigger(uri: Uri): Boolean {
+        return uri.scheme?.lowercase() == "litloop" &&
+            uri.host == "telegram-login" &&
+            uri.query.isNullOrBlank()
+    }
+
+    private fun isTelegramLoginResponse(uri: Uri): Boolean {
+        return uri.scheme?.lowercase() == "litloop" &&
+            uri.host == "telegram-login" &&
+            !uri.query.isNullOrBlank()
+    }
+
+    private fun startTelegramLogin() {
+        if (BuildConfig.TELEGRAM_LOGIN_CLIENT_ID.isBlank()) {
+            Log.w("TelegramLogin", "TELEGRAM_LOGIN_CLIENT_ID is not configured")
+            return
+        }
+
+        try {
+            TelegramLogin.startLogin(this)
+        } catch (e: Exception) {
+            Log.e("TelegramLogin", "startLogin failed", e)
+        }
+    }
+
+    private fun handleTelegramLoginResponse(uri: Uri) {
+        TelegramLogin.handleLoginResponse(
+            uri,
+            onSuccess = { loginData ->
+                // Complete the sign-in inside the app's own WebView, so the
+                // session cookie lands in the app.
+                routeAfterTelegramLogin(loginData.idToken)
+            },
+            onError = { error ->
+                Log.e("TelegramLogin", "Login failed: ${error.message}")
+            }
+        )
+    }
+
+    private fun routeAfterTelegramLogin(idToken: String) {
+        val url = Uri.parse("$baseURL/telegram_login/oidc").buildUpon()
+            .appendQueryParameter("id_token", idToken)
+            .build()
+        val targetUrl = resolveTargetUrl(url) ?: return
+        val pending = DeepLink(targetUrl, findTargetTabIndex(targetUrl))
+        pendingDeepLink = pending
+        routeDeepLinkIfReady(pending)
     }
 
     private fun findTargetTabIndex(url: String): Int {

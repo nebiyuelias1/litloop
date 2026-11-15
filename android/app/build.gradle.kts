@@ -20,9 +20,21 @@ android {
         versionName = "1.0" + (buildVersionCode?.let { ".$it" } ?: "")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "TELEGRAM_LOGIN_CLIENT_ID", "\"$telegramLoginClientId\"")
     }
 
     val uploadKeystore = System.getenv("LITLOOP_UPLOAD_KEYSTORE")
+
+    // Telegram Login SDK: the client id is the bot's numeric id
+    // (the TELEGRAM_BOT_TOKEN prefix, matching the Rails side).
+    val telegramLoginClientId = providers.gradleProperty("TELEGRAM_LOGIN_CLIENT_ID")
+        .orElse(providers.environmentVariable("TELEGRAM_LOGIN_CLIENT_ID"))
+        .orElse("")
+        .get()
+
+    buildFeatures {
+        buildConfig = true
+    }
 
     signingConfigs {
         create("release") {
@@ -57,6 +69,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation("dev.hotwire:core:1.2.0")
     implementation("dev.hotwire:navigation-fragments:1.2.0")
+    implementation("org.telegram:login-sdk:1.0.0")
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)
