@@ -14,6 +14,7 @@ import dev.hotwire.navigation.navigator.Navigator
 import dev.hotwire.navigation.tabs.HotwireBottomNavigationController
 import dev.hotwire.navigation.tabs.navigatorConfigurations
 import dev.hotwire.navigation.util.applyDefaultImeWindowInsets
+import et.netale.litloop.BuildConfig
 import et.netale.litloop.R
 import et.netale.litloop.models.mainTabs
 import android.util.Log
