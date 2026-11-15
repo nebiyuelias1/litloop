@@ -18,6 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       LITLOOP_VERSION_CODE: ${{ github.run_number }}
+      # Telegram Login SDK resolves from GitHub Packages (TelegramMessenger org),
+      # which the built-in GITHUB_TOKEN can't read — requires a PAT with read:packages.
+      GITHUB_USERNAME: ${{ secrets.GPR_USERNAME }}
+      GITHUB_TOKEN: ${{ secrets.GPR_TOKEN }}
     defaults:
       run:
         working-directory: ./android
@@ -50,6 +54,10 @@ jobs:
     environment: staging
     env:
       LITLOOP_VERSION_CODE: ${{ github.run_number }}
+      # Telegram Login SDK resolves from GitHub Packages (TelegramMessenger org),
+      # which the built-in GITHUB_TOKEN can't read — requires a PAT with read:packages.
+      GITHUB_USERNAME: ${{ secrets.GPR_USERNAME }}
+      GITHUB_TOKEN: ${{ secrets.GPR_TOKEN }}
     defaults:
       run:
         working-directory: ./android
