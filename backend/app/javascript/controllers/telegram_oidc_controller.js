@@ -1,9 +1,14 @@
 import { Controller } from "@hotwired/stimulus"
 
 // Telegram Login (OpenID Connect) — https://core.telegram.org/bots/telegram-login
-// Opens Telegram's auth popup via the official library and posts the resulting
-// id_token to the server, which validates it (JWKS signature, issuer, audience,
-// nonce) before signing the user in.
+// Opens Telegram's auth page in a popup and posts the resulting id_token to the
+// server, which validates it (JWKS signature, issuer, audience, expiry, nonce)
+// before signing the user in.
+//
+// The popup URL is built here rather than by the official telegram-login.js
+// library, because the library omits the `origin` parameter that Telegram's
+// /auth endpoint requires (it needs both `origin` and `redirect_uri`). The
+// result delivery is the same postMessage contract the library uses.
 export default class extends Controller {
   static values = {
     clientId: Number,
@@ -11,61 +16,69 @@ export default class extends Controller {
     scope: { type: String, default: "profile" },
   }
 
-  static POLL_INTERVAL_MS = 200
-  static POLL_MAX_ATTEMPTS = 30
-
-  connect() {
-    // Disabled until the SDK is available, so clicks are never silently dropped.
-    this.element.disabled = true
-    this.attempts = 0
-    this.waitForLibrary()
-  }
+  static TELEGRAM_OAUTH_ORIGIN = "https://oauth.telegram.org"
 
   disconnect() {
-    clearTimeout(this.retryTimeout)
-  }
-
-  waitForLibrary() {
-    if (window.Telegram?.Login) {
-      this.initLibrary()
-      this.ready = true
-      this.element.disabled = false
-    } else if (++this.attempts >= this.constructor.POLL_MAX_ATTEMPTS) {
-      // The script failed to load or is blocked — stop retrying and say so.
-      this.notify("Telegram sign-in could not load. Please refresh and try again.")
-    } else {
-      // telegram-login.js is loaded with `async`, so retry until it is available
-      this.retryTimeout = setTimeout(() => this.waitForLibrary(), this.constructor.POLL_INTERVAL_MS)
-    }
+    window.removeEventListener("message", this.messageHandler)
+    clearInterval(this.closeChecker)
   }
 
   open() {
-    if (!this.ready) return
-    // The SDK script can run again after this controller connected (e.g. a Turbo
-    // visit re-executes the script tag) and replace window.Telegram.Login, so
-    // (re-)apply our options and callback to the current object.
-    this.initLibrary()
-    window.Telegram.Login.open()
-  }
-
-  initLibrary() {
-    window.Telegram.Login.init(
-      {
-        client_id: this.clientIdValue,
-        scope: this.scopeValue.split(" "),
-        nonce: this.nonceValue,
-      },
-      (result) => this.onAuth(result),
+    const popup = window.open(
+      this.authUrl(),
+      "telegram_oidc_login",
+      "width=550,height=650,left=" +
+        Math.max(0, (screen.width - 550) / 2) +
+        ",top=" +
+        Math.max(0, (screen.height - 650) / 2) +
+        ",status=0,location=0,menubar=0,toolbar=0",
     )
+    if (!popup) return
+
+    this.messageHandler = (event) => {
+      if (event.origin !== this.constructor.TELEGRAM_OAUTH_ORIGIN || event.source !== popup) return
+      let data
+      try {
+        data = JSON.parse(event.data)
+      } catch {
+        return
+      }
+      if (data?.event !== "auth_result") return
+
+      window.removeEventListener("message", this.messageHandler)
+      clearInterval(this.closeChecker)
+      this.onAuth(data)
+    }
+    window.addEventListener("message", this.messageHandler)
+
+    // Stop listening if the popup is closed without completing the flow
+    this.closeChecker = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(this.closeChecker)
+        window.removeEventListener("message", this.messageHandler)
+      }
+    }, 300)
   }
 
-  async onAuth(result) {
-    // popup_closed / user-cancelled / client-side errors: stay on the page
-    if (!result || result.error || !result.id_token) return
+  authUrl() {
+    const params = new URLSearchParams({
+      response_type: "post_message",
+      client_id: this.clientIdValue,
+      origin: window.location.origin,
+      redirect_uri: window.location.origin + window.location.pathname,
+      scope: `openid ${this.scopeValue}`,
+      nonce: this.nonceValue,
+    })
+    return `${this.constructor.TELEGRAM_OAUTH_ORIGIN}/auth?${params}`
+  }
+
+  async onAuth(data) {
+    // user cancelled or Telegram reported an error client-side: stay on the page
+    if (data.error || !data.result) return
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content
     const body = new URLSearchParams({
-      id_token: result.id_token,
+      id_token: data.result,
       authenticity_token: csrfToken,
     })
 
@@ -75,12 +88,12 @@ export default class extends Controller {
         headers: { "content-type": "application/x-www-form-urlencoded" },
         body: body.toString(),
       })
-      const data = await response.json()
+      const result = await response.json()
 
-      if (data.status === "ok" && data.redirect_url) {
-        window.location.href = data.redirect_url
+      if (result.status === "ok" && result.redirect_url) {
+        window.location.href = result.redirect_url
       } else {
-        this.notify(data.error || "Telegram sign-in failed.")
+        this.notify(result.error || "Telegram sign-in failed.")
       }
     } catch {
       this.notify("Network error, please try again.")

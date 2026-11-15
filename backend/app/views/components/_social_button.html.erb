@@ -36,8 +36,10 @@
   <%# Telegram Login (OpenID Connect): our own button, styled like the other
       social buttons (NEB-100). The OIDC client id is the bot's numeric id —
       the bot token's prefix.
-      Web: the library opens the auth popup; the id_token is validated
-      server-side (TelegramLoginController#oidc).
+      Web: the controller builds the auth popup URL itself (Telegram's /auth
+      requires both `origin` and `redirect_uri`, which the official library
+      omits) and validates the id_token server-side
+      (TelegramLoginController#oidc).
       Native apps: the button hands off to the official Telegram Login SDK via
       litloop://telegram-login; the SDK opens the Telegram app for consent and
       the resulting id_token is routed to the same endpoint. %>
@@ -68,7 +70,6 @@
         </svg>
         <span>Log in with Telegram</span>
       <% end %>
-      <script async src="https://oauth.telegram.org/js/telegram-login.js?6"></script>
     <% end %>
   <% end %>
 <% end %>
