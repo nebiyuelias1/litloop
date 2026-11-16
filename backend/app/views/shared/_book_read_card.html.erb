@@ -3,7 +3,7 @@
 <% show_club_name = local_assigns.fetch(:show_club_name, true) %>
 <% can_see_details = club&.private_info_visible_to?(current_user) %>
 
-<div class="card card-side bg-surface shadow-sm border border-border hover:border-accent/40 transition-all group">
+<div class="card card-side bg-surface border border-border hover:border-accent/40 transition-all group">
   <figure class="w-32 shrink-0 relative overflow-hidden bg-background">
     <% if book&.cover_image.present? %>
       <img
@@ -32,7 +32,7 @@
       <% if show_club_name %>
         <div class="flex items-center gap-2 mb-1.5 min-w-0">
           <% if club&.photo&.attached? %>
-            <%= image_tag club.photo, alt: "", class: "w-7 h-7 aspect-square rounded-full object-cover shrink-0 ring-1 ring-border shadow-xs" %>
+            <%= image_tag club.photo, alt: "", class: "w-7 h-7 aspect-square rounded-full object-cover shrink-0 ring-1 ring-border" %>
           <% else %>
             <div aria-hidden="true" class="w-7 h-7 rounded-full bg-accent/15 text-accent font-bold text-xs flex items-center justify-center shrink-0">
               <%= club&.name_initial || "B" %>
