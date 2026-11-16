@@ -9,19 +9,19 @@
     <div class="flex items-start gap-3.5">
       <div
         class="
-          h-14 w-14 shrink-0 overflow-hidden rounded-2xl border-2 border-surface
+          relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border-2 border-surface
           bg-primary shadow-sm ring-1 ring-border
         ">
+        <%# Fallback placeholder sits beneath the image; image-fallback hides a broken img on error %>
+        <div
+          aria-hidden="true"
+          class="absolute inset-0 flex items-center justify-center text-xl font-bold text-primary-contrast">
+          <%= club.name_initial %>
+        </div>
         <% if club.photo.attached? %>
-          <%= image_tag club.photo, alt: "", class: "h-full w-full object-cover" %>
-        <% else %>
-          <div
-            class="
-              flex h-full w-full items-center justify-center text-xl font-bold
-              text-primary-contrast
-            ">
-            <%= club.name_initial %>
-          </div>
+          <%= image_tag club.photo, alt: "",
+            data: { controller: "image-fallback", action: "error->image-fallback#fail" },
+            class: "relative h-full w-full object-cover" %>
         <% end %>
       </div>
 

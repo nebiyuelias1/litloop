@@ -1,9 +1,11 @@
 <div class="flex items-center p-3 hover:bg-background transition-colors border-b border-border last:border-b-0">
-  <% if book.cover_image.present? %>
-    <%= image_tag book.cover_image, alt: "Cover of #{book.title}", class: "w-12 h-16 object-cover rounded-md mr-4" %>
-  <% else %>
-    <div class="w-12 h-16 bg-background rounded-md mr-4 flex items-center justify-center text-content-muted text-xs text-center p-1">No Image</div>
-  <% end %>
+  <div class="relative w-12 h-16 rounded-md mr-4 shrink-0 overflow-hidden">
+    <%# Bookplate monogram sits beneath the image; image-fallback hides a broken img on error %>
+    <%= render "shared/book_cover_fallback", book: book, size_class: "text-xl" %>
+    <% if book.cover_image.present? %>
+      <%= image_tag book.cover_image, alt: "Cover of #{book.title}", data: { controller: "image-fallback", action: "error->image-fallback#fail" }, class: "relative w-12 h-16 object-cover" %>
+    <% end %>
+  </div>
   <div class="flex-1">
     <p class="font-semibold text-lg text-content"><%= book.title %></p>
     <div class="flex items-center gap-2">

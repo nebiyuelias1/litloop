@@ -3,13 +3,19 @@
 <% show_club_name = local_assigns.fetch(:show_club_name, true) %>
 <% can_see_details = club&.private_info_visible_to?(current_user) %>
 
-<div class="card card-side bg-surface shadow-sm border border-border hover:border-accent/40 transition-all group">
+<div class="card card-side bg-surface border border-border hover:border-accent/40 transition-all group">
   <figure class="w-32 shrink-0 relative overflow-hidden bg-background">
-    <% if book&.cover_image.present? %>
-      <img
-        src="<%= book.cover_image %>"
-        alt="<%= book.title %>"
-        class="absolute inset-0 h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500">
+    <% if book.present? %>
+      <%# Bookplate monogram sits beneath the image; image-fallback hides a broken img on error %>
+      <%= render "shared/book_cover_fallback", book: book, size_class: "text-5xl" %>
+      <% if book.cover_image.present? %>
+        <img
+          src="<%= book.cover_image %>"
+          alt="<%= book.title %>"
+          data-controller="image-fallback"
+          data-action="error->image-fallback#fail"
+          class="absolute inset-0 h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500">
+      <% end %>
     <% elsif book_read.poll.present? && can_see_details %>
       <div class="absolute inset-0 flex flex-col items-center justify-center text-accent p-2 text-center">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-1">
@@ -32,7 +38,14 @@
       <% if show_club_name %>
         <div class="flex items-center gap-2 mb-1.5 min-w-0">
           <% if club&.photo&.attached? %>
-            <%= image_tag club.photo, alt: "", class: "w-7 h-7 aspect-square rounded-full object-cover shrink-0 ring-1 ring-border shadow-xs" %>
+            <div class="relative w-7 h-7 shrink-0">
+              <div aria-hidden="true" class="absolute inset-0 flex items-center justify-center rounded-full bg-accent/15 font-bold text-xs text-accent ring-1 ring-border">
+                <%= club&.name_initial || "B" %>
+              </div>
+              <%= image_tag club.photo, alt: "",
+                data: { controller: "image-fallback", action: "error->image-fallback#fail" },
+                class: "absolute inset-0 rounded-full object-cover ring-1 ring-border" %>
+            </div>
           <% else %>
             <div aria-hidden="true" class="w-7 h-7 rounded-full bg-accent/15 text-accent font-bold text-xs flex items-center justify-center shrink-0">
               <%= club&.name_initial || "B" %>

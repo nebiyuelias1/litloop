@@ -9,10 +9,12 @@
   aria_label ||= title
   classes ||= "w-9 h-9 bg-blue-600 text-white text-xs font-semibold ring-2 ring-white"
 %>
-<div class="rounded-full flex items-center justify-center overflow-hidden <%= classes %>" title="<%= title %>" aria-label="<%= aria_label %>">
+<div class="relative rounded-full flex items-center justify-center overflow-hidden <%= classes %>" title="<%= title %>" aria-label="<%= aria_label %>">
+  <%# Initials stay beneath the image; image-fallback hides a broken img on error and these show through %>
+  <%= user.name_initial %>
   <% if user.respond_to?(:avatar_url) && user.avatar_url.present? %>
-    <img src="<%= user.avatar_url %>" alt="<%= aria_label %>" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer">
-  <% else %>
-    <%= user.name_initial %>
+    <img src="<%= user.avatar_url %>" alt="<%= aria_label %>" loading="lazy" referrerpolicy="no-referrer"
+      data-controller="image-fallback" data-action="error->image-fallback#fail"
+      class="absolute inset-0 w-full h-full object-cover">
   <% end %>
 </div>
