@@ -1,0 +1,17 @@
+<%#
+  Book cover fallback: a quiet bookplate monogram on a themed band, rendered
+  beneath the cover <img>. Shows through when no cover exists (server side)
+  or when the img fails at runtime (image-fallback hides the broken img).
+  Locals:
+    - book: Book — its title provides the monogram initial
+    - size_class: font size for the initial, defaults to text-5xl
+%>
+<% size_class ||= "text-5xl" %>
+<% cover_bands = [
+     "bg-background text-primary",
+     "bg-primary text-primary-contrast",
+     "bg-accent/10 text-accent"
+   ] %>
+<div aria-hidden="true" class="absolute inset-0 flex items-center justify-center <%= cover_bands[(book.id || 0) % cover_bands.length] %>">
+  <span class="relative font-serif leading-none <%= size_class %>"><%= book.title.to_s.strip[0].to_s.upcase %></span>
+</div>

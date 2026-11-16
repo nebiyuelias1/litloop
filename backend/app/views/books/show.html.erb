@@ -31,31 +31,16 @@
         aspect-[2/3] w-full rounded-2xl shadow-xl overflow-hidden bg-background border
         border-border relative group
       ">
+      <%# Bookplate monogram sits beneath the image; image-fallback hides a broken img on error %>
+      <%= render "shared/book_cover_fallback", book: @book, size_class: "text-7xl" %>
       <% if @book.cover_image.present? %>
         <img
           src="<%= @book.cover_image %>"
           alt="<%= @book.title %>"
+          data-controller="image-fallback"
+          data-action="error->image-fallback#fail"
           class="absolute inset-0 w-full h-full object-cover">
         <div class="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-2xl"></div>
-      <% else %>
-        <div
-          class="
-            flex h-full w-full flex-col items-center justify-center text-content-muted p-8
-            text-center bg-background
-          ">
-          <svg
-            class="h-16 w-16 mb-4 opacity-50"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1"
-              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          </svg>
-          <span class="text-sm font-medium text-content-muted">No Cover</span>
-        </div>
       <% end %>
     </div>
   </div>

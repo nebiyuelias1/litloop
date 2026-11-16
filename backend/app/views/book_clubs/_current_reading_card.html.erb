@@ -18,17 +18,23 @@
     ">
     <div class="flex gap-4">
       <div class="w-28 shrink-0 self-stretch">
-        <% if can_see_details && book&.cover_image.present? %>
+        <% if can_see_details && book.present? %>
           <figure
             class="
               relative h-full min-h-42 w-full overflow-hidden rounded-xl border
               border-border bg-background
             ">
-            <img
-              src="<%= book.cover_image %>"
-              alt="<%= book.title %>"
-              loading="lazy"
-              class="absolute inset-0 h-full w-full object-cover">
+            <%# Bookplate monogram sits beneath the image; image-fallback hides a broken img on error %>
+            <%= render "shared/book_cover_fallback", book: book, size_class: "text-4xl" %>
+            <% if book.cover_image.present? %>
+              <img
+                src="<%= book.cover_image %>"
+                alt="<%= book.title %>"
+                loading="lazy"
+                data-controller="image-fallback"
+                data-action="error->image-fallback#fail"
+                class="absolute inset-0 h-full w-full object-cover">
+            <% end %>
           </figure>
         <% elsif can_see_details && poll.present? %>
           <figure

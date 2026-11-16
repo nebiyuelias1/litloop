@@ -3,43 +3,80 @@
   Locals:
     - club: BookClub
 %>
-<section class="relative">
-  <div class="relative h-48 w-full overflow-hidden rounded-3xl border border-border bg-primary sm:h-56">
-    <% if club.cover_photo.attached? %>
-      <%= image_tag club.cover_photo,
-      alt: "",
-      class: "absolute inset-0 h-full w-full object-cover" %>
-    <% elsif club.photo.attached? %>
-      <%= image_tag club.photo,
-      alt: "",
-      class: "absolute inset-0 h-full w-full scale-110 object-cover blur-sm" %>
-    <% else %>
-      <div class="absolute inset-0 bg-gradient-to-br from-primary via-primary to-accent/50"></div>
-    <% end %>
+  <section class="relative">
+    <div
+      class="
+        relative h-48 w-full overflow-hidden rounded-3xl border border-border bg-primary
+        sm:h-56
+      ">
+      <%# Gradient is the base layer; image-fallback hides a broken img on error and this shows through %>
+      <div
+        aria-hidden="true"
+        class="
+          absolute inset-0 bg-linear-to-br from-primary via-primary to-accent/50
+        "></div>
+      <% if club.cover_photo.attached? %>
+        <%= image_tag club.cover_photo,
+        alt: "",
+        data: {
+          controller: "image-fallback",
+          action: "error->image-fallback#fail",
+        },
+        class: "absolute inset-0 h-full w-full object-cover" %>
+      <% elsif club.photo.attached? %>
+        <%= image_tag club.photo,
+        alt: "",
+        data: {
+          controller: "image-fallback",
+          action: "error->image-fallback#fail",
+        },
+        class: "absolute inset-0 h-full w-full scale-110 object-cover blur-sm" %>
+      <% end %>
 
-    <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent"></div>
+      <div
+        class="
+          absolute inset-0 bg-linear-to-t from-black/75 via-black/20 to-transparent
+        "></div>
 
-    <div class="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/60 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
-      <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
-      <span>Est. <%= club.created_at.year %></span>
+      <div
+        class="
+          absolute left-4 top-4 inline-flex items-center gap-2 rounded-full border
+          border-white/20 bg-black/60 px-3 py-1 text-xs font-medium text-white
+          backdrop-blur-sm
+        ">
+        <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+        <span>Est.
+          <%= club.created_at.year %></span>
+      </div>
+
+      <button
+        type="button"
+        aria-label="<%= t("share", default: "Share") %>"
+        data-controller="share"
+        data-action="click->share#share:prevent"
+        data-share-url-value="<%= book_club_url(club) %>"
+        data-share-title-value="<%= club.name %>"
+        class="
+          absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center
+          rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-sm
+          transition-colors hover:bg-black/80
+        ">
+        <span class="sr-only" data-share-target="label"><%= t("share", default: "Share") %></span>
+        <svg
+          class="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true">
+          <circle cx="18" cy="5" r="3" />
+          <circle cx="6" cy="12" r="3" />
+          <circle cx="18" cy="19" r="3" />
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+        </svg>
+      </button>
     </div>
-
-    <button
-      type="button"
-      aria-label="<%= t("share", default: "Share") %>"
-      data-controller="share"
-      data-action="click->share#share:prevent"
-      data-share-url-value="<%= book_club_url(club) %>"
-      data-share-title-value="<%= club.name %>"
-      class="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-black/80">
-      <span class="sr-only" data-share-target="label"><%= t("share", default: "Share") %></span>
-      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="18" cy="5" r="3" />
-        <circle cx="6" cy="12" r="3" />
-        <circle cx="18" cy="19" r="3" />
-        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-      </svg>
-    </button>
-  </div>
-</section>
+  </section>

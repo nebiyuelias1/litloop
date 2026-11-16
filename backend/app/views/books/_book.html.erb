@@ -1,15 +1,10 @@
 <%= link_to book_path(book), id: dom_id(book), class: "card bg-surface shadow-xs hover:shadow-xl transition-all duration-300 rounded-2xl border border-border/80 overflow-hidden group flex flex-col h-full focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer" do %>
   <%# Compact Full Cover Image Figure %>
   <figure class="relative h-44 sm:h-48 w-full overflow-hidden bg-background m-0 shrink-0 border-b border-border/40">
+    <%# Bookplate monogram sits beneath the image; image-fallback hides a broken img on error %>
+    <%= render "shared/book_cover_fallback", book: book, size_class: "text-5xl" %>
     <% if book.cover_image.present? %>
-      <img src="<%= book.cover_image %>" alt="<%= book.title %>" class="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500">
-    <% else %>
-      <div class="flex h-full w-full flex-col items-center justify-center bg-background text-content-muted p-3 text-center border border-dashed border-border/60">
-        <svg class="h-8 w-8 mb-1 opacity-50 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-        </svg>
-        <span class="text-xs font-semibold text-content-muted">No Cover</span>
-      </div>
+      <img src="<%= book.cover_image %>" alt="<%= book.title %>" data-controller="image-fallback" data-action="error->image-fallback#fail" class="relative h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500">
     <% end %>
 
     <%# Published Year Badge %>

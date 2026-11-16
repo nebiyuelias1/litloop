@@ -22,9 +22,16 @@
 <div class="max-w-4xl mx-auto">
   <div class="flex flex-col md:flex-row gap-8 pb-10">
     <div class="w-full md:w-1/3 shrink-0">
-      <% if @book_read.book&.cover_image.present? %>
-        <%= image_tag @book_read.book.cover_image,
-        class: "w-full aspect-[2/3] object-cover rounded-xl border border-border" %>
+      <% if @book_read.book.present? %>
+        <div class="relative w-full aspect-[2/3] overflow-hidden rounded-xl border border-border bg-background">
+          <%# Bookplate monogram sits beneath the image; image-fallback hides a broken img on error %>
+          <%= render "shared/book_cover_fallback", book: @book_read.book, size_class: "text-7xl" %>
+          <% if @book_read.book.cover_image.present? %>
+            <%= image_tag @book_read.book.cover_image,
+            data: { controller: "image-fallback", action: "error->image-fallback#fail" },
+            class: "absolute inset-0 w-full h-full object-cover" %>
+          <% end %>
+        </div>
       <% elsif @book_read.poll.present? %>
         <div
           class="
@@ -349,8 +356,14 @@
         </p>
         <% if winner_label.present? %>
           <div class="mt-5 flex items-center gap-4">
-            <% if winner_book&.cover_image.present? %>
-              <%= image_tag winner_book.cover_image, class: "w-16 h-24 object-cover rounded border border-border shrink-0 ring-1 ring-primary/30", alt: "" %>
+            <% if winner_book.present? %>
+              <div class="relative w-16 h-24 shrink-0 rounded border border-border ring-1 ring-primary/30 overflow-hidden">
+                <%# Bookplate monogram sits beneath the image; image-fallback hides a broken img on error %>
+                <%= render "shared/book_cover_fallback", book: winner_book, size_class: "text-2xl" %>
+                <% if winner_book.cover_image.present? %>
+                  <%= image_tag winner_book.cover_image, alt: "", data: { controller: "image-fallback", action: "error->image-fallback#fail" }, class: "absolute inset-0 w-full h-full object-cover" %>
+                <% end %>
+              </div>
             <% else %>
               <div class="w-16 h-24 shrink-0 bg-surface border border-border rounded flex items-center justify-center">
                 <svg class="w-7 h-7 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">

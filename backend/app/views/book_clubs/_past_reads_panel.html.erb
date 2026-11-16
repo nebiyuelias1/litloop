@@ -18,20 +18,26 @@
                   relative flex h-full min-h-36 w-full items-center justify-center overflow-hidden
                   rounded-xl border border-border bg-background text-content-muted
                 ">
-                <% if read.book&.cover_image.present? %>
-                  <img
-                    src="<%= read.book.cover_image %>"
-                    alt="<%= read.book.title %>"
-                    loading="lazy"
-                    class="absolute inset-0 h-full w-full object-cover">
+                <% if read.book.present? %>
+                  <%# Bookplate monogram sits beneath the image; image-fallback hides a broken img on error %>
+                  <%= render "shared/book_cover_fallback", book: read.book, size_class: "text-3xl" %>
                 <% else %>
-                  <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg aria-hidden="true" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
                       stroke-linecap="round"
                       stroke-linejoin="round"
                       stroke-width="1.5"
                       d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
+                <% end %>
+                <% if read.book&.cover_image.present? %>
+                  <img
+                    src="<%= read.book.cover_image %>"
+                    alt="<%= read.book.title %>"
+                    loading="lazy"
+                    data-controller="image-fallback"
+                    data-action="error->image-fallback#fail"
+                    class="absolute inset-0 h-full w-full object-cover">
                 <% end %>
               </figure>
             </div>
