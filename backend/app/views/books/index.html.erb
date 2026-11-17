@@ -1,52 +1,81 @@
 <% content_for :title, t("titles.books") %>
-<div class="mb-12">
-  <div class="max-w-3xl mx-auto text-center mb-8">
-    <h1 class="title title-lg text-content font-bold tracking-tight mb-4"><%= t("discover_books") %></h1>
-    <p class="text-lg text-content-subtle max-w-2xl mx-auto"><%= t("explore_books") %></p>
+<header class="mb-10 sm:mb-12">
+  <div class="max-w-2xl mx-auto text-center mb-6 sm:mb-8">
+    <h1 class="title title-lg font-bold text-content text-balance mb-3"><%= t("discover_books") %></h1>
+    <p class="text-base sm:text-lg text-content-subtle text-pretty"><%= t("explore_books") %></p>
   </div>
 
   <div class="max-w-2xl mx-auto">
     <%= render partial: "books/search_bar" %>
   </div>
-</div>
+</header>
 
-<% if @page.records.any? %>
-  <div
-    id="books_list"
-    class="
-      grid grid-cols-1 min-[450px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4
-      xl:grid-cols-5 gap-6
-    ">
-     <%= render partial: "books/book", collection: @page.records, as: :book %>
-  </div>
-
-  <div id="pagination_placeholder">
-    <% if @page.next_param %>
-      <%= turbo_frame_tag "books_page_#{@page.next_param}", src: books_path(page: @page.next_param, format: :turbo_stream), loading: :lazy do %>
-        <%= render partial: "books/pagination_placeholder" %>
+<section aria-labelledby="catalogue_heading">
+  <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-3">
+    <h2 id="catalogue_heading" class="text-sm font-medium text-content-subtle tabular-nums">
+      <% if @active_tag.present? %>
+        <%= t("library.tagged", tag: @active_tag) %>
+      <% else %>
+        <%= t("library.book_count", count: @total_books, formatted: number_with_delimiter(@total_books)) %>
       <% end %>
+    </h2>
+
+    <% if @tags.any? %>
+      <nav aria-label="<%= t("library.filters_label") %>" class="-mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto">
+        <ul class="flex gap-2 whitespace-nowrap">
+          <li>
+            <%= link_to t("library.all_books"), library_path,
+                  class: ["inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                          @active_tag.blank? ? "bg-primary text-primary-contrast" : "text-content-subtle hover:text-accent"],
+                  aria: { current: (@active_tag.blank? ? "page" : nil) } %>
+          </li>
+          <% @tags.each do |tag| %>
+            <% active = tag.name == @active_tag %>
+            <li>
+              <%= link_to tag.name, library_path(tag: tag.name),
+                    class: ["inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                            active ? "bg-primary text-primary-contrast" : "text-content-subtle hover:text-accent"],
+                    aria: { current: (active ? "page" : nil) } %>
+            </li>
+          <% end %>
+        </ul>
+      </nav>
     <% end %>
   </div>
 
-<% else %>
-  <div
-    class="
-      text-center py-24 bg-background rounded-2xl border-2 border-dashed border-border
-    ">
-    <div class="mx-auto h-24 w-24 text-content-muted">
+  <% if @page.records.any? %>
+    <div
+      id="books_list"
+      class="
+        grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5
+        gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10
+      ">
+      <%= render partial: "books/book", collection: @page.records, as: :book %>
+    </div>
+
+    <%= render partial: "books/pagination_placeholder" %>
+  <% else %>
+    <div class="max-w-md mx-auto text-center py-16 sm:py-24">
       <svg
+        class="mx-auto h-12 w-12 text-content-muted"
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
-        stroke-width="1"
+        stroke-width="1.25"
         stroke="currentColor"
-        class="w-full h-full">
+        aria-hidden="true">
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
           d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
       </svg>
+      <% if @active_tag.present? %>
+        <h3 class="title title-sm font-bold text-content mt-4"><%= t("library.empty_tag_title", tag: @active_tag) %></h3>
+        <%= link_to t("library.show_all"), library_path, class: "btn btn-primary mt-6" %>
+      <% else %>
+        <h3 class="title title-sm font-bold text-content mt-4"><%= t("library.empty_title") %></h3>
+        <p class="mt-2 text-sm text-content-subtle text-pretty"><%= t("library.empty_hint") %></p>
+      <% end %>
     </div>
-    <h3 class="mt-4 text-lg font-semibold text-content"><%= t("no_books_found") %></h3>
-  </div>
-<% end %>
+  <% end %>
+</section>

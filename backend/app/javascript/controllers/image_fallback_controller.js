@@ -17,6 +17,18 @@ export default class extends Controller {
     // slow JS), so also detect an already-broken image here.
     if (this.element.src && this.element.complete && this.element.naturalWidth === 0) {
       this.fail()
+    } else if (this.element.complete) {
+      this.check()
+    }
+  }
+
+  // Google Books answers a missing cover with a 200 OK "image not available"
+  // PNG (always 300x391) instead of an error, so the error action never fires.
+  // Wire it with `load->image-fallback#check` to treat that stand-in as broken.
+  check() {
+    const { naturalWidth, naturalHeight, src } = this.element
+    if (src.includes("books.google.") && naturalWidth === 300 && naturalHeight === 391) {
+      this.fail()
     }
   }
 

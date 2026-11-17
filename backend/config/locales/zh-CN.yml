@@ -199,3 +199,22 @@ zh-CN:
   votes_count:
     other: "%{count} 票"
   jump_to_section: "跳转本页区域"
+  library:
+    book_count:
+      other: "书目共 %{formatted} 本"
+    tagged: "标签：“%{tag}”"
+    all_books: "全部书籍"
+    show_all: "显示全部书籍"
+    filters_label: "按标签筛选"
+    search_label: "搜索书库"
+    searching: "搜索中…"
+    no_search_results: "没有符合搜索的书籍。请尝试其他书名或作者。"
+    by_author: "%{author} 著"
+    club_read: "读书会选读"
+    reviews:
+      other: "%{count} 条书评"
+    rating_label: "平均评分 %{rating}（满分 5）"
+    empty_title: "书架还是空的"
+    empty_hint: "在上方搜索任意书名。网上找到的书籍在打开后会加入书目。"
+    empty_tag_title: "还没有标签为“%{tag}”的书"
+    end_of_catalogue: "已经到书目末尾了。"

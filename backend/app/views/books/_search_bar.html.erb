@@ -1,10 +1,11 @@
-<div data-controller="search" class="relative group mb-6 search-hero">
+<div data-controller="search" role="search" class="relative group search-hero">
   <div class="search-container">
     <div
       class="
         absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none
       ">
       <svg
+        aria-hidden="true"
         class="
           h-6 w-6 text-content-muted group-focus-within:text-primary transition-colors
         "
@@ -19,8 +20,10 @@
       </svg>
     </div>
     <input
-      type="text"
+      type="search"
       autocomplete="off"
+      enterkeyhint="search"
+      aria-label="<%= t("library.search_label") %>"
       placeholder="<%= t("search_bar_placeholder") %>"
       class="
         search-input block w-full pr-4 bg-surface text-content
@@ -40,9 +43,10 @@
       data-search-target="loader"
       class="
         hidden absolute z-50 w-full mt-2 bg-surface border border-border rounded-2xl
-        shadow-lg p-4 text-center text-content-muted
-      ">
-      Loading...
+        shadow-lg p-4 text-center text-sm text-content-muted
+      "
+      role="status">
+      <%= t("library.searching") %>
     </div>
   </div>
 </div>

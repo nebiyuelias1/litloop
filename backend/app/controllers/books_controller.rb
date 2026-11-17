@@ -10,7 +10,9 @@ class BooksController < ApplicationController
       books = books.joins(:tags).where(tags: { name: @active_tag })
     end
 
+    @total_books = books.count unless request.format.turbo_stream?
     set_page_and_extract_portion_from books
+    load_card_stats(@page.records)
 
     respond_to do |format|
       format.html
@@ -104,6 +106,13 @@ class BooksController < ApplicationController
   end
 
   private
+
+  # One grouped query each instead of a ratings/book_reads query per card.
+  def load_card_stats(books)
+    ids = books.map(&:id)
+    @average_ratings = Rating.where(book_id: ids).group(:book_id).average(:score)
+    @club_read_book_ids = BookRead.where(book_id: ids).distinct.pluck(:book_id).to_set
+  end
 
   def map_lookup_result_to_book(result)
     Book.new(

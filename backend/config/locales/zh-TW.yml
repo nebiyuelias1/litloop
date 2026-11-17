@@ -199,3 +199,22 @@ zh-TW:
   votes_count:
     other: "%{count} 票"
   jump_to_section: "跳至本頁區域"
+  library:
+    book_count:
+      other: "書目共 %{formatted} 本"
+    tagged: "標籤：「%{tag}」"
+    all_books: "全部書籍"
+    show_all: "顯示全部書籍"
+    filters_label: "依標籤篩選"
+    search_label: "搜尋書庫"
+    searching: "搜尋中…"
+    no_search_results: "沒有符合搜尋的書籍。請嘗試其他書名或作者。"
+    by_author: "%{author} 著"
+    club_read: "讀書會選讀"
+    reviews:
+      other: "%{count} 則書評"
+    rating_label: "平均評分 %{rating}（滿分 5）"
+    empty_title: "書架還是空的"
+    empty_hint: "在上方搜尋任何書名。網路上找到的書籍在開啟後會加入書目。"
+    empty_tag_title: "還沒有標籤為「%{tag}」的書"
+    end_of_catalogue: "已經到書目末尾了。"
