@@ -155,10 +155,17 @@ zh-CN:
   type_title: "输入书名..."
 
   date:
+    abbr_day_names: [周日, 周一, 周二, 周三, 周四, 周五, 周六]
+    month_names: [~, 一月, 二月, 三月, 四月, 五月, 六月, 七月, 八月, 九月, 十月, 十一月, 十二月]
+    abbr_month_names: [~, 1月, 2月, 3月, 4月, 5月, 6月, 7月, 8月, 9月, 10月, 11月, 12月]
+    formats:
+      month_year: "%Y年%-m月"
     day_names: [星期日, 星期一, 星期二, 星期三, 星期四, 星期五, 星期六]
 
   time:
     formats:
+      club_read: "%Y年%-m月%-d日 %a %H:%M"
+      month_short: "%-m月"
       flyer: "%Y年%m月%d日 %H:%M"
       long: "%Y年%m月%d日 %H:%M"
   page_count: "页数"
@@ -199,3 +206,98 @@ zh-CN:
   votes_count:
     other: "%{count} 票"
   jump_to_section: "跳转本页区域"
+
+  books:
+    show:
+      og_title: "%{title}，作者：%{author}"
+      by_author_html: "作者：%{author}"
+      average_rating: "平均评分"
+      reviews_count:
+        one: "1 条书评"
+        other: "%{count} 条书评"
+      not_yet_rated: "暂无评分"
+      tags: "标签"
+      publisher: "出版社"
+      published: "出版时间"
+      language: "语言"
+      isbn: "ISBN"
+      cover_alt: "《%{title}》封面"
+      about: "关于本书"
+      club_reads: "读书会共读"
+      upcoming: "即将举行"
+      have_you_read: "读过这本书吗？"
+      rate_prompt: "打个分，分享你的看法"
+      your_rating: "你的评分"
+      stars:
+        one: "1 星"
+        other: "%{count} 星"
+      rating_saved: "评分已保存。"
+      rating_failed: "评分保存失败，请重试。"
+      write_review: "写书评"
+      review_placeholder: "分享你对这本书的看法……"
+      post_review: "发布书评"
+      read_this_book: "读过这本书？"
+      sign_in_prompt: "登录后即可评分并分享你的看法。"
+      sign_in_cta: "登录以评分和写书评"
+      reviews: "书评"
+      you: "你"
+      rated_out_of_5: "评分 %{score}/5"
+      review_by: "%{name} 的书评"
+      time_ago: "%{time}前"
+      likes:
+        one: "赞"
+        other: "赞"
+      like_review_by: "赞 %{name} 的书评"
+      no_reviews: "还没有书评，来分享第一篇吧！"
+  reviews:
+    create:
+      posted: "书评已发布。"
+      failed: "书评发布失败：%{errors}"
+  languages:
+    am: "阿姆哈拉语"
+    en: "英语"
+    zh: "中文"
+    zh-CN: "简体中文"
+    zh-TW: "繁体中文"
+    de: "德语"
+    fr: "法语"
+    ja: "日语"
+  datetime:
+    distance_in_words:
+      half_a_minute: "半分钟"
+      less_than_x_seconds:
+        one: "不到 1 秒"
+        other: "不到 %{count} 秒"
+      x_seconds:
+        one: "1 秒"
+        other: "%{count} 秒"
+      less_than_x_minutes:
+        one: "不到 1 分钟"
+        other: "不到 %{count} 分钟"
+      x_minutes:
+        one: "1 分钟"
+        other: "%{count} 分钟"
+      about_x_hours:
+        one: "大约 1 小时"
+        other: "大约 %{count} 小时"
+      x_hours:
+        one: "1 小时"
+        other: "%{count} 小时"
+      x_days:
+        one: "1 天"
+        other: "%{count} 天"
+      about_x_months:
+        one: "大约 1 个月"
+        other: "大约 %{count} 个月"
+      x_months:
+        one: "1 个月"
+        other: "%{count} 个月"
+      about_x_years:
+        one: "大约 1 年"
+        other: "大约 %{count} 年"
+      over_x_years:
+        one: "超过 1 年"
+        other: "超过 %{count} 年"
+      almost_x_years:
+        one: "将近 1 年"
+        other: "将近 %{count} 年"

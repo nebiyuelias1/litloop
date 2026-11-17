@@ -1,0 +1,17 @@
+<%#
+  Cover fallback: a quiet, icon-led placeholder on Vellum, rendered beneath a
+  cover <img>. Shows through when no image exists (server side) or when the
+  img fails at runtime (image-fallback hides the broken img).
+
+  Icons come from the shared icon set (icons/*.svg → shared/icons/_*.html.erb
+  via `rake theme:generate`), so placeholders match the navigation icons.
+
+  Locals:
+    - icon: String, an icon partial name in shared/icons ("library", "clubs")
+    - size_class: font-size utility that sets the icon size (icon is 1em),
+      defaults to text-5xl
+%>
+<% size_class = local_assigns[:size_class].presence || "text-5xl" %>
+<div aria-hidden="true" class="absolute inset-0 flex items-center justify-center bg-background text-content-muted <%= size_class %>">
+  <%= render "shared/icons/#{icon}", classes: "h-[1em] w-[1em]" %>
+</div>

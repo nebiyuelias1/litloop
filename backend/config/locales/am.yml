@@ -164,10 +164,17 @@ am:
   type_title: "አርዕስት ይጻፉ..."
 
   date:
+    abbr_day_names: [እሑድ, ሰኞ, ማክሰ, ረቡዕ, ሐሙስ, ዓርብ, ቅዳሜ]
+    month_names: [~, ጃንዩወሪ, ፌብሩወሪ, ማርች, ኤፕሪል, ሜይ, ጁን, ጁላይ, ኦገስት, ሴፕቴምበር, ኦክቶበር, ኖቬምበር, ዲሴምበር]
+    abbr_month_names: [~, ጃን, ፌብ, ማርች, ኤፕሪ, ሜይ, ጁን, ጁላይ, ኦገስ, ሴፕቴ, ኦክቶ, ኖቬም, ዲሴም]
+    formats:
+      month_year: "%B %Y"
     day_names: [እሑድ, ሰኞ, ማክሰኞ, ረቡዕ, ሐሙስ, ዓርብ, ቅዳሜ]
 
   time:
     formats:
+      club_read: "%a፣ %b %-d፣ %Y · %H:%M"
+      month_short: "%b"
       flyer: "%b %d, %Y - %H:%M"
       long: "%d/%m/%Y %H:%M"
   page_count: "የገጽ ብዛት"
@@ -209,3 +216,98 @@ am:
     one: "%{count} ድምፅ"
     other: "%{count} ድምፅ"
   jump_to_section: "ወደ ክፍል ዝለል"
+
+  books:
+    show:
+      og_title: "%{title} — በ%{author}"
+      by_author_html: "በ %{author}"
+      average_rating: "አማካይ ደረጃ"
+      reviews_count:
+        one: "1 ግምገማ"
+        other: "%{count} ግምገማዎች"
+      not_yet_rated: "ገና ደረጃ አልተሰጠውም"
+      tags: "መለያዎች"
+      publisher: "አሳታሚ"
+      published: "የታተመበት"
+      language: "ቋንቋ"
+      isbn: "ISBN"
+      cover_alt: "የ%{title} ሽፋን"
+      about: "ስለዚህ መጽሐፍ"
+      club_reads: "በክለቦች የተነበበ"
+      upcoming: "መጪ"
+      have_you_read: "ይህን መጽሐፍ አንብበውታል?"
+      rate_prompt: "አስተያየትዎን ለማጋራት ደረጃ ይስጡት"
+      your_rating: "የእርስዎ ደረጃ"
+      stars:
+        one: "1 ኮከብ"
+        other: "%{count} ኮከቦች"
+      rating_saved: "ደረጃዎ ተቀምጧል።"
+      rating_failed: "ደረጃዎን ማስቀመጥ አልተቻለም። እባክዎ እንደገና ይሞክሩ።"
+      write_review: "ግምገማ ይጻፉ"
+      review_placeholder: "ስለዚህ መጽሐፍ ሀሳብዎን ያጋሩ..."
+      post_review: "ግምገማ ይለጥፉ"
+      read_this_book: "ይህን መጽሐፍ አንብበዋል?"
+      sign_in_prompt: "ደረጃ ለመስጠት እና ሀሳብዎን ለማጋራት ይግቡ።"
+      sign_in_cta: "ለደረጃ እና ግምገማ ይግቡ"
+      reviews: "ግምገማዎች"
+      you: "እርስዎ"
+      rated_out_of_5: "ከ5 %{score} ደረጃ"
+      review_by: "የ%{name} ግምገማ"
+      time_ago: "ከ%{time} በፊት"
+      likes:
+        one: "መውደድ"
+        other: "መውደዶች"
+      like_review_by: "የ%{name}ን ግምገማ ይውደዱ"
+      no_reviews: "እስካሁን ምንም ግምገማ የለም። ሀሳብዎን በማጋራት የመጀመሪያው ይሁኑ!"
+  reviews:
+    create:
+      posted: "ግምገማዎ ተለጥፏል።"
+      failed: "ግምገማ መለጠፍ አልተቻለም፦ %{errors}"
+  languages:
+    am: "አማርኛ"
+    en: "እንግሊዝኛ"
+    zh: "ቻይንኛ"
+    zh-CN: "ቻይንኛ (ቀላል)"
+    zh-TW: "ቻይንኛ (ባህላዊ)"
+    de: "ጀርመንኛ"
+    fr: "ፈረንሳይኛ"
+    ja: "ጃፓንኛ"
+  datetime:
+    distance_in_words:
+      half_a_minute: "ግማሽ ደቂቃ"
+      less_than_x_seconds:
+        one: "ከ1 ሰከንድ ያነሰ"
+        other: "ከ%{count} ሰከንድ ያነሰ"
+      x_seconds:
+        one: "1 ሰከንድ"
+        other: "%{count} ሰከንድ"
+      less_than_x_minutes:
+        one: "ከ1 ደቂቃ ያነሰ"
+        other: "ከ%{count} ደቂቃ ያነሰ"
+      x_minutes:
+        one: "1 ደቂቃ"
+        other: "%{count} ደቂቃ"
+      about_x_hours:
+        one: "1 ሰዓት ገደማ"
+        other: "%{count} ሰዓት ገደማ"
+      x_hours:
+        one: "1 ሰዓት"
+        other: "%{count} ሰዓት"
+      x_days:
+        one: "1 ቀን"
+        other: "%{count} ቀናት"
+      about_x_months:
+        one: "1 ወር ገደማ"
+        other: "%{count} ወራት ገደማ"
+      x_months:
+        one: "1 ወር"
+        other: "%{count} ወራት"
+      about_x_years:
+        one: "1 ዓመት ገደማ"
+        other: "%{count} ዓመታት ገደማ"
+      over_x_years:
+        one: "ከ1 ዓመት በላይ"
+        other: "ከ%{count} ዓመታት በላይ"
+      almost_x_years:
+        one: "1 ዓመት ሊሞላ"
+        other: "%{count} ዓመታት ሊሞላ"

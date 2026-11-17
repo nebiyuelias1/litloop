@@ -3,9 +3,10 @@ import { Controller } from "@hotwired/stimulus";
 
 // Connects to data-controller="toast"
 export default class extends Controller {
-  static targets = ["container"];
+  static targets = ["container", "politeRegion", "assertiveRegion"];
   static values = {
     position: { type: String, default: "top-center" },
+    closeLabel: { type: String, default: "Close" },
     layout: { type: String, default: "default" }, // "default" (stacked) or "expanded" (all visible)
     gap: { type: Number, default: 14 }, // Gap between toasts in expanded mode
     autoDismissDuration: { type: Number, default: 4000 },
@@ -145,6 +146,8 @@ export default class extends Controller {
       }
     }
 
+    this.announce(event.detail);
+
     const toast = {
       id: `toast-${Math.random().toString(16).slice(2)}`,
       mounted: false,
@@ -217,6 +220,23 @@ export default class extends Controller {
       this.expanded = false;
       this.updateAllToasts();
     }
+  }
+
+  // Mirror the toast text into a persistent live region so assistive tech
+  // announces it. Errors interrupt (assertive); everything else waits (polite).
+  announce(detail) {
+    const urgent = detail.type === "error" || detail.type === "warning";
+    const hasRegion = urgent ? this.hasAssertiveRegionTarget : this.hasPoliteRegionTarget;
+    if (!hasRegion) return;
+    const region = urgent ? this.assertiveRegionTarget : this.politeRegionTarget;
+    const text = [detail.message, detail.description].filter(Boolean).join(". ");
+    if (!text) return;
+    // Clear first so repeating the same message is announced again.
+    region.textContent = "";
+    clearTimeout(this.announceTimer);
+    this.announceTimer = setTimeout(() => {
+      region.textContent = text;
+    }, 50);
   }
 
   renderToast(toast) {
@@ -326,11 +346,13 @@ export default class extends Controller {
     }
 
     // Add close button
-    const closeBtn = document.createElement("span");
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.setAttribute("aria-label", this.closeLabelValue);
     const hasActions = toast.action || toast.secondaryAction;
     closeBtn.className = `absolute right-0 p-1.5 mr-2.5 text-neutral-400 duration-100 ease-in-out rounded-full cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-700 hover:text-neutral-500 dark:hover:text-neutral-300 ${!toast.description && !toast.html && !hasActions ? "top-1/2 -translate-y-1/2" : "top-0 mt-2.5"
       }`;
-    closeBtn.innerHTML = `<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>`;
+    closeBtn.innerHTML = `<svg class="w-3 h-3" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>`;
     closeBtn.dataset.toastId = toast.id;
     closeBtn.addEventListener("click", (e) => {
       e.stopPropagation();
