@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-06T11:30:00Z",
+  "generatedAt": "2026-11-17T23:32:09Z",
   "title": "Design System: LitLoop",
   "extensions": {
     "colorMeta": {
@@ -195,6 +195,11 @@
         "name": "residual-card-softness",
         "value": "0 1px 2px rgb(0 0 0 / 0.05)",
         "purpose": "Residual softness on existing cards and buttons. Do not extend to new surfaces."
+      },
+      {
+        "name": "card-shadow-token",
+        "value": "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)",
+        "purpose": "Legacy --shadow-card on the current reading card and past-reads panel. Remove when those components are next touched; do not reuse."
       }
     ],
     "motion": [
@@ -209,14 +214,14 @@
         "purpose": "Button, color, border, and opacity state changes."
       },
       {
-        "name": "cover-zoom",
-        "value": "500ms ease",
-        "purpose": "Book-cover scale on card hover."
-      },
-      {
         "name": "toast",
         "value": "400ms ease",
         "purpose": "Toast enter, exit, and stack movement."
+      },
+      {
+        "name": "cover-lift",
+        "value": "300ms ease-out",
+        "purpose": "Catalogue cover rises 4px and its border deepens on hover; disabled under prefers-reduced-motion."
       }
     ],
     "breakpoints": [
@@ -295,9 +300,17 @@
       "name": "Book Card",
       "kind": "card",
       "refersTo": "card-book",
-      "description": "A catalogue card for the book grid: cover, year, title, author, and rating.",
-      "html": "<article class=\"ds-book-card\"> <div class=\"ds-book-cover\"><span class=\"ds-year\">2024</span></div> <div class=\"ds-book-body\"> <h3 class=\"ds-book-title\">The Shadow of the Wind</h3> <p class=\"ds-book-author\">Carlos Ruiz Zafón</p> <div class=\"ds-book-foot\"><span class=\"ds-rating\">★ 4.6</span><span class=\"ds-reviews\">128 reviews</span></div> </div> </article>",
-      "css": ".ds-book-card { overflow: hidden; border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent); border-radius: 16px; background: var(--color-surface); font-family: var(--font-sans); transition: border-color 300ms ease; } .ds-book-card:hover { border-color: color-mix(in srgb, var(--color-primary) 30%, transparent); } .ds-book-cover { position: relative; height: 176px; background: var(--color-background); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent); } .ds-year { position: absolute; top: 10px; right: 10px; padding: 4px 8px; border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--color-surface) 90%, transparent); color: var(--color-content); font-size: 12px; font-weight: 600; } .ds-book-body { padding: 16px; } .ds-book-title { margin: 0; color: var(--color-content); font-size: 16px; font-weight: 700; line-height: 1.3; } .ds-book-card:hover .ds-book-title { color: var(--color-primary); } .ds-book-author { margin: 4px 0 0; color: var(--color-content-subtle); font-size: 12px; font-weight: 500; } .ds-book-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent); font-size: 12px; } .ds-rating { color: var(--color-content); font-weight: 700; } .ds-reviews { color: var(--color-content-muted); }"
+      "description": "Catalogue entry shelved face-out: the whole 2:3 cover on the vellum with no card frame, then serif title, author, and a metadata line that shows rating and reviews only when they exist. Missing covers show a plain-cloth binding.",
+      "html": "<a class=\"ds-book-card\" href=\"#\"><figure class=\"ds-book-cover\"><div class=\"ds-binding\"><span class=\"ds-binding-rule\"></span><span class=\"ds-binding-title\">So Long a Letter</span><span class=\"ds-binding-author\">Mariama Bâ</span></div><span class=\"ds-stamp\">Club read</span></figure><div class=\"ds-book-body\"><h3 class=\"ds-book-title\">So Long a Letter</h3><p class=\"ds-book-author\">Mariama Bâ</p><p class=\"ds-book-meta\"><span class=\"ds-rating\"><svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z\"/></svg>4.2</span><span>3 reviews</span><span>1979</span></p></div></a>",
+      "css": ".ds-book-card { display: flex; flex-direction: column; width: 180px; text-decoration: none; border-radius: 12px; font-family: var(--font-sans); } .ds-book-card:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 4px; } .ds-book-cover { position: relative; margin: 0; aspect-ratio: 2 / 3; overflow: hidden; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); transition: translate 300ms ease-out, border-color 300ms ease-out; } .ds-book-card:hover .ds-book-cover { translate: 0 -4px; border-color: var(--color-content-muted); } .ds-binding { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 16px; color: var(--color-primary); } .ds-binding-rule { display: block; width: 32px; height: 1px; background: currentColor; opacity: 0.4; } .ds-binding-title { font-family: var(--font-serif); font-size: 18px; font-weight: 700; line-height: 1.25; } .ds-binding-author { font-size: 12px; opacity: 0.8; } .ds-stamp { position: absolute; left: 8px; bottom: 8px; padding: 4px 8px; border-radius: 8px; background: var(--color-accent); color: var(--color-accent-contrast); font-size: 11px; font-weight: 600; line-height: 1; letter-spacing: 0.05em; text-transform: uppercase; } .ds-book-body { display: flex; flex-direction: column; gap: 4px; padding-top: 12px; } .ds-book-title { margin: 0; font-family: var(--font-serif); font-size: 16px; font-weight: 700; line-height: 1.25; letter-spacing: -0.01em; color: var(--color-content); transition: color 150ms ease; } .ds-book-card:hover .ds-book-title { color: var(--color-primary); } .ds-book-author { margin: 0; font-size: 14px; color: var(--color-content-subtle); } .ds-book-meta { display: flex; flex-wrap: wrap; gap: 2px 8px; margin: 2px 0 0; font-size: 12px; color: var(--color-content-muted); font-variant-numeric: tabular-nums; } .ds-rating { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: var(--color-content); } .ds-rating svg { width: 14px; height: 14px; color: var(--color-accent); }"
+    },
+    {
+      "name": "Club Read Stamp",
+      "kind": "chip",
+      "refersTo": "stamp-club-read",
+      "description": "Small oxblood wax-seal label on a catalogue cover marking a book a club has scheduled.",
+      "html": "<span class=\"ds-stamp-club\">Club read</span>",
+      "css": ".ds-stamp-club { display: inline-block; padding: 4px 8px; border-radius: 8px; background: var(--color-accent); color: var(--color-accent-contrast); font-family: var(--font-sans); font-size: 11px; font-weight: 600; line-height: 1; letter-spacing: 0.05em; text-transform: uppercase; }"
     },
     {
       "name": "Status Badge",
@@ -356,12 +369,12 @@
       },
       {
         "name": "The Reading Column Rule",
-        "body": "Club and read surfaces stay between 42rem and 56rem wide. Do not stretch a reading page to the full viewport; line length and focus matter more than filling the screen.",
+        "body": "Club and read surfaces stay between `42rem` and `56rem` wide. Do not stretch a reading page to the full viewport; line length and focus matter more than filling the screen.",
         "section": "layout"
       },
       {
         "name": "The Thumb Zone Rule",
-        "body": "Below 640px, primary navigation lives in the fixed bottom bar. Do not duplicate the full desktop menu into a cramped top row.",
+        "body": "Below `640px`, primary navigation lives in the fixed bottom bar. Do not duplicate the full desktop menu into a cramped top row.",
         "section": "layout"
       },
       {
@@ -376,36 +389,36 @@
       },
       {
         "name": "The Soft Corner Rule",
-        "body": "Use the 8/12/16/24px radius ladder. Reserve full pills for search, avatars, dots, and compact tabs; do not pill every control.",
+        "body": "Use the `8/12/16/24px` ladder. Reserve full pills for search, avatars, dots, and compact tabs; do not pill every control.",
         "section": "shapes"
       },
       {
         "name": "The No Hard Outline Rule",
-        "body": "Borders are 1px Deckle Edge. Dividers use the same hairline. Never introduce black rules or heavy structural strokes.",
+        "body": "Borders are `1px` Deckle Edge. Dividers use the same hairline. Never introduce black rules or heavy structural strokes.",
         "section": "shapes"
       }
     ],
     "dos": [
-      "Do start pages on Vellum and place Book Page sheets on top.",
-      "Do keep Deep Spruce for structure and actions, and Oxblood for the live read and small emphasis.",
-      "Do set headings in the serif register and all interface text in the Ethiopic-first sans stack.",
-      "Do use the radius ladder: 8px controls, 12px small cards, 16px cards, 24px panels and dialogs, full pills for search and avatars.",
-      "Do use 1px Deckle Edge borders and tonal contrast for depth.",
-      "Do preserve the 42-56rem reading column for club and read pages.",
-      "Do give every interactive element a visible Deep Spruce focus ring.",
-      "Do use real book covers and club images; keep placeholders quiet and icon-led.",
-      "Do keep uppercase for short labels and micro-headings only."
+      "**Do** start pages on Vellum and place Book Page sheets on top.",
+      "**Do** keep Deep Spruce for structure and actions, and Oxblood for the live read and small emphasis.",
+      "**Do** set headings in the serif register and all interface text in the Ethiopic-first sans stack.",
+      "**Do** use the radius ladder: `8px` controls, `12px` small cards, `16px` cards, `24px` panels and dialogs, full pills for search and avatars.",
+      "**Do** use `1px` Deckle Edge borders and tonal contrast for depth.",
+      "**Do** preserve the `42-56rem` reading column for club and read pages.",
+      "**Do** give every interactive element a visible Deep Spruce focus ring.",
+      "**Do** use real book covers and club images; keep placeholders quiet and icon-led.",
+      "**Do** keep uppercase for short labels and micro-headings only."
     ],
     "donts": [
-      "Don't use pure white page backgrounds, pure black text, or cool slate text tones.",
-      "Don't add shadow-based elevation to cards, panels, or sections.",
-      "Don't use gradients beyond the hero fallback and the profile banner.",
-      "Don't introduce new brand hues; success, error, and warning colors are semantic only.",
-      "Don't use sepia paper textures, script fonts, leather-and-candle imagery, or faux-vintage props.",
-      "Don't turn the product into a dashboard of metric tiles or an infinite social feed.",
-      "Don't set body copy, controls, or metadata in the serif.",
-      "Don't pill every button; pills are for search, avatars, dots, and status chips.",
-      "Don't nest a button inside a card anchor; use a stretched link with controls above it."
+      "**Don't** use pure white page backgrounds, pure black text, or cool slate text tones.",
+      "**Don't** add shadow-based elevation to cards, panels, or sections.",
+      "**Don't** use gradients beyond the hero fallback and the profile banner.",
+      "**Don't** introduce new brand hues; success, error, and warning colors are semantic only.",
+      "**Don't** use sepia paper textures, script fonts, leather-and-candle imagery, or faux-vintage props.",
+      "**Don't** turn the product into a dashboard of metric tiles or an infinite social feed.",
+      "**Don't** set body copy, controls, or metadata in the serif.",
+      "**Don't** pill every button; pills are for search, avatars, dots, and status chips.",
+      "**Don't** nest a button inside a card anchor; use a stretched link with controls above it."
     ]
   }
 }

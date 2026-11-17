@@ -71,7 +71,7 @@ components:
     rounded: "{rounded.lg}"
     padding: "8px 16px"
   button-primary-hover:
-    backgroundColor: "#0c3d3a"
+    backgroundColor: "#10423f"
   button-secondary:
     backgroundColor: "transparent"
     textColor: "{colors.deep-spruce}"
@@ -95,10 +95,14 @@ components:
     rounded: "{rounded.3xl}"
     padding: "16px"
   card-book:
-    backgroundColor: "{colors.book-page}"
+    backgroundColor: "{colors.vellum}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.2xl}"
-    padding: "16px"
+    rounded: "{rounded.xl}"
+  stamp-club-read:
+    backgroundColor: "{colors.oxblood}"
+    textColor: "{colors.accent-contrast}"
+    rounded: "{rounded.lg}"
+    padding: "4px 8px"
   badge-status:
     backgroundColor: "{colors.vellum}"
     textColor: "{colors.faded-ink}"
@@ -140,7 +144,7 @@ A warm paper-and-ink palette with a single oxblood accent: quiet enough for ever
 - **Primary Contrast** (`primary-contrast`): Text and icons on Deep Spruce; never used as a page surface.
 
 ### Secondary
-- **Oxblood** (`oxblood`): The live-read signal. Metadata icons on reading cards, club names in card headers, capacity bars, hover emphasis, and small section labels. It is a stamp, not a wash — book-cloth red, wax-seal red.
+- **Oxblood** (`oxblood`): The live-read signal. Metadata icons on reading cards, club names in card headers, capacity bars, hover emphasis, and small section labels, the "Club read" stamp on catalogue covers, and text selection. It is a stamp, not a wash — book-cloth red, wax-seal red.
 - **Accent Contrast** (`accent-contrast`): Text placed on a solid Oxblood field.
 
 ### Neutral
@@ -164,7 +168,7 @@ A warm paper-and-ink palette with a single oxblood accent: quiet enough for ever
 **Body Font:** Noto Sans Ethiopic (with Inter, sans-serif)
 **Label Font:** Noto Sans Ethiopic / Inter, same as body, at label scale
 
-**Character:** Headings and card titles are set in the serif register — Playfair Display where installed, Georgia as the ubiquitous book serif — applied through the tokenized `title` / `title-sm` / `title-lg` utilities. Serif headings over a warm paper ground do as much for the bookish feel as the palette itself. Interface text stays in the humanist, Ethiopic-first sans, which reads like a well-printed catalogue rather than a startup UI.
+**Character:** Headings and card titles are set in the serif register — Playfair Display leads the stack but is not webfont-loaded, so Georgia, the ubiquitous book serif, is what renders in practice — applied through the tokenized `title` / `title-sm` / `title-lg` utilities. Serif headings over a warm paper ground do as much for the bookish feel as the palette itself. Interface text stays in the humanist, Ethiopic-first sans, which reads like a well-printed catalogue rather than a startup UI.
 
 **Email stack:** Email templates cannot load webfonts, so the mailer layout documents its own fallback stack: headings in `Georgia, "Times New Roman", serif`, body in `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif`. This is the websafe expression of the two-register system, not a brand addition.
 
@@ -186,7 +190,7 @@ The page shell is a centered container with `16px` gutters on small screens, `24
 
 The desktop header is sticky, `64px` tall, with a `1px` Deep Spruce bottom border and a vellum background. Below `640px`, primary navigation moves to a fixed `64px` bottom bar with four equal thumb targets; the top bar reduces to brand and account. Main content reserves `64px` of bottom padding on mobile so the bar never covers the last action.
 
-Card and section rhythm is built on a `4px` base: `8px` inside labels, `16px` card padding, `24px` between related blocks, `32px` between sections, and `48px` between major streams. The catalogue grid runs one column, then two at `450px`, three at `768px`, four at `1024px`, and five at `1280px`, with `24px` gaps. Club carousels use `320px` items. Dense admin tables keep `16px` row padding by default and `12px` in compact mode.
+Card and section rhythm is built on a `4px` base: `8px` inside labels, `16px` card padding, `24px` between related blocks, `32px` between sections, and `48px` between major streams. The catalogue grid runs two columns, then three at `640px`, four at `1024px`, and five at `1280px`, with `16px` column gaps (`24px` from `640px`) and `32-40px` row gaps. Club carousels use `320px` items. Dense admin tables keep `16px` row padding by default and `12px` in compact mode.
 
 ### Named Rules
 **The Reading Column Rule.** Club and read surfaces stay between `42rem` and `56rem` wide. Do not stretch a reading page to the full viewport; line length and focus matter more than filling the screen.
@@ -202,6 +206,8 @@ Observed card shadows (`shadow-xs`, `shadow-sm`, `shadow-card`) are residual sof
 ### Shadow Vocabulary
 - **Overlay lift** (`0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)`): Dropdowns, dialogs, popovers, and toasts only.
 - **Residual card softness** (`0 1px 2px rgb(0 0 0 / 0.05)`): Existing cards and buttons. Keep it subtle; do not extend it to new surfaces.
+- **Card shadow token** (`--shadow-card`: `0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)`): Still applied to the current reading card and the past-reads panel. Legacy; remove it when those components are next touched rather than reusing it.
+- **Known exceptions:** the book-detail cover and the auth panels (from `640px`) carry the overlay lift. They predate the Tonal Depth Rule; do not copy them.
 
 ### Named Rules
 **The Tonal Depth Rule.** Separate surfaces with vellum/surface contrast and hairline borders. Do not introduce shadow-based hierarchy.
@@ -224,7 +230,7 @@ Borders are hairlines in Deckle Edge, never black or high-contrast. Images are c
 ### Buttons
 - **Character:** Tactile and confident. Buttons press, not bounce; the motion is a small acknowledgement, not a performance.
 - **Shape:** `8px` radius (rounded-lg), `1px` transparent border, `8px 16px` padding, `14px` medium label, `0 1px 2px` softness.
-- **Primary:** Deep Spruce fill with Primary Contrast text. Hover darkens to `#0c3d3a`; active scales to `0.98`; focus-visible shows a `2px` Deep Spruce outline with `2px` offset.
+- **Primary:** Deep Spruce fill with Primary Contrast text. Hover mixes 15% black into Deep Spruce (the `button-primary-hover` token); active scales to `0.98`; focus-visible shows a `2px` Deep Spruce outline with `2px` offset.
 - **Secondary:** Transparent fill, Deep Spruce text, muted Deep Spruce border. Hover shifts the label to Oxblood.
 - **Ghost / Icon:** DaisyUI ghost treatment for icon-only controls, with the same focus outline. Negative actions use an error-tinted outline, never a solid red fill.
 - **Width:** Forms default to full width; card actions are full width inside the card. Use the `lg` size (`48px` height) for the single primary action on auth forms.
@@ -237,7 +243,7 @@ Borders are hairlines in Deckle Edge, never black or high-contrast. Images are c
 - **Select / Textarea:** Same field shell. Select uses the native chevron and keeps the same radius and focus ring; textarea uses relaxed line height and a `16px` radius when framed as a card.
 
 ### Cards / Containers
-- **Book card:** Book Page, `16px` radius, `1px` Deckle Edge border, `16px` padding. A `176-192px` cover sits above the title, with a year badge in the top-right. Hover deepens the border and lifts the title to Deep Spruce while the cover zooms to `1.05` over `500ms`.
+- **Book card:** No card frame. The whole cover at its natural `2:3` proportion sits on the vellum with a `12px` radius and a `1px` Deckle Edge border, like a book shelved face-out; serif title, author, and a quiet metadata line (rating and review count only when they exist, then year) sit below. A small Oxblood "Club read" stamp marks books a club has scheduled. Books without a cover show a plain-cloth binding: the title in serif on a themed band. Hover lifts the cover `4px` and lifts the title to Deep Spruce.
 - **Club card:** Book Page, `16px` radius, `128px` cover band, `16px` body padding. A stretched link makes the whole card clickable at `z-10`; membership buttons sit above it at `z-20`.
 - **Reading card:** Book Page, `24px` radius, `16px` padding, `112px` cover, Oxblood metadata icons, and a capacity bar when the read has a maximum. This is the signature container; it should feel like a catalogue card with a live wax seal.
 - **Panel:** Book Page or Vellum, `16-24px` radius, `1px` Deckle Edge border, `24-32px` internal padding. Section dividers use the same hairline.
@@ -261,7 +267,7 @@ Borders are hairlines in Deckle Edge, never black or high-contrast. Images are c
 ### Signature Components
 **The Reading Card.** The system's central object: cover, club name in oxblood uppercase, title in serif, author, meetup time and location with oxblood icons, RSVP action, and an oxblood capacity bar. It is a catalogue card made live with a wax seal. Every read surface should echo this hierarchy even when the layout changes.
 
-**The Search Hero.** A full pill (`9999px`) on Book Page, `48px` tall, with a `24px` search icon inset at `20px` and a soft focus shadow. It is the one place where a pill is allowed to dominate.
+**The Search Hero.** A full pill (`9999px`) on Book Page, `48px` tall, with a `24px` search icon inset at `20px` and a soft focus shadow. It is the one place where a pill is allowed to dominate. On the library page it sits in the `42rem` header column rather than its full width.
 
 ## Do's and Don'ts
 
