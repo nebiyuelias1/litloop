@@ -210,7 +210,10 @@ zh-CN:
     searching: "搜索中…"
     no_search_results: "没有符合搜索的书籍。请尝试其他书名或作者。"
     by_author: "%{author} 著"
-    club_read: "读书会选读"
+    clubs_reading:
+      other: "%{count} 个读书会在读"
+    clubs_read:
+      other: "%{count} 个读书会读过"
     reviews:
       other: "%{count} 条书评"
     rating_label: "平均评分 %{rating}（满分 5）"

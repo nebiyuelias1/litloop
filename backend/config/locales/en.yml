@@ -250,7 +250,12 @@ en:
     searching: "Searching…"
     no_search_results: "No books match that search. Try a different title or author."
     by_author: "by %{author}"
-    club_read: "Club read"
+    clubs_reading:
+      one: "%{count} club reading"
+      other: "%{count} clubs reading"
+    clubs_read:
+      one: "Read by %{count} club"
+      other: "Read by %{count} clubs"
     reviews:
       one: "%{count} review"
       other: "%{count} reviews"

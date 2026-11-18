@@ -144,7 +144,7 @@ A warm paper-and-ink palette with a single oxblood accent: quiet enough for ever
 - **Primary Contrast** (`primary-contrast`): Text and icons on Deep Spruce; never used as a page surface.
 
 ### Secondary
-- **Oxblood** (`oxblood`): The live-read signal. Metadata icons on reading cards, club names in card headers, capacity bars, hover emphasis, and small section labels, the "Club read" stamp on catalogue covers, and text selection. It is a stamp, not a wash — book-cloth red, wax-seal red.
+- **Oxblood** (`oxblood`): The live-read signal. Metadata icons on reading cards, club names in card headers, capacity bars, hover emphasis, and small section labels, the clubs-reading stamp on catalogue covers, and text selection. It is a stamp, not a wash — book-cloth red, wax-seal red.
 - **Accent Contrast** (`accent-contrast`): Text placed on a solid Oxblood field.
 
 ### Neutral
@@ -243,7 +243,7 @@ Borders are hairlines in Deckle Edge, never black or high-contrast. Images are c
 - **Select / Textarea:** Same field shell. Select uses the native chevron and keeps the same radius and focus ring; textarea uses relaxed line height and a `16px` radius when framed as a card.
 
 ### Cards / Containers
-- **Book card:** No card frame. The whole cover at its natural `2:3` proportion sits on the vellum with a `12px` radius and a `1px` Deckle Edge border, like a book shelved face-out; serif title, author, and a quiet metadata line (rating and review count only when they exist, then year) sit below. A small Oxblood "Club read" stamp marks books a club has scheduled. Books without a cover show a plain-cloth binding: the title in serif on a themed band. Hover lifts the cover `4px` and lifts the title to Deep Spruce.
+- **Book card:** No card frame. The cover sits on the vellum in a tall `2:3` frame, the proportion of a printed book; wider scans fill it with object-cover and lose a little at the sides with a `12px` radius and a `1px` Deckle Edge border, like a book shelved face-out; serif title, author, and a quiet metadata line (rating and review count only when they exist, then year) sit below. A small Oxblood stamp on the cover counts the clubs reading the book now (meetup still ahead), e.g. "2 clubs reading"; clubs whose meetup has passed appear quietly in the metadata line as "Read by N clubs". Books without a cover show a plain-cloth binding: the title in serif on a themed band. Hover lifts the cover `4px` and lifts the title to Deep Spruce.
 - **Club card:** Book Page, `16px` radius, `128px` cover band, `16px` body padding. A stretched link makes the whole card clickable at `z-10`; membership buttons sit above it at `z-20`.
 - **Reading card:** Book Page, `24px` radius, `16px` padding, `112px` cover, Oxblood metadata icons, and a capacity bar when the read has a maximum. This is the signature container; it should feel like a catalogue card with a live wax seal.
 - **Panel:** Book Page or Vellum, `16-24px` radius, `1px` Deckle Edge border, `24-32px` internal padding. Section dividers use the same hairline.

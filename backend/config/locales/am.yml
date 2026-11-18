@@ -221,7 +221,12 @@ am:
     searching: "በመፈለግ ላይ…"
     no_search_results: "ከፍለጋዎ ጋር የሚዛመድ መጽሐፍ የለም። ሌላ ርዕስ ወይም ደራሲ ይሞክሩ።"
     by_author: "በ%{author}"
-    club_read: "የክበብ ንባብ"
+    clubs_reading:
+      one: "%{count} ክበብ እያነበበው ነው"
+      other: "%{count} ክበቦች እያነበቡት ነው"
+    clubs_read:
+      one: "%{count} ክበብ አንብቦታል"
+      other: "%{count} ክበቦች አንብበውታል"
     reviews:
       one: "%{count} ግምገማ"
       other: "%{count} ግምገማዎች"

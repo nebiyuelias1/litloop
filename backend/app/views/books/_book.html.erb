@@ -1,24 +1,27 @@
 <%#
   Catalogue card: the whole cover at its natural 2:3 proportion, sitting
   directly on the vellum like a book face-out on a shelf. No card frame.
-  Expects @average_ratings and @club_read_book_ids from BooksController#index;
-  falls back to per-book queries when rendered elsewhere.
+  Expects @average_ratings, @reading_club_counts and @past_club_counts from
+  BooksController#index; falls back to per-book queries when rendered elsewhere.
+  A club is "reading" the book while its meetup is still ahead.
 %>
 <% average = @average_ratings ? @average_ratings[book.id] : (book.ratings.average(:score) if book.ratings.any?) %>
-<% club_read = @club_read_book_ids ? @club_read_book_ids.include?(book.id) : book.book_reads.exists? %>
+<% reading_clubs = @reading_club_counts ? @reading_club_counts.fetch(book.id, 0) : book.book_reads.where("meetup_time >= ?", Time.current).distinct.count(:book_club_id) %>
+<% past_clubs = @past_club_counts ? @past_club_counts.fetch(book.id, 0) : book.book_reads.where("meetup_time < ?", Time.current).distinct.count(:book_club_id) %>
 <%= link_to book_path(book), id: dom_id(book), class: "group flex flex-col rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary" do %>
   <figure class="relative aspect-[2/3] w-full overflow-hidden rounded-xl border border-border bg-background m-0 transition-[translate,border-color] duration-300 ease-out group-hover:-translate-y-1 group-hover:border-content-muted motion-reduce:transition-none motion-reduce:group-hover:translate-y-0">
     <%= render "shared/book_cover_fallback", book: book, titled: true %>
     <% if book.cover_image.present? %>
-      <img src="<%= book.cover_image %>" alt="" loading="lazy" decoding="async"
+      <img src="<%= book.cover_display_url %>" alt="" loading="lazy" decoding="async"
            data-controller="image-fallback"
            data-action="error->image-fallback#fail load->image-fallback#check"
            class="relative h-full w-full object-cover object-center">
     <% end %>
 
-    <% if club_read %>
-      <span class="absolute bottom-2 left-2 rounded-lg bg-accent px-2 py-1 text-[0.6875rem] font-semibold uppercase tracking-wider leading-none text-accent-contrast">
-        <%= t("library.club_read") %>
+    <% if reading_clubs.positive? %>
+      <span class="absolute bottom-2 left-2 max-w-[calc(100%-1rem)] inline-flex items-center gap-1.5 rounded-lg bg-accent px-2 py-1 text-xs font-semibold leading-tight text-accent-contrast tabular-nums">
+        <span class="size-1.5 shrink-0 rounded-full bg-accent-contrast" aria-hidden="true"></span>
+        <span class="truncate"><%= t("library.clubs_reading", count: reading_clubs) %></span>
       </span>
     <% end %>
   </figure>
@@ -31,7 +34,7 @@
       <%= book.author.presence || t("unknown_author") %>
     </p>
 
-    <% if average.present? || book.reviews_count.positive? || book.published_at.present? %>
+    <% if average.present? || book.reviews_count.positive? || past_clubs.positive? || book.published_at.present? %>
       <p class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-content-muted tabular-nums">
         <% if average.present? %>
           <span class="inline-flex items-center gap-1 font-semibold text-content" aria-label="<%= t("library.rating_label", rating: number_with_precision(average, precision: 1)) %>">
@@ -43,6 +46,9 @@
         <% end %>
         <% if book.reviews_count.positive? %>
           <span><%= t("library.reviews", count: book.reviews_count) %></span>
+        <% end %>
+        <% if past_clubs.positive? %>
+          <span><%= t("library.clubs_read", count: past_clubs) %></span>
         <% end %>
         <% if book.published_at.present? %>
           <span><%= book.published_at.year %></span>

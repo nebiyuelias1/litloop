@@ -111,7 +111,10 @@ class BooksController < ApplicationController
   def load_card_stats(books)
     ids = books.map(&:id)
     @average_ratings = Rating.where(book_id: ids).group(:book_id).average(:score)
-    @club_read_book_ids = BookRead.where(book_id: ids).distinct.pluck(:book_id).to_set
+    # A read is current while its meetup is still ahead (same rule as BookClubsController#show).
+    reads = BookRead.where(book_id: ids).group(:book_id).distinct
+    @reading_club_counts = reads.where("meetup_time >= ?", Time.current).count(:book_club_id)
+    @past_club_counts = reads.where("meetup_time < ?", Time.current).count(:book_club_id)
   end
 
   def map_lookup_result_to_book(result)

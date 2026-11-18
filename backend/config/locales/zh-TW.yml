@@ -210,7 +210,10 @@ zh-TW:
     searching: "搜尋中…"
     no_search_results: "沒有符合搜尋的書籍。請嘗試其他書名或作者。"
     by_author: "%{author} 著"
-    club_read: "讀書會選讀"
+    clubs_reading:
+      other: "%{count} 個讀書會在讀"
+    clubs_read:
+      other: "%{count} 個讀書會讀過"
     reviews:
       other: "%{count} 則書評"
     rating_label: "平均評分 %{rating}（滿分 5）"
