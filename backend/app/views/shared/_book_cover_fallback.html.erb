@@ -5,13 +5,24 @@
   Locals:
     - book: Book — its title provides the monogram initial
     - size_class: font size for the initial, defaults to text-5xl
+    - titled: true sets the title and author like a plain cloth binding
+      instead of the single initial (for portrait catalogue covers)
 %>
 <% size_class ||= "text-5xl" %>
+<% titled = local_assigns[:titled] %>
 <% cover_bands = [
-     "bg-background text-primary",
+     (titled ? "bg-surface text-primary" : "bg-background text-primary"),
      "bg-primary text-primary-contrast",
      "bg-accent/10 text-accent"
    ] %>
 <div aria-hidden="true" class="absolute inset-0 flex items-center justify-center <%= cover_bands[(book.id || 0) % cover_bands.length] %>">
-  <span class="relative font-serif leading-none <%= size_class %>"><%= book.title.to_s.strip[0].to_s.upcase %></span>
+  <% if titled %>
+    <div class="flex h-full w-full flex-col justify-between p-4 sm:p-5 text-left">
+      <span class="block h-px w-8 bg-current opacity-40"></span>
+      <span class="font-serif font-bold text-lg sm:text-xl leading-tight line-clamp-5 text-balance"><%= book.title %></span>
+      <span class="text-xs opacity-80 truncate"><%= book.author %></span>
+    </div>
+  <% else %>
+    <span class="relative font-serif leading-none <%= size_class %>"><%= book.title.to_s.strip[0].to_s.upcase %></span>
+  <% end %>
 </div>

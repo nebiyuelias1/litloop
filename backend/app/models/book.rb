@@ -38,6 +38,16 @@ class Book < ApplicationRecord
     connection.execute sql_query
   end
 
+  # mereb.shop covers are stored as 115x115 thumbnails ("-smallIII.jpg"); the
+  # same path with "-large.jpg" serves 420x420, sharp enough for a grid cover.
+  MEREB_THUMBNAIL = %r{\A(https://www\.mereb\.shop/Image/Product/.+)-small(?:I{1,3})?\.jpg\z}
+
+  def cover_display_url
+    return cover_image if cover_image.blank?
+
+    cover_image.sub(MEREB_THUMBNAIL, '\1-large.jpg')
+  end
+
   def average_rating
     ratings.average(:score)&.round(1) || 0
   end

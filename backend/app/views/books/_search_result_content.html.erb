@@ -9,7 +9,7 @@
   <div class="flex-1">
     <p class="font-semibold text-lg text-content"><%= book.title %></p>
     <div class="flex items-center gap-2">
-      <p class="text-sm text-content-subtle">by <%= book.author %></p>
+      <p class="text-sm text-content-subtle"><%= t("library.by_author", author: book.author.presence || t("unknown_author")) %></p>
       <% if book.source.present? && book.source != "local" %>
         <span class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-surface-variant text-content-subtle border border-border">
           <%= book.source.humanize %>

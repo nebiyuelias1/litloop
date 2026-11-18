@@ -238,3 +238,29 @@ en:
     one: "%{count} vote"
     other: "%{count} votes"
   jump_to_section: "Jump to section"
+  library:
+    book_count:
+      one: "%{formatted} book in the catalogue"
+      other: "%{formatted} books in the catalogue"
+    tagged: "Tagged “%{tag}”"
+    all_books: "All books"
+    show_all: "Show all books"
+    filters_label: "Filter by tag"
+    search_label: "Search the library"
+    searching: "Searching…"
+    no_search_results: "No books match that search. Try a different title or author."
+    by_author: "by %{author}"
+    clubs_reading:
+      one: "%{count} club reading"
+      other: "%{count} clubs reading"
+    clubs_read:
+      one: "Read by %{count} club"
+      other: "Read by %{count} clubs"
+    reviews:
+      one: "%{count} review"
+      other: "%{count} reviews"
+    rating_label: "Average rating %{rating} out of 5"
+    empty_title: "The shelves are empty"
+    empty_hint: "Search above for any title. Books found online are added to the catalogue when you open them."
+    empty_tag_title: "No books tagged “%{tag}” yet"
+    end_of_catalogue: "You've reached the end of the catalogue."
