@@ -5,7 +5,7 @@ name: System Tests Check
 # the self-hosted Mac mini while passing locally.
 #   - self-hosted Mac mini (Intel)       → where they reportedly fail
 #   - GitHub-hosted macos-latest (ARM)   → is it macOS in general?
-#   - GitHub-hosted ubuntu-latest        → do they pass on a clean machine?
+#   - GitHub-hosted ubuntu-24.04         → do they pass on a clean machine?
 
 on:
   push:
@@ -37,11 +37,14 @@ jobs:
           - name: macos-latest
             runs-on: macos-latest
             hosted: true
-          - name: ubuntu-latest
-            runs-on: ubuntu-latest
+          # ubuntu-latest is Ubuntu 26.04, which has no prebuilt Ruby 3.4.6 yet.
+          - name: ubuntu-24.04
+            runs-on: ubuntu-24.04
             hosted: true
     env:
       RAILS_ENV: test
+      # Give Turbo navigations time to settle on slower runners.
+      CAPYBARA_MAX_WAIT: "10"
     defaults:
       run:
         working-directory: ./backend
@@ -86,7 +89,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: system-test-failures-${{ matrix.runs-on == 'macos-latest' && 'macos' || matrix.runs-on == 'ubuntu-latest' && 'ubuntu' || 'mac-mini' }}
+          name: system-test-failures-${{ matrix.runs-on == 'macos-latest' && 'macos' || matrix.runs-on == 'ubuntu-24.04' && 'ubuntu' || 'mac-mini' }}
           path: |
             backend/tmp/screenshots
             backend/tmp/capybara

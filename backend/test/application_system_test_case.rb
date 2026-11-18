@@ -1,6 +1,11 @@
 require "test_helper"
 
 class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
+  # Slower CI machines (e.g. the self-hosted Intel Mac mini) can take longer
+  # than Capybara's 2s default to finish a Turbo navigation. CI raises it via
+  # CAPYBARA_MAX_WAIT; local runs keep the default.
+  Capybara.default_max_wait_time = Float(ENV.fetch("CAPYBARA_MAX_WAIT", Capybara.default_max_wait_time))
+
   if ENV["CAPYBARA_SERVER_PORT"]
     served_by host: "rails-app", port: ENV["CAPYBARA_SERVER_PORT"]
 
