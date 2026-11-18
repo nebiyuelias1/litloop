@@ -173,23 +173,10 @@
                 <h2 id="your-take-heading" class="title text-xl font-bold text-content"><%= t(".have_you_read") %></h2>
                 <p class="text-sm text-content-subtle mt-1"><%= t(".rate_prompt") %></p>
               </div>
-              <fieldset class="star-rating">
-                <legend class="sr-only"><%= t(".your_rating") %></legend>
-                <% 5.times do |i| %>
-                  <label class="star-rating__star">
-                    <input
-                      type="radio"
-                      name="rating_score"
-                      value="<%= i + 1 %>"
-                      class="sr-only"
-                      data-rating-target="input"
-                      data-action="change->rating#rate"
-                      <%= "checked" if @user_score == i + 1 %>>
-                    <span class="sr-only"><%= t(".stars", count: i + 1) %></span>
-                    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="<%= star_path %>" /></svg>
-                  </label>
-                <% end %>
-              </fieldset>
+              <%= render "shared/star_rating",
+                  score: @user_score,
+                  legend: t(".your_rating"),
+                  input_data: { rating_target: "input", action: "change->rating#rate" } %>
             </div>
 
             <%= form_with(model: [@book, Review.new], class: "mt-5 pt-5 border-t border-border space-y-3") do |f| %>

@@ -228,9 +228,6 @@ zh-TW:
       have_you_read: "讀過這本書嗎？"
       rate_prompt: "打個分，分享你的看法"
       your_rating: "你的評分"
-      stars:
-        one: "1 星"
-        other: "%{count} 星"
       rating_saved: "評分已儲存。"
       rating_failed: "評分儲存失敗，請再試一次。"
       write_review: "寫書評"
@@ -301,3 +298,8 @@ zh-TW:
       almost_x_years:
         one: "將近 1 年"
         other: "將近 %{count} 年"
+  shared:
+    star_rating:
+      stars:
+        one: "1 星"
+        other: "%{count} 星"

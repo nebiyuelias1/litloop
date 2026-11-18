@@ -264,9 +264,6 @@ en:
       have_you_read: "Have you read this?"
       rate_prompt: "Rate it to share your opinion"
       your_rating: "Your rating"
-      stars:
-        one: "1 star"
-        other: "%{count} stars"
       rating_saved: "Your rating was saved."
       rating_failed: "Your rating couldn't be saved. Please try again."
       write_review: "Write a review"
@@ -298,3 +295,8 @@ en:
     de: "German"
     fr: "French"
     ja: "Japanese"
+  shared:
+    star_rating:
+      stars:
+        one: "1 star"
+        other: "%{count} stars"

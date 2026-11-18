@@ -238,9 +238,6 @@ am:
       have_you_read: "ይህን መጽሐፍ አንብበውታል?"
       rate_prompt: "አስተያየትዎን ለማጋራት ደረጃ ይስጡት"
       your_rating: "የእርስዎ ደረጃ"
-      stars:
-        one: "1 ኮከብ"
-        other: "%{count} ኮከቦች"
       rating_saved: "ደረጃዎ ተቀምጧል።"
       rating_failed: "ደረጃዎን ማስቀመጥ አልተቻለም። እባክዎ እንደገና ይሞክሩ።"
       write_review: "ግምገማ ይጻፉ"
@@ -311,3 +308,8 @@ am:
       almost_x_years:
         one: "1 ዓመት ሊሞላ"
         other: "%{count} ዓመታት ሊሞላ"
+  shared:
+    star_rating:
+      stars:
+        one: "1 ኮከብ"
+        other: "%{count} ኮከቦች"

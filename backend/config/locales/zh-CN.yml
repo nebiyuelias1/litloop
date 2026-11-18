@@ -228,9 +228,6 @@ zh-CN:
       have_you_read: "读过这本书吗？"
       rate_prompt: "打个分，分享你的看法"
       your_rating: "你的评分"
-      stars:
-        one: "1 星"
-        other: "%{count} 星"
       rating_saved: "评分已保存。"
       rating_failed: "评分保存失败，请重试。"
       write_review: "写书评"
@@ -301,3 +298,8 @@ zh-CN:
       almost_x_years:
         one: "将近 1 年"
         other: "将近 %{count} 年"
+  shared:
+    star_rating:
+      stars:
+        one: "1 星"
+        other: "%{count} 星"
