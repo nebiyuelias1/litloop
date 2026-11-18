@@ -1,0 +1,94 @@
+name: System Tests Check
+
+# Experiment: run the browser system tests on each kind of runner to find out
+# where they work. deploy-staging.yml has them disabled because they fail on
+# the self-hosted Mac mini while passing locally.
+#   - self-hosted Mac mini (Intel)       → where they reportedly fail
+#   - GitHub-hosted macos-latest (ARM)   → is it macOS in general?
+#   - GitHub-hosted ubuntu-latest        → do they pass on a clean machine?
+
+on:
+  push:
+    branches: [ci/system-tests-check]
+    paths:
+      - "backend/**"
+      - ".github/workflows/system-tests-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: system-tests-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  system-tests:
+    name: System tests (${{ matrix.name }})
+    runs-on: ${{ matrix.runs-on }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: self-hosted Mac mini
+            runs-on: [self-hosted, macOS]
+            hosted: false
+          - name: macos-latest
+            runs-on: macos-latest
+            hosted: true
+          - name: ubuntu-latest
+            runs-on: ubuntu-latest
+            hosted: true
+    env:
+      RAILS_ENV: test
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby (GitHub-hosted)
+        if: matrix.hosted
+        uses: ruby/setup-ruby@v1
+        with:
+          working-directory: ./backend
+          bundler-cache: true
+
+      - name: Install Ruby dependencies (self-hosted)
+        if: ${{ !matrix.hosted }}
+        run: |
+          bundle config set jobs 4
+          bundle check || bundle install
+
+      - name: Diagnostics
+        run: |
+          echo "OS: $(uname -a)"
+          ruby -v
+          bundle exec ruby -e 'require "selenium-webdriver"; puts "selenium-webdriver #{Selenium::WebDriver::VERSION}"'
+          case "$(uname)" in
+            Darwin) "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --version || echo "Google Chrome not found in /Applications" ;;
+            Linux)  google-chrome --version || chromium --version || echo "Chrome not found" ;;
+          esac
+          which chromedriver && chromedriver --version || echo "no chromedriver on PATH (Selenium Manager will fetch one)"
+
+      - name: Setup database
+        run: bin/rails db:test:prepare
+
+      - name: Build CSS
+        run: bin/rails tailwindcss:build
+
+      - name: Run system tests
+        run: bin/rails test:system
+
+      - name: Upload failure screenshots and logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-test-failures-${{ matrix.runs-on == 'macos-latest' && 'macos' || matrix.runs-on == 'ubuntu-latest' && 'ubuntu' || 'mac-mini' }}
+          path: |
+            backend/tmp/screenshots
+            backend/tmp/capybara
+            backend/log/test.log
+          if-no-files-found: ignore
