@@ -9,9 +9,9 @@ on:
 
 jobs:
   test:
-    # Self-hosted runner: never run code from fork pull requests here.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: self-hosted
+    # Pull requests from forks run on a GitHub-hosted runner: the self-hosted
+    # Mac mini persists between jobs, so it only runs code from this repository.
+    runs-on: ${{ github.event.pull_request.head.repo.full_name == github.repository && 'self-hosted' || 'ubuntu-24.04' }}
     environment: staging
     env:
       RAILS_ENV: test
@@ -29,7 +29,15 @@ jobs:
             backend
             .github/workflows
 
+      - name: Set up Ruby
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        uses: ruby/setup-ruby@v1
+        with:
+          working-directory: ./backend
+          bundler-cache: true
+
       - name: Install Ruby dependencies
+        if: github.event.pull_request.head.repo.full_name == github.repository
         run: |
           bundle config set jobs 4
           bundle check || bundle install
