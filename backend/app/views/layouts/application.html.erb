@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html data-theme="silk" <%= "data-hotwire-native" if hotwire_native_app? %>>
+<html lang="<%= I18n.locale %>" data-theme="silk" <%= "data-hotwire-native" if hotwire_native_app? %>>
   <head>
     <title><%= content_for?(:title) ? "#{content_for(:title)} - #{app_name}" : app_name %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">

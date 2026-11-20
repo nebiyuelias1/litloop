@@ -20,15 +20,8 @@
       ">
 
       <figure class="relative h-32 bg-background">
-        <%# Bookplate monogram sits beneath the image; image-fallback hides a broken img on error %>
-        <% bookplate_bands = [
-             "bg-background text-primary",
-             "bg-primary text-primary-contrast",
-             "bg-accent/10 text-accent"
-           ] %>
-        <div aria-hidden="true" class="absolute inset-0 flex items-center justify-center <%= bookplate_bands[(club.id || 0) % bookplate_bands.length] %>">
-          <span class="font-serif text-5xl leading-none"><%= club.name_initial %></span>
-        </div>
+        <%# Club icon sits beneath the image; image-fallback hides a broken img on error %>
+        <%= render "shared/cover_fallback", icon: "clubs", size_class: "text-5xl" %>
         <% if club.cover_photo.attached? %>
           <%= image_tag club.cover_photo,
             data: { controller: "image-fallback", action: "error->image-fallback#fail" },

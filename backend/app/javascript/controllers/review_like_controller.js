@@ -5,7 +5,9 @@ export default class extends Controller {
   static values = {
     reviewId: Number,
     bookId: Number,
-    liked: Boolean
+    liked: Boolean,
+    oneText: { type: String, default: "like" },
+    otherText: { type: String, default: "likes" }
   }
 
   connect() {
@@ -20,7 +22,7 @@ export default class extends Controller {
     let currentCount = parseInt(countEl.textContent) || 0
     currentCount += this.likedValue ? 1 : -1
     countEl.textContent = currentCount
-    if (textEl) textEl.textContent = currentCount === 1 ? 'like' : 'likes'
+    if (textEl) textEl.textContent = this.label(currentCount)
     this.updateAppearance()
 
     try {
@@ -37,14 +39,14 @@ export default class extends Controller {
         const data = await response.json()
         this.likedValue = data.liked
         countEl.textContent = data.likes_count
-        if (textEl) textEl.textContent = data.likes_count === 1 ? 'like' : 'likes'
+        if (textEl) textEl.textContent = this.label(data.likes_count)
         this.updateAppearance()
       } else {
         // Revert on failure
         this.likedValue = !this.likedValue
         currentCount += this.likedValue ? 1 : -1
         countEl.textContent = currentCount
-        if (textEl) textEl.textContent = currentCount === 1 ? 'like' : 'likes'
+        if (textEl) textEl.textContent = this.label(currentCount)
         this.updateAppearance()
       }
     } catch (error) {
@@ -53,20 +55,20 @@ export default class extends Controller {
       currentCount = parseInt(countEl.textContent) || 0
       currentCount += this.likedValue ? 1 : -1
       countEl.textContent = currentCount
-      if (textEl) textEl.textContent = currentCount === 1 ? 'like' : 'likes'
+      if (textEl) textEl.textContent = this.label(currentCount)
       this.updateAppearance()
       console.error('Error toggling like:', error)
     }
   }
 
+  label(count) {
+    return count === 1 ? this.oneTextValue : this.otherTextValue
+  }
+
   updateAppearance() {
     const icon = this.iconTarget
-    if (this.likedValue) {
-      icon.classList.add('text-red-500')
-      icon.classList.remove('text-gray-400', 'hover:text-red-400')
-    } else {
-      icon.classList.remove('text-red-500')
-      icon.classList.add('text-gray-400', 'hover:text-red-400')
-    }
+    icon.classList.toggle('text-accent', this.likedValue)
+    icon.classList.toggle('text-content-muted', !this.likedValue)
+    icon.closest('button')?.setAttribute('aria-pressed', String(this.likedValue))
   }
 }

@@ -193,10 +193,14 @@ en:
   type_title: "Type title..."
 
   date:
+    formats:
+      month_year: "%B %Y"
     day_names: [Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday]
 
   time:
     formats:
+      club_read: "%a %-d %b %Y · %H:%M"
+      month_short: "%b"
       flyer: "%b %d, %Y - %H:%M"
       long: "%B %d, %Y at %I:%M %p"
   page_count: "Page count"
@@ -238,3 +242,61 @@ en:
     one: "%{count} vote"
     other: "%{count} votes"
   jump_to_section: "Jump to section"
+
+  books:
+    show:
+      og_title: "%{title} by %{author}"
+      by_author_html: "by %{author}"
+      average_rating: "Average rating"
+      reviews_count:
+        one: "1 review"
+        other: "%{count} reviews"
+      not_yet_rated: "Not yet rated"
+      tags: "Tags"
+      publisher: "Publisher"
+      published: "Published"
+      language: "Language"
+      isbn: "ISBN"
+      cover_alt: "Cover of %{title}"
+      about: "About this book"
+      club_reads: "Read in clubs"
+      upcoming: "Upcoming"
+      have_you_read: "Have you read this?"
+      rate_prompt: "Rate it to share your opinion"
+      your_rating: "Your rating"
+      rating_saved: "Your rating was saved."
+      rating_failed: "Your rating couldn't be saved. Please try again."
+      write_review: "Write a review"
+      review_placeholder: "Share your thoughts about this book..."
+      post_review: "Post Review"
+      read_this_book: "Read this book?"
+      sign_in_prompt: "Sign in to rate it and share your thoughts."
+      sign_in_cta: "Sign in to rate & review"
+      reviews: "Reviews"
+      you: "You"
+      rated_out_of_5: "Rated %{score} out of 5"
+      review_by: "Review by %{name}"
+      time_ago: "%{time} ago"
+      likes:
+        one: "like"
+        other: "likes"
+      like_review_by: "Like review by %{name}"
+      no_reviews: "No reviews yet. Be the first to share your thoughts!"
+  reviews:
+    create:
+      posted: "Review posted successfully."
+      failed: "Failed to post review: %{errors}"
+  languages:
+    am: "Amharic"
+    en: "English"
+    zh: "Chinese"
+    zh-CN: "Chinese (Simplified)"
+    zh-TW: "Chinese (Traditional)"
+    de: "German"
+    fr: "French"
+    ja: "Japanese"
+  shared:
+    star_rating:
+      stars:
+        one: "1 star"
+        other: "%{count} stars"

@@ -155,10 +155,17 @@ zh-TW:
   type_title: "輸入書名..."
 
   date:
+    abbr_day_names: [週日, 週一, 週二, 週三, 週四, 週五, 週六]
+    month_names: [~, 一月, 二月, 三月, 四月, 五月, 六月, 七月, 八月, 九月, 十月, 十一月, 十二月]
+    abbr_month_names: [~, 1月, 2月, 3月, 4月, 5月, 6月, 7月, 8月, 9月, 10月, 11月, 12月]
+    formats:
+      month_year: "%Y年%-m月"
     day_names: [週日, 週一, 週二, 週三, 週四, 週五, 週六]
 
   time:
     formats:
+      club_read: "%Y年%-m月%-d日 %a %H:%M"
+      month_short: "%-m月"
       flyer: "%Y年%m月%d日 %H:%M"
       long: "%Y年%m月%d日 %H:%M"
   page_count: "頁數"
@@ -199,3 +206,100 @@ zh-TW:
   votes_count:
     other: "%{count} 票"
   jump_to_section: "跳至本頁區域"
+
+  books:
+    show:
+      og_title: "%{title}，作者：%{author}"
+      by_author_html: "作者：%{author}"
+      average_rating: "平均評分"
+      reviews_count:
+        one: "1 則書評"
+        other: "%{count} 則書評"
+      not_yet_rated: "暫無評分"
+      tags: "標籤"
+      publisher: "出版社"
+      published: "出版時間"
+      language: "語言"
+      isbn: "ISBN"
+      cover_alt: "《%{title}》封面"
+      about: "關於本書"
+      club_reads: "讀書會共讀"
+      upcoming: "即將舉行"
+      have_you_read: "讀過這本書嗎？"
+      rate_prompt: "打個分，分享你的看法"
+      your_rating: "你的評分"
+      rating_saved: "評分已儲存。"
+      rating_failed: "評分儲存失敗，請再試一次。"
+      write_review: "寫書評"
+      review_placeholder: "分享你對這本書的看法……"
+      post_review: "發布書評"
+      read_this_book: "讀過這本書？"
+      sign_in_prompt: "登入後即可評分並分享你的看法。"
+      sign_in_cta: "登入以評分和寫書評"
+      reviews: "書評"
+      you: "你"
+      rated_out_of_5: "評分 %{score}/5"
+      review_by: "%{name} 的書評"
+      time_ago: "%{time}前"
+      likes:
+        one: "讚"
+        other: "讚"
+      like_review_by: "讚 %{name} 的書評"
+      no_reviews: "還沒有書評，來分享第一篇吧！"
+  reviews:
+    create:
+      posted: "書評已發布。"
+      failed: "書評發布失敗：%{errors}"
+  languages:
+    am: "阿姆哈拉語"
+    en: "英語"
+    zh: "中文"
+    zh-CN: "簡體中文"
+    zh-TW: "繁體中文"
+    de: "德語"
+    fr: "法語"
+    ja: "日語"
+  datetime:
+    distance_in_words:
+      half_a_minute: "半分鐘"
+      less_than_x_seconds:
+        one: "不到 1 秒"
+        other: "不到 %{count} 秒"
+      x_seconds:
+        one: "1 秒"
+        other: "%{count} 秒"
+      less_than_x_minutes:
+        one: "不到 1 分鐘"
+        other: "不到 %{count} 分鐘"
+      x_minutes:
+        one: "1 分鐘"
+        other: "%{count} 分鐘"
+      about_x_hours:
+        one: "大約 1 小時"
+        other: "大約 %{count} 小時"
+      x_hours:
+        one: "1 小時"
+        other: "%{count} 小時"
+      x_days:
+        one: "1 天"
+        other: "%{count} 天"
+      about_x_months:
+        one: "大約 1 個月"
+        other: "大約 %{count} 個月"
+      x_months:
+        one: "1 個月"
+        other: "%{count} 個月"
+      about_x_years:
+        one: "大約 1 年"
+        other: "大約 %{count} 年"
+      over_x_years:
+        one: "超過 1 年"
+        other: "超過 %{count} 年"
+      almost_x_years:
+        one: "將近 1 年"
+        other: "將近 %{count} 年"
+  shared:
+    star_rating:
+      stars:
+        one: "1 星"
+        other: "%{count} 星"
