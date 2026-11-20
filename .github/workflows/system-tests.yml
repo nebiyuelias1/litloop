@@ -1,9 +1,10 @@
 name: System Tests
 
-# Browser (Capybara + headless Chrome) tests, on the two runners where they
-# pass reliably: the self-hosted Mac mini and GitHub's Ubuntu 24.04.
-# GitHub's macos-latest is left out: there the tests race Turbo page swaps
-# (stale-element errors in different tests on each run).
+# Browser (Capybara + headless Chrome) tests on the self-hosted Mac mini.
+#
+# The Mac mini is a persistent machine, so pull requests from forks never run
+# here: their code (bin/rails, tests) would run as the runner account. Only
+# pushes, manual runs and pull requests from branches in this repository do.
 
 on:
   pull_request:
@@ -27,23 +28,13 @@ concurrency:
 
 jobs:
   system-tests:
-    name: System tests (${{ matrix.name }})
-    runs-on: ${{ matrix.runs-on }}
+    name: System tests
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, macOS]
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Mac mini
-            runs-on: [self-hosted, macOS]
-            hosted: false
-          # Pinned: ubuntu-latest (26.04) has no prebuilt Ruby 3.4.6 yet.
-          - name: Ubuntu 24.04
-            runs-on: ubuntu-24.04
-            hosted: true
     env:
       RAILS_ENV: test
-      # Give Turbo navigations time to settle on slower runners.
+      # Give Turbo navigations time to settle.
       CAPYBARA_MAX_WAIT: "10"
     defaults:
       run:
@@ -52,15 +43,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Ruby
-        if: matrix.hosted
-        uses: ruby/setup-ruby@v1
-        with:
-          working-directory: ./backend
-          bundler-cache: true
-
       - name: Install Ruby dependencies
-        if: ${{ !matrix.hosted }}
         run: |
           bundle config set jobs 4
           bundle check || bundle install
@@ -78,7 +61,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: system-test-failures-${{ matrix.hosted && 'ubuntu' || 'mac-mini' }}-${{ github.run_number }}
+          name: system-test-failures-${{ github.run_number }}
           path: |
             backend/tmp/screenshots
             backend/log/test.log
