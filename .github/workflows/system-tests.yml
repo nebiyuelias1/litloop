@@ -1,0 +1,63 @@
+name: System Tests
+
+# Browser (Capybara + headless Chrome) tests on the self-hosted Mac mini.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "backend/**"
+      - ".github/workflows/system-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/system-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: system-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  system-tests:
+    name: System tests
+    runs-on: [self-hosted, macOS]
+    timeout-minutes: 30
+    env:
+      RAILS_ENV: test
+      # Give Turbo navigations time to settle.
+      CAPYBARA_MAX_WAIT: "10"
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Ruby dependencies
+        run: |
+          bundle config set jobs 4
+          bundle check || bundle install
+
+      - name: Setup database
+        run: bin/rails db:test:prepare
+
+      - name: Build CSS
+        run: bin/rails tailwindcss:build
+
+      - name: Run system tests
+        run: bin/rails test:system
+
+      - name: Upload failure screenshots and logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-test-failures-${{ github.run_number }}
+          path: |
+            backend/tmp/screenshots
+            backend/log/test.log
+          if-no-files-found: ignore
