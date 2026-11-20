@@ -1,10 +1,6 @@
 name: System Tests
 
 # Browser (Capybara + headless Chrome) tests on the self-hosted Mac mini.
-#
-# The Mac mini is a persistent machine, so pull requests from forks never run
-# here: their code (bin/rails, tests) would run as the runner account. Only
-# pushes, manual runs and pull requests from branches in this repository do.
 
 on:
   pull_request:
@@ -29,7 +25,6 @@ concurrency:
 jobs:
   system-tests:
     name: System tests
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, macOS]
     timeout-minutes: 30
     env:
