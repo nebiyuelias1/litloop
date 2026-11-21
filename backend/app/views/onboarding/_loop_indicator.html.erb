@@ -1,0 +1,21 @@
+<%#
+  Tour progress: a faint LitLoop mark, revealed in colour along the loop by the
+  onboarding controller. Coordinates are the mark's (681 x 491).
+%>
+<svg class="h-10 w-14" viewBox="-8 -8 697 507" aria-hidden="true">
+  <defs>
+    <g id="litloop-mark"><%= render "shared/litloop_mark" %></g>
+    <mask id="litloop-mark-progress" maskUnits="userSpaceOnUse" x="-8" y="-8" width="697" height="507">
+      <path d="M348.4 165C391.4 93 441.4 37 521.4 37C601.4 37 651.4 98 651.4 165C651.4 233 601.4 293 521.4 293C441.4 293 391.4 237 348.4 165C305.4 93 241.4 37 161.4 37C81.4 37 31.4 98 31.4 165C31.4 233 81.4 293 161.4 293C241.4 293 305.4 237 348.4 165Z" fill="none" stroke="#fff" stroke-width="92" stroke-dasharray="0 9999" data-onboarding-target="loopTrail" />
+      <rect x="250" y="250" width="185" height="245" fill="#fff" opacity="0" data-onboarding-target="ribbon" />
+    </mask>
+  </defs>
+  <use href="#litloop-mark" fill="var(--color-primary)" opacity="0.22" />
+  <use href="#litloop-mark" fill="var(--color-primary)" mask="url(#litloop-mark-progress)" />
+  <%# Centreline for placing stations and the marker %>
+  <path d="M348.4 165C391.4 93 441.4 37 521.4 37C601.4 37 651.4 98 651.4 165C651.4 233 601.4 293 521.4 293C441.4 293 391.4 237 348.4 165C305.4 93 241.4 37 161.4 37C81.4 37 31.4 98 31.4 165C31.4 233 81.4 293 161.4 293C241.4 293 305.4 237 348.4 165Z" fill="none" stroke="none" data-onboarding-target="loopPath" />
+  <% 4.times do %>
+    <circle class="onb-loop__station" r="20" cx="348.4" cy="165.0" data-onboarding-target="station" />
+  <% end %>
+  <circle class="onb-loop__marker" r="42" cx="348.4" cy="165.0" fill="var(--color-accent)" stroke="var(--color-background)" stroke-width="16" opacity="0" data-onboarding-target="marker" />
+</svg>

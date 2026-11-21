@@ -34,6 +34,16 @@ class ApplicationController < ActionController::Base
     Time.use_zone(time_zone, &block)
   end
 
+  ONBOARDED_COOKIE = :onboarded
+
+  def remember_onboarded
+    cookies.permanent[ONBOARDED_COOKIE] = "1" if hotwire_native_app?
+  end
+
+  def onboarding_pending?
+    hotwire_native_app? && !user_signed_in? && cookies[ONBOARDED_COOKIE].blank?
+  end
+
   def after_sign_in_path_for(resource)
     stored_location_for(resource) || super
   end

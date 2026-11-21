@@ -45,6 +45,9 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   root "home#index"
 
+  # First-run tour for the apps
+  get "onboarding", to: "onboarding#show", as: :onboarding
+
   get "/books/search", to: "books#search", as: :books_search
 
   # Book resources (public)
