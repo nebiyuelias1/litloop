@@ -1,13 +1,18 @@
 <div id="pagination_placeholder">
-  <%= turbo_frame_tag "books_page_#{@page.next_param}", src: books_path(page: @page.next_param, format: :turbo_stream), loading: :lazy do %>
-    <div
-      class="
-        grid grid-cols-1 min-[450px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4
-        xl:grid-cols-5 gap-6 mt-6
-      ">
-      <% 3.times do %>
-        <%= render partial: "books/book_skeleton" %>
-      <% end %>
-    </div>
+  <% if @page.next_param %>
+    <%= turbo_frame_tag "books_page_#{@page.next_param}", src: books_path(page: @page.next_param, tag: @active_tag.presence, format: :turbo_stream), loading: :lazy do %>
+      <div
+        aria-hidden="true"
+        class="
+          grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5
+          gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 mt-8 sm:mt-10
+        ">
+        <% 5.times do |i| %>
+          <%= render partial: "books/book_skeleton", locals: { extra_class: ("hidden sm:flex" if i == 2) || ("hidden lg:flex" if i == 3) || ("hidden xl:flex" if i == 4) } %>
+        <% end %>
+      </div>
+    <% end %>
+  <% elsif @page.number > 1 %>
+    <p class="mt-12 text-center text-sm text-content-muted"><%= t("library.end_of_catalogue") %></p>
   <% end %>
 </div>

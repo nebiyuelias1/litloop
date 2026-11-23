@@ -1,46 +1,59 @@
-<%= link_to book_path(book), id: dom_id(book), class: "card bg-surface shadow-xs hover:shadow-xl transition-all duration-300 rounded-2xl border border-border/80 overflow-hidden group flex flex-col h-full focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer" do %>
-  <%# Compact Full Cover Image Figure %>
-  <figure class="relative h-44 sm:h-48 w-full overflow-hidden bg-background m-0 shrink-0 border-b border-border/40">
-    <%# Bookplate monogram sits beneath the image; image-fallback hides a broken img on error %>
-    <%= render "shared/book_cover_fallback", book: book, size_class: "text-5xl" %>
+<%#
+  Catalogue card: the whole cover at its natural 2:3 proportion, sitting
+  directly on the vellum like a book face-out on a shelf. No card frame.
+  Expects @average_ratings, @reading_club_counts and @past_club_counts from
+  BooksController#index; falls back to per-book queries when rendered elsewhere.
+  A club is "reading" the book while its meetup is still ahead.
+%>
+<% average = @average_ratings ? @average_ratings[book.id] : (book.ratings.average(:score) if book.ratings.any?) %>
+<% reading_clubs = @reading_club_counts ? @reading_club_counts.fetch(book.id, 0) : book.book_reads.where("meetup_time >= ?", Time.current).distinct.count(:book_club_id) %>
+<% past_clubs = @past_club_counts ? @past_club_counts.fetch(book.id, 0) : book.book_reads.where("meetup_time < ?", Time.current).distinct.count(:book_club_id) %>
+<%= link_to book_path(book), id: dom_id(book), class: "group flex flex-col rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary" do %>
+  <figure class="relative aspect-[2/3] w-full overflow-hidden rounded-xl border border-border bg-background m-0 transition-[translate,border-color] duration-300 ease-out group-hover:-translate-y-1 group-hover:border-content-muted motion-reduce:transition-none motion-reduce:group-hover:translate-y-0">
+    <%= render "shared/book_cover_fallback", book: book, titled: true %>
     <% if book.cover_image.present? %>
-      <img src="<%= book.cover_image %>" alt="<%= book.title %>" data-controller="image-fallback" data-action="error->image-fallback#fail" class="relative h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500">
+      <img src="<%= book.cover_display_url %>" alt="" loading="lazy" decoding="async"
+           data-controller="image-fallback"
+           data-action="error->image-fallback#fail load->image-fallback#check"
+           class="relative h-full w-full object-cover object-center">
     <% end %>
 
-    <%# Published Year Badge %>
-    <% if book.published_at.present? %>
-      <div class="absolute top-2.5 right-2.5 z-10">
-        <span class="badge badge-neutral badge-sm shadow-xs backdrop-blur-md bg-surface/90 text-content font-semibold border-border/80">
-          <%= book.published_at.strftime('%Y') %>
-        </span>
-      </div>
+    <% if reading_clubs.positive? %>
+      <span class="absolute bottom-2 left-2 max-w-[calc(100%-1rem)] inline-flex items-center gap-1.5 rounded-lg bg-accent px-2 py-1 text-xs font-semibold leading-tight text-accent-contrast tabular-nums">
+        <span class="size-1.5 shrink-0 rounded-full bg-accent-contrast" aria-hidden="true"></span>
+        <span class="truncate"><%= t("library.clubs_reading", count: reading_clubs) %></span>
+      </span>
     <% end %>
   </figure>
 
-  <%# Card Body %>
-  <div class="card-body p-4 flex flex-col justify-between flex-1">
-    <div>
-      <h3 class="card-title title-sm text-base font-bold text-content mb-1 line-clamp-2 leading-snug group-hover:text-primary transition-colors">
-        <%= book.title %>
-      </h3>
-      <p class="text-xs text-content-subtle font-medium truncate mb-2">
-        <%= book.author.presence || 'Unknown Author' %>
-      </p>
-    </div>
+  <div class="pt-3 flex flex-col gap-1 min-w-0">
+    <h3 class="title title-sm font-bold text-content leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+      <%= book.title %>
+    </h3>
+    <p class="text-sm text-content-subtle truncate">
+      <%= book.author.presence || t("unknown_author") %>
+    </p>
 
-    <div class="pt-3 border-t border-border/50">
-      <%# Rating Row %>
-      <div class="flex items-center justify-between text-xs">
-        <div class="flex items-center gap-1">
-          <svg class="w-4 h-4 text-warning fill-current" viewBox="0 0 20 20">
-            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-          </svg>
-          <span class="font-bold text-content"><%= book.average_rating %></span>
-        </div>
-        <span class="text-content-muted">
-          <%= book.reviews_count %> <%= "review".pluralize(book.reviews_count) %>
-        </span>
-      </div>
-    </div>
+    <% if average.present? || book.reviews_count.positive? || past_clubs.positive? || book.published_at.present? %>
+      <p class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-content-muted tabular-nums">
+        <% if average.present? %>
+          <span class="inline-flex items-center gap-1 font-semibold text-content" aria-label="<%= t("library.rating_label", rating: number_with_precision(average, precision: 1)) %>">
+            <svg class="w-3.5 h-3.5 text-accent fill-current" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+            <%= number_with_precision(average, precision: 1) %>
+          </span>
+        <% end %>
+        <% if book.reviews_count.positive? %>
+          <span><%= t("library.reviews", count: book.reviews_count) %></span>
+        <% end %>
+        <% if past_clubs.positive? %>
+          <span><%= t("library.clubs_read", count: past_clubs) %></span>
+        <% end %>
+        <% if book.published_at.present? %>
+          <span><%= book.published_at.year %></span>
+        <% end %>
+      </p>
+    <% end %>
   </div>
 <% end %>

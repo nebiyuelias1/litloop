@@ -209,3 +209,29 @@ am:
     one: "%{count} ድምፅ"
     other: "%{count} ድምፅ"
   jump_to_section: "ወደ ክፍል ዝለል"
+  library:
+    book_count:
+      one: "በካታሎጉ ውስጥ %{formatted} መጽሐፍ"
+      other: "በካታሎጉ ውስጥ %{formatted} መጻሕፍት"
+    tagged: "መለያ፦ “%{tag}”"
+    all_books: "ሁሉም መጻሕፍት"
+    show_all: "ሁሉንም መጻሕፍት አሳይ"
+    filters_label: "በመለያ አጣራ"
+    search_label: "ቤተ-መጻሕፍቱን ይፈልጉ"
+    searching: "በመፈለግ ላይ…"
+    no_search_results: "ከፍለጋዎ ጋር የሚዛመድ መጽሐፍ የለም። ሌላ ርዕስ ወይም ደራሲ ይሞክሩ።"
+    by_author: "በ%{author}"
+    clubs_reading:
+      one: "%{count} ክበብ እያነበበው ነው"
+      other: "%{count} ክበቦች እያነበቡት ነው"
+    clubs_read:
+      one: "%{count} ክበብ አንብቦታል"
+      other: "%{count} ክበቦች አንብበውታል"
+    reviews:
+      one: "%{count} ግምገማ"
+      other: "%{count} ግምገማዎች"
+    rating_label: "አማካይ ደረጃ ከ5 %{rating}"
+    empty_title: "መደርደሪያዎቹ ባዶ ናቸው"
+    empty_hint: "ከላይ ማንኛውንም ርዕስ ይፈልጉ። በመስመር ላይ የተገኙ መጻሕፍት ሲከፍቷቸው ወደ ካታሎጉ ይታከላሉ።"
+    empty_tag_title: "እስካሁን “%{tag}” የሚል መለያ ያለው መጽሐፍ የለም"
+    end_of_catalogue: "የካታሎጉ መጨረሻ ላይ ደርሰዋል።"
