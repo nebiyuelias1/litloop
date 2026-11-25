@@ -1,51 +1,23 @@
-<% content_for :title, t("titles.forgot_password") %>
-<div class="min-h-[80vh] flex items-center justify-center py-4 sm:py-10">
-  <div class="w-full max-w-md bg-transparent sm:bg-surface shadow-none sm:shadow-xl rounded-none sm:rounded-2xl p-0 sm:p-8 border-0 sm:border sm:border-border/60 transition-all">
-    <div class="text-center mb-6">
-      <div class="mx-auto w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-3">
-        <svg xmlns="http://www.w3.org/2000/svg" class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
-        </svg>
-      </div>
-      <h2 class="text-2xl sm:text-3xl font-bold text-content tracking-tight">Forgot password?</h2>
-      <p class="mt-1.5 text-xs sm:text-sm text-content-subtle">Enter your email and we'll send instructions to reset your password.</p>
-    </div>
+<% footer = capture do %>
+  <p>
+    <%= t("auth.forgot.remembered") %>
+    <%= link_to t("auth.back_to_sign_in"), new_session_path(resource_name), class: "auth-link" %>
+  </p>
+<% end %>
+<%= render layout: "devise/shared/auth_page", locals: {
+      title: t("auth.forgot.title"),
+      lede: t("auth.forgot.lede"),
+      footer: footer
+    } do %>
+  <%= render "devise/shared/error_messages", resource: resource, fields: %i[email] %>
 
-    <% if flash.any? %>
-      <% flash.each do |name, msg| %>
-        <div class="mb-4 p-3.5 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2.5 shadow-xs <%= name.to_s == 'alert' || name.to_s == 'error' ? 'alert alert-error text-error-content' : 'alert alert-info text-info-content' %>">
-          <svg xmlns="http://www.w3.org/2000/svg" class="size-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span><%= msg %></span>
-        </div>
-      <% end %>
-    <% end %>
+  <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post, class: "space-y-4", data: { controller: "submit-once", action: "submit->submit-once#lock turbo:submit-end->submit-once#unlock", submit_once_busy_label_value: t("auth.forgot.busy") } }) do |f| %>
+    <%= render "components/input",
+        form: f, field_type: :email, name: :email,
+        label: t("auth.fields.email"), autofocus: true, autocomplete: "email",
+        required: true, required_marker: false,
+        error: resource.errors.full_messages_for(:email).presence %>
 
-    <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post, class: "space-y-4" }) do |f| %>
-      <%= render "devise/shared/error_messages", resource: resource %>
-
-      <%= render "components/input",
-                 form: f,
-                 field_type: :email,
-                 name: :email,
-                 label: "Email address",
-                 placeholder: "name@example.com",
-                 autofocus: true,
-                 autocomplete: "email",
-                 required: true,
-                 icon: '<svg xmlns="http://www.w3.org/2000/svg" class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>' %>
-
-      <div class="pt-2">
-        <%= render "components/button",
-                   label: "Send reset instructions",
-                   type: "submit",
-                   variant: "primary",
-                   size: "lg",
-                   full_width: true %>
-      </div>
-    <% end %>
-
-    <%= render "devise/shared/links" %>
-  </div>
-</div>
+    <%= f.button t("auth.forgot.submit"), type: "submit", data: { submit_once_target: "button" }, class: "btn-primary h-12 w-full justify-center text-base cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.98] transition" %>
+  <% end %>
+<% end %>

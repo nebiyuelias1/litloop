@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html data-theme="silk" <%= "data-hotwire-native" if hotwire_native_app? %>>
+<html lang="<%= I18n.locale %>" data-theme="silk" <%= "data-hotwire-native" if hotwire_native_app? %>>
   <head>
     <title><%= content_for?(:title) ? "#{content_for(:title)} - #{app_name}" : app_name %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -79,7 +79,7 @@
       </script>
     <% end %>
 
-    <% if notice.present? %>
+    <% if notice.present? && !content_for?(:inline_flash) %>
       <script>
         document.addEventListener('turbo:load', function() {
           showToast('<%= j notice %>', {
@@ -89,7 +89,7 @@
       </script>
     <% end %>
 
-    <% if alert.present? %>
+    <% if alert.present? && !content_for?(:inline_flash) %>
       <script>
         document.addEventListener('turbo:load', function() {
           showToast('<%= j alert %>', {
@@ -123,16 +123,28 @@
   <body
     class="bg-background min-h-screen text-content flex flex-col font-sans"
     data-controller="timezone">
-    <%= render "shared/navbar" %>
-
-    <main class="flex-1 w-full pb-16 sm:pb-0 hotwire-native:pb-0">
-      <%= render "shared/toast_container" %>
-      <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <%# :bare_layout drops the site chrome (onboarding, account pages) %>
+    <% if content_for?(:bare_layout) %>
+      <main class="flex-1 w-full">
+        <%= render "shared/toast_container" %>
         <%= yield %>
-      </div>
-    </main>
+      </main>
+    <% else %>
+      <%= render "shared/navbar" %>
+      <%# Apps launch without the tab bar; normal pages show it %>
+      <% if hotwire_native_app? %>
+        <div data-controller="bridge--tab-bar" data-bridge--tab-bar-event-value="show" hidden></div>
+      <% end %>
 
-    <%= render "shared/footer" %>
-    <%= render("shared/bottom_nav") if show_bottom_nav? %>
+      <main class="flex-1 w-full pb-16 sm:pb-0 hotwire-native:pb-0">
+        <%= render "shared/toast_container" %>
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <%= yield %>
+        </div>
+      </main>
+
+      <%= render "shared/footer" %>
+      <%= render("shared/bottom_nav") if show_bottom_nav? %>
+    <% end %>
   </body>
 </html>

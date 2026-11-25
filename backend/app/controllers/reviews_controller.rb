@@ -7,9 +7,9 @@ class ReviewsController < ApplicationController
     @review.user = current_user
 
     if @review.save
-      redirect_to @book, notice: "Review posted successfully."
+      redirect_to @book, notice: t("reviews.create.posted")
     else
-      redirect_to @book, alert: "Failed to post review: #{@review.errors.full_messages.join(", ")}"
+      redirect_to @book, alert: t("reviews.create.failed", errors: @review.errors.full_messages.to_sentence)
     end
   end
 

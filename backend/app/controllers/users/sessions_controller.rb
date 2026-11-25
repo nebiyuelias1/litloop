@@ -1,4 +1,9 @@
 class Users::SessionsController < Devise::SessionsController
+  include AuthRateLimited
+
+  # Slows password guessing.
+  rate_limit_auth to: 10, within: 3.minutes
+
   before_action :set_remember_me_for_native_app, only: [ :create ]
 
   private

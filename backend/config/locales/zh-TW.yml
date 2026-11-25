@@ -1,5 +1,6 @@
 zh-TW:
   hello: "你好"
+  choose_language: "選擇語言"
   sign_in: "登入"
   sign_up: "註冊"
   titles:
@@ -155,10 +156,17 @@ zh-TW:
   type_title: "輸入書名..."
 
   date:
+    abbr_day_names: [週日, 週一, 週二, 週三, 週四, 週五, 週六]
+    month_names: [~, 一月, 二月, 三月, 四月, 五月, 六月, 七月, 八月, 九月, 十月, 十一月, 十二月]
+    abbr_month_names: [~, 1月, 2月, 3月, 4月, 5月, 6月, 7月, 8月, 9月, 10月, 11月, 12月]
+    formats:
+      month_year: "%Y年%-m月"
     day_names: [週日, 週一, 週二, 週三, 週四, 週五, 週六]
 
   time:
     formats:
+      club_read: "%Y年%-m月%-d日 %a %H:%M"
+      month_short: "%-m月"
       flyer: "%Y年%m月%d日 %H:%M"
       long: "%Y年%m月%d日 %H:%M"
   page_count: "頁數"
@@ -199,3 +207,190 @@ zh-TW:
   votes_count:
     other: "%{count} 票"
   jump_to_section: "跳至本頁區域"
+
+  books:
+    show:
+      og_title: "%{title}，作者：%{author}"
+      by_author_html: "作者：%{author}"
+      average_rating: "平均評分"
+      reviews_count:
+        one: "1 則書評"
+        other: "%{count} 則書評"
+      not_yet_rated: "暫無評分"
+      tags: "標籤"
+      publisher: "出版社"
+      published: "出版時間"
+      language: "語言"
+      isbn: "ISBN"
+      cover_alt: "《%{title}》封面"
+      about: "關於本書"
+      club_reads: "讀書會共讀"
+      upcoming: "即將舉行"
+      have_you_read: "讀過這本書嗎？"
+      rate_prompt: "打個分，分享你的看法"
+      your_rating: "你的評分"
+      rating_saved: "評分已儲存。"
+      rating_failed: "評分儲存失敗，請再試一次。"
+      write_review: "寫書評"
+      review_placeholder: "分享你對這本書的看法……"
+      post_review: "發布書評"
+      read_this_book: "讀過這本書？"
+      sign_in_prompt: "登入後即可評分並分享你的看法。"
+      sign_in_cta: "登入以評分和寫書評"
+      reviews: "書評"
+      you: "你"
+      rated_out_of_5: "評分 %{score}/5"
+      review_by: "%{name} 的書評"
+      time_ago: "%{time}前"
+      likes:
+        one: "讚"
+        other: "讚"
+      like_review_by: "讚 %{name} 的書評"
+      no_reviews: "還沒有書評，來分享第一篇吧！"
+  reviews:
+    create:
+      posted: "書評已發布。"
+      failed: "書評發布失敗：%{errors}"
+  languages:
+    am: "阿姆哈拉語"
+    en: "英語"
+    zh: "中文"
+    zh-CN: "簡體中文"
+    zh-TW: "繁體中文"
+    de: "德語"
+    fr: "法語"
+    ja: "日語"
+  datetime:
+    distance_in_words:
+      half_a_minute: "半分鐘"
+      less_than_x_seconds:
+        one: "不到 1 秒"
+        other: "不到 %{count} 秒"
+      x_seconds:
+        one: "1 秒"
+        other: "%{count} 秒"
+      less_than_x_minutes:
+        one: "不到 1 分鐘"
+        other: "不到 %{count} 分鐘"
+      x_minutes:
+        one: "1 分鐘"
+        other: "%{count} 分鐘"
+      about_x_hours:
+        one: "大約 1 小時"
+        other: "大約 %{count} 小時"
+      x_hours:
+        one: "1 小時"
+        other: "%{count} 小時"
+      x_days:
+        one: "1 天"
+        other: "%{count} 天"
+      about_x_months:
+        one: "大約 1 個月"
+        other: "大約 %{count} 個月"
+      x_months:
+        one: "1 個月"
+        other: "%{count} 個月"
+      about_x_years:
+        one: "大約 1 年"
+        other: "大約 %{count} 年"
+      over_x_years:
+        one: "超過 1 年"
+        other: "超過 %{count} 年"
+      almost_x_years:
+        one: "將近 1 年"
+        other: "將近 %{count} 年"
+  shared:
+    star_rating:
+      stars:
+        one: "1 星"
+        other: "%{count} 星"
+  onboarding:
+    show:
+      title: "歡迎來到 LitLoop"
+      carousel: "輪播"
+      slide: "頁面"
+      slide_label: "第 %{current} 頁，共 %{total} 頁"
+      step_status: "第 %{current} 步，共 %{total} 步：%{name}"
+      skip: "略過"
+      next: "下一步"
+      back: "上一步"
+      stations:
+        start: "歡迎"
+        gather: "相聚"
+        choose: "選書"
+        meet: "見面"
+        reflect: "回味"
+      welcome_title: "讀書會的完整一圈"
+      welcome_body: "LitLoop 打理整個共讀：找到書友、選定書目、實體聚會、深入討論，再開始下一本。"
+      gather_title: "找到你的書友"
+      gather_body: "一鍵加入公開讀書會，或申請加入私密讀書會。每個讀書會的成員、共讀和歷史都集中在一處。"
+      choose_title: "選擇下一本讀什麼"
+      choose_body: "用你的語言，看看其他讀者評分最高的書。讀書會透過投票一起決定下一本書。"
+      picks_language: "書籍語言"
+      poll_note: "讀書會投票決定下一本書"
+      meet_title: "見面，一起聊聊"
+      meet_body: "每次共讀都有時間、地點和參與名單。報名後，帶上討論問題赴約。"
+      going:
+        one: "1 人參加"
+        other: "%{count} 人參加"
+      question_label: "討論問題"
+      reflect_title: "回味，然後再來一圈"
+      reflect_body: "為讀過的書評分、寫書評。你的想法會幫助讀書會選出下一本書，新的一圈就此開始。"
+      review_on: "評《%{title}》"
+      create_account: "建立帳戶"
+      have_account: "已有帳戶？"
+      sign_in: "登入"
+  auth:
+    rate_limited: "嘗試次數過多，請幾分鐘後再試。"
+    home: "LitLoop 首頁"
+    fields:
+      name: "你的名字"
+      email: "電子郵件"
+      password: "密碼"
+      password_confirmation: "確認密碼"
+      new_password: "新密碼"
+      password_hint:
+        one: "至少 1 個字元"
+        other: "至少 %{count} 個字元"
+    sign_in:
+      busy: "正在登入…"
+      title: "歡迎回來"
+      lede: "登入後查看你的讀書會、共讀和報名。"
+      forgot_password: "忘記密碼？"
+      remember_me: "保持登入"
+      submit: "登入"
+      no_account: "第一次來 LitLoop？"
+      create_account: "建立帳戶"
+      resend_confirmation: "沒有收到確認信？"
+    sign_up:
+      busy: "正在建立帳戶…"
+      title: "加入 LitLoop"
+      lede: "建立帳戶，加入讀書會、報名共讀並為書寫書評。"
+      submit: "建立帳戶"
+      have_account: "已有帳戶？"
+      sign_in: "登入"
+      confirm_note: "我們會寄一封信，用來確認你的電子郵件地址。"
+    forgot:
+      busy: "正在寄送…"
+      title: "重設密碼"
+      lede: "輸入註冊時使用的電子郵件，我們會寄送連結讓你設定新密碼。"
+      submit: "寄送重設連結"
+      remembered: "想起來了？"
+    reset:
+      busy: "正在儲存…"
+      request_new: "重新取得連結"
+      title: "設定新密碼"
+      submit: "儲存新密碼"
+    confirm:
+      busy: "正在寄送…"
+      title: "確認你的電子郵件"
+      lede: "輸入你的電子郵件，我們會重新寄送確認連結。"
+      submit: "寄送確認連結"
+    back_to_sign_in: "返回登入"
+    see_how_it_works: "了解 LitLoop 如何運作"
+    fix_fields: "請修正標示的欄位。"
+  components:
+    input:
+      required: "*必填"
+      show_password: "顯示密碼"
+      hide_password: "隱藏密碼"

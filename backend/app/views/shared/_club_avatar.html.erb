@@ -1,0 +1,40 @@
+<%#
+  Club avatar: the club photo over the club's initial.
+  The initial always renders underneath; image-fallback hides a photo that
+  fails to load (missing blob, bad URL, network drop) so the initial shows through.
+  Clubs without a photo get the initial alone.
+
+  Locals:
+    - club: BookClub (may be nil; falls back to "B")
+    - variant: Symbol, default :badge
+        :badge    — 28px circle, oxblood initial. Club headers on reading cards and read pages.
+        :row      — 40px circle, oxblood initial. Club lists (onboarding).
+        :identity — 56px tile, spruce initial ground. Club page header.
+%>
+<%
+  variant = local_assigns.fetch(:variant, :badge)
+  styles = {
+    badge: {
+      frame: "h-7 w-7 rounded-full ring-1 ring-border",
+      fallback: "bg-accent/15 text-accent text-xs font-bold"
+    },
+    row: {
+      frame: "h-10 w-10 rounded-full ring-1 ring-border",
+      fallback: "bg-accent/15 text-accent text-sm font-bold"
+    },
+    identity: {
+      frame: "h-14 w-14 rounded-2xl border-2 border-surface shadow-sm ring-1 ring-border",
+      fallback: "bg-primary text-primary-contrast text-xl font-bold"
+    }
+  }.fetch(variant)
+%>
+<span class="relative inline-flex shrink-0 overflow-hidden <%= styles[:frame] %>">
+  <span aria-hidden="true" class="absolute inset-0 flex items-center justify-center <%= styles[:fallback] %>">
+    <%= club&.name_initial || "B" %>
+  </span>
+  <% if club&.photo&.attached? %>
+    <%= image_tag club.photo, alt: "",
+        data: { controller: "image-fallback", action: "error->image-fallback#fail" },
+        class: "absolute inset-0 h-full w-full object-cover" %>
+  <% end %>
+</span>

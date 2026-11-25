@@ -32,7 +32,7 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
     visit new_user_session_path
     fill_in "Email", with: user.email
     fill_in "Password", with: "password123"
-    click_on "Log in"
-    assert_no_button "Log in"
+    click_on "Sign in"
+    assert_no_button "Sign in"
   end
 end

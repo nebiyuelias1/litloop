@@ -185,4 +185,17 @@ class BookClubTest < ActiveSupport::TestCase
     assert_not club.private_info_visible_to?(outsider)
     assert_not club.private_info_visible_to?(nil)
   end
+
+  test "visible_to matches private_info_visible_to?" do
+    club = book_clubs(:one)
+    club.update!(is_private: true, application_form_url: "https://example.com/form")
+    club.book_club_members.find_by(user: club.owner)&.destroy!
+    club.book_club_members.create!(user: users(:two))
+
+    [ club.owner, users(:two), users(:three), nil ].each do |user|
+      assert_equal club.private_info_visible_to?(user), BookClub.visible_to(user).include?(club),
+                   "mismatch for #{user&.email || 'a guest'}"
+    end
+    assert_includes BookClub.visible_to(nil), book_clubs(:two)
+  end
 end

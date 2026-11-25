@@ -19,7 +19,9 @@ Rails.application.routes.draw do
   end
   devise_for :users, controllers: {
     registrations: "users/registrations",
-    sessions: "users/sessions"
+    sessions: "users/sessions",
+    passwords: "users/passwords",
+    confirmations: "users/confirmations"
   }
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
@@ -44,6 +46,9 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   root "home#index"
+
+  # First-run tour for the apps
+  get "onboarding", to: "onboarding#show", as: :onboarding
 
   get "/books/search", to: "books#search", as: :books_search
 

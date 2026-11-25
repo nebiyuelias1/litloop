@@ -1,4 +1,6 @@
 class HomeController < ApplicationController
+  before_action :start_at_onboarding, only: :index
+
   def index
   end
 
@@ -20,5 +22,11 @@ class HomeController < ApplicationController
       format.html { render partial: "home/upcoming_book_reads" }
       format.turbo_stream
     end
+  end
+
+  private
+
+  def start_at_onboarding
+    redirect_to onboarding_path if onboarding_pending?
   end
 end

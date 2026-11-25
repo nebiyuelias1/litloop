@@ -1,0 +1,67 @@
+# Devise and account validation messages (zh-TW).
+zh-TW:
+  devise:
+    confirmations:
+      confirmed: "你的電子郵件地址已確認。"
+      send_instructions: "幾分鐘內你會收到一封信，依說明確認你的電子郵件地址。"
+      send_paranoid_instructions: "如果該電子郵件已註冊，幾分鐘內你會收到確認信。"
+    failure:
+      already_authenticated: "你已經登入。"
+      inactive: "你的帳戶尚未啟用。"
+      invalid: "%{authentication_keys}或密碼不正確。"
+      locked: "你的帳戶已被鎖定。"
+      last_attempt: "再失敗一次，你的帳戶將被鎖定。"
+      not_found_in_database: "%{authentication_keys}或密碼不正確。"
+      timeout: "工作階段已逾時，請重新登入。"
+      unauthenticated: "請先登入或註冊。"
+      unconfirmed: "請先確認你的電子郵件地址。"
+    mailer:
+      confirmation_instructions:
+        subject: "確認你的電子郵件"
+      reset_password_instructions:
+        subject: "重設密碼"
+      email_changed:
+        subject: "電子郵件已變更"
+      password_change:
+        subject: "密碼已變更"
+    passwords:
+      no_token: "只能透過重設密碼信中的連結進入此頁面。如果你是從信中進入的，請確認使用了完整的連結。"
+      send_instructions: "幾分鐘內你會收到一封信，依說明重設密碼。"
+      send_paranoid_instructions: "如果該電子郵件已註冊，幾分鐘內你會收到重設密碼的連結。"
+      updated: "密碼已變更，你現在已登入。"
+      updated_not_active: "密碼已變更。"
+    registrations:
+      destroyed: "你的帳戶已註銷，希望很快再見到你。"
+      signed_up: "歡迎！註冊成功。"
+      signed_up_but_inactive: "註冊成功，但帳戶尚未啟用，暫時無法登入。"
+      signed_up_but_locked: "註冊成功，但帳戶已被鎖定，暫時無法登入。"
+      signed_up_but_unconfirmed: "確認連結已寄到你的電子郵件，請點擊連結啟用帳戶。"
+      update_needs_confirmation: "帳戶已更新，但需要確認新的電子郵件地址。請查收信件並點擊確認連結。"
+      updated: "帳戶已更新。"
+      updated_but_not_signed_in: "帳戶已更新。由於密碼已變更，請重新登入。"
+    sessions:
+      signed_in: "登入成功。"
+      signed_out: "已登出。"
+      already_signed_out: "已登出。"
+  errors:
+    format: "%{attribute}%{message}"
+    messages:
+      already_confirmed: "已經確認過，請直接登入"
+      expired: "已過期，請重新申請"
+      not_found: "找不到"
+      blank: "不能為空白"
+      taken: "已被使用"
+      invalid: "無效"
+      confirmation: "與%{attribute}不一致"
+      too_short:
+        one: "太短（至少 1 個字元）"
+        other: "太短（至少 %{count} 個字元）"
+  activerecord:
+    attributes:
+      user:
+        name: "名字"
+        email: "電子郵件"
+        password: "密碼"
+        password_confirmation: "確認密碼"
+        reset_password_token: "重設連結"
+        confirmation_token: "確認連結"

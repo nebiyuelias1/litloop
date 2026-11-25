@@ -1,0 +1,63 @@
+<%# Links to this page in each interface language %>
+<div class="dropdown dropdown-end ml-2">
+  <div
+    tabindex="0"
+    role="button"
+    aria-label="<%= t("choose_language") %>"
+    aria-haspopup="menu"
+    class="
+      btn btn-ghost btn-circle flex items-center justify-center focus:outline-none focus-visible:outline-2 focus-visible:outline-primary
+    ">
+    <svg
+      class="w-6 h-6 animate-pulse-slow text-primary"
+      aria-hidden="true"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+    </svg>
+  </div>
+  <ul
+    tabindex="0"
+    class="
+      menu dropdown-content bg-surface border border-primary rounded-box z-50 w-40 p-2
+      shadow-xl
+    ">
+    <li>
+      <%= link_to "English",
+      url_for(locale: :en),
+      lang: "en",
+      aria: { current: (I18n.locale == :en) },
+      class:
+        "text-primary hover:text-accent #{I18n.locale == :en ? "active font-bold" : ""}" %>
+    </li>
+    <li>
+      <%= link_to "አማርኛ",
+      url_for(locale: :am),
+      lang: "am",
+      aria: { current: (I18n.locale == :am) },
+      class:
+        "text-primary hover:text-accent #{I18n.locale == :am ? "active font-bold" : ""}" %>
+    </li>
+    <li>
+      <%= link_to "简体中文",
+      url_for(locale: :"zh-CN"),
+      lang: "zh-CN",
+      aria: { current: (I18n.locale == :"zh-CN") },
+      class:
+        "text-primary hover:text-accent #{I18n.locale == :"zh-CN" ? "active font-bold" : ""}" %>
+    </li>
+    <li>
+      <%= link_to "繁體中文",
+      url_for(locale: :"zh-TW"),
+      lang: "zh-TW",
+      aria: { current: (I18n.locale == :"zh-TW") },
+      class:
+        "text-primary hover:text-accent #{I18n.locale == :"zh-TW" ? "active font-bold" : ""}" %>
+    </li>
+  </ul>
+</div>

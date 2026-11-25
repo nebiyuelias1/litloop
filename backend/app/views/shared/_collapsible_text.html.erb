@@ -16,6 +16,7 @@
   show_more_text ||= t("show_more")
   show_less_text ||= t("show_less")
   classes ||= ""
+  content_id = "collapsible-#{SecureRandom.hex(4)}"
 
   clamp_class = case max_lines
   when 1 then "line-clamp-1"
@@ -32,11 +33,14 @@
      data-collapsible-text-clamp-class-value="<%= clamp_class %>"
      data-collapsible-text-show-more-text-value="<%= show_more_text %>"
      data-collapsible-text-show-less-text-value="<%= show_less_text %>">
-  <div data-collapsible-text-target="content"
+  <div id="<%= content_id %>"
+       data-collapsible-text-target="content"
        class="<%= clamp_class %> overflow-hidden <%= classes %>">
     <%= formatted_text(text) %>
   </div>
   <button type="button"
+          aria-controls="<%= content_id %>"
+          aria-expanded="false"
           data-collapsible-text-target="toggle"
           data-action="click->collapsible-text#toggle"
           class="text-primary hover:text-accent text-sm font-medium mt-2 cursor-pointer bg-transparent border-0 p-0 underline decoration-accent/40 underline-offset-2 hidden">

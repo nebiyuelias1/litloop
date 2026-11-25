@@ -92,11 +92,7 @@
           class:
             "inline-flex items-center gap-2 min-w-0 max-w-full mb-2 rounded-md transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
           aria: { label: @book_club.name } do %>
-            <% if @book_club.photo.attached? %>
-              <%= image_tag @book_club.photo, alt: "", class: "w-7 h-7 aspect-square rounded-full object-cover shrink-0 ring-1 ring-border" %>
-            <% else %>
-              <span aria-hidden="true" class="w-7 h-7 rounded-full bg-accent/15 text-accent font-bold text-xs flex items-center justify-center shrink-0"><%= @book_club.name_initial %></span>
-            <% end %>
+            <%= render "shared/club_avatar", club: @book_club %>
             <span class="text-xs font-bold uppercase tracking-wider text-accent truncate"><%= @book_club.name %></span>
           <% end %>
           <h1 class="title title-lg text-content font-bold leading-tight mb-2">

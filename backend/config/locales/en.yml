@@ -29,6 +29,7 @@
 
 en:
   hello: "Hello"
+  choose_language: "Choose language"
   sign_in: "Sign In"
   sign_up: "Sign Up"
   titles:
@@ -193,10 +194,14 @@ en:
   type_title: "Type title..."
 
   date:
+    formats:
+      month_year: "%B %Y"
     day_names: [Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday]
 
   time:
     formats:
+      club_read: "%a %-d %b %Y · %H:%M"
+      month_short: "%b"
       flyer: "%b %d, %Y - %H:%M"
       long: "%B %d, %Y at %I:%M %p"
   page_count: "Page count"
@@ -238,3 +243,151 @@ en:
     one: "%{count} vote"
     other: "%{count} votes"
   jump_to_section: "Jump to section"
+
+  books:
+    show:
+      og_title: "%{title} by %{author}"
+      by_author_html: "by %{author}"
+      average_rating: "Average rating"
+      reviews_count:
+        one: "1 review"
+        other: "%{count} reviews"
+      not_yet_rated: "Not yet rated"
+      tags: "Tags"
+      publisher: "Publisher"
+      published: "Published"
+      language: "Language"
+      isbn: "ISBN"
+      cover_alt: "Cover of %{title}"
+      about: "About this book"
+      club_reads: "Read in clubs"
+      upcoming: "Upcoming"
+      have_you_read: "Have you read this?"
+      rate_prompt: "Rate it to share your opinion"
+      your_rating: "Your rating"
+      rating_saved: "Your rating was saved."
+      rating_failed: "Your rating couldn't be saved. Please try again."
+      write_review: "Write a review"
+      review_placeholder: "Share your thoughts about this book..."
+      post_review: "Post Review"
+      read_this_book: "Read this book?"
+      sign_in_prompt: "Sign in to rate it and share your thoughts."
+      sign_in_cta: "Sign in to rate & review"
+      reviews: "Reviews"
+      you: "You"
+      rated_out_of_5: "Rated %{score} out of 5"
+      review_by: "Review by %{name}"
+      time_ago: "%{time} ago"
+      likes:
+        one: "like"
+        other: "likes"
+      like_review_by: "Like review by %{name}"
+      no_reviews: "No reviews yet. Be the first to share your thoughts!"
+  reviews:
+    create:
+      posted: "Review posted successfully."
+      failed: "Failed to post review: %{errors}"
+  languages:
+    am: "Amharic"
+    en: "English"
+    zh: "Chinese"
+    zh-CN: "Chinese (Simplified)"
+    zh-TW: "Chinese (Traditional)"
+    de: "German"
+    fr: "French"
+    ja: "Japanese"
+  shared:
+    star_rating:
+      stars:
+        one: "1 star"
+        other: "%{count} stars"
+  onboarding:
+    show:
+      title: "Welcome to LitLoop"
+      carousel: "carousel"
+      slide: "slide"
+      slide_label: "%{current} of %{total}"
+      step_status: "Step %{current} of %{total}: %{name}"
+      skip: "Skip"
+      next: "Next"
+      back: "Back"
+      stations:
+        start: "Welcome"
+        gather: "Gather"
+        choose: "Choose"
+        meet: "Meet"
+        reflect: "Reflect"
+      welcome_title: "Your book club, all the way round"
+      welcome_body: "LitLoop runs the whole read: find your readers, choose the book, meet up, talk it through, and start the next one."
+      gather_title: "Find your readers"
+      gather_body: "Join a public club in a tap, or ask to join a private one. Each club keeps its members, its reads and its history together."
+      choose_title: "Choose what to read next"
+      choose_body: "See the books other readers rate highly, in your language. Clubs settle their next book together with a poll."
+      picks_language: "Book language"
+      poll_note: "Clubs vote on their next book"
+      meet_title: "Meet up and talk it through"
+      meet_body: "Every read has a time, a place and a guest list. RSVP, then bring the discussion questions to the table."
+      going:
+        one: "1 going"
+        other: "%{count} going"
+      question_label: "Discussion question"
+      reflect_title: "Reflect, then go around again"
+      reflect_body: "Rate and review what you read. Your thoughts help your club choose its next book, and the loop begins again."
+      review_on: "on %{title}"
+      create_account: "Create an account"
+      have_account: "Have an account?"
+      sign_in: "Sign in"
+  auth:
+    rate_limited: "Too many attempts. Please wait a few minutes and try again."
+    home: "LitLoop home"
+    fields:
+      name: "Your name"
+      email: "Email"
+      password: "Password"
+      password_confirmation: "Confirm password"
+      new_password: "New password"
+      password_hint:
+        one: "At least 1 character"
+        other: "At least %{count} characters"
+    sign_in:
+      busy: "Signing in…"
+      title: "Welcome back"
+      lede: "Sign in to see your clubs, reads and RSVPs."
+      forgot_password: "Forgot your password?"
+      remember_me: "Keep me signed in"
+      submit: "Sign in"
+      no_account: "New to LitLoop?"
+      create_account: "Create an account"
+      resend_confirmation: "Didn't get the confirmation email?"
+    sign_up:
+      busy: "Creating account…"
+      title: "Join LitLoop"
+      lede: "Create an account to join clubs, RSVP to reads and review books."
+      submit: "Create account"
+      have_account: "Already have an account?"
+      sign_in: "Sign in"
+      confirm_note: "We'll email you a link to confirm your address."
+    forgot:
+      busy: "Sending…"
+      title: "Reset your password"
+      lede: "Enter the email you signed up with and we'll send you a link to choose a new password."
+      submit: "Send reset link"
+      remembered: "Remembered it?"
+    reset:
+      busy: "Saving…"
+      request_new: "Request a new link"
+      title: "Choose a new password"
+      submit: "Save new password"
+    confirm:
+      busy: "Sending…"
+      title: "Confirm your email"
+      lede: "Enter your email and we'll send you a new confirmation link."
+      submit: "Send confirmation link"
+    back_to_sign_in: "Back to sign in"
+    see_how_it_works: "See how LitLoop works"
+    fix_fields: "Please fix the highlighted fields."
+  components:
+    input:
+      required: "*Required"
+      show_password: "Show password"
+      hide_password: "Hide password"

@@ -1,0 +1,67 @@
+# Devise and account validation messages (zh-CN).
+zh-CN:
+  devise:
+    confirmations:
+      confirmed: "你的邮箱地址已确认。"
+      send_instructions: "几分钟内你会收到一封邮件，按说明确认你的邮箱地址。"
+      send_paranoid_instructions: "如果该邮箱已注册，几分钟内你会收到确认邮箱的邮件。"
+    failure:
+      already_authenticated: "你已经登录。"
+      inactive: "你的账户尚未激活。"
+      invalid: "%{authentication_keys}或密码不正确。"
+      locked: "你的账户已被锁定。"
+      last_attempt: "再失败一次，你的账户将被锁定。"
+      not_found_in_database: "%{authentication_keys}或密码不正确。"
+      timeout: "会话已过期，请重新登录。"
+      unauthenticated: "请先登录或注册。"
+      unconfirmed: "请先确认你的邮箱地址。"
+    mailer:
+      confirmation_instructions:
+        subject: "确认你的邮箱"
+      reset_password_instructions:
+        subject: "重置密码"
+      email_changed:
+        subject: "邮箱已更改"
+      password_change:
+        subject: "密码已更改"
+    passwords:
+      no_token: "只能通过重置密码邮件中的链接访问此页面。如果你是从邮件中进入的，请确认使用了完整的链接。"
+      send_instructions: "几分钟内你会收到一封邮件，按说明重置密码。"
+      send_paranoid_instructions: "如果该邮箱已注册，几分钟内你会收到重置密码的链接。"
+      updated: "密码已更改，你现在已登录。"
+      updated_not_active: "密码已更改。"
+    registrations:
+      destroyed: "你的账户已注销，希望很快再见到你。"
+      signed_up: "欢迎！注册成功。"
+      signed_up_but_inactive: "注册成功，但账户尚未激活，暂时无法登录。"
+      signed_up_but_locked: "注册成功，但账户已被锁定，暂时无法登录。"
+      signed_up_but_unconfirmed: "确认链接已发送到你的邮箱，请点击链接激活账户。"
+      update_needs_confirmation: "账户已更新，但需要确认新的邮箱地址。请查收邮件并点击确认链接。"
+      updated: "账户已更新。"
+      updated_but_not_signed_in: "账户已更新。由于密码已更改，请重新登录。"
+    sessions:
+      signed_in: "登录成功。"
+      signed_out: "已退出登录。"
+      already_signed_out: "已退出登录。"
+  errors:
+    format: "%{attribute}%{message}"
+    messages:
+      already_confirmed: "已经确认过，请直接登录"
+      expired: "已过期，请重新申请"
+      not_found: "未找到"
+      blank: "不能为空"
+      taken: "已被使用"
+      invalid: "无效"
+      confirmation: "与%{attribute}不一致"
+      too_short:
+        one: "太短（至少 1 个字符）"
+        other: "太短（至少 %{count} 个字符）"
+  activerecord:
+    attributes:
+      user:
+        name: "名字"
+        email: "邮箱"
+        password: "密码"
+        password_confirmation: "确认密码"
+        reset_password_token: "重置链接"
+        confirmation_token: "确认链接"

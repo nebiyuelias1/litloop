@@ -3,6 +3,7 @@ import { Controller } from "@hotwired/stimulus";
 export default class extends Controller {
   static targets = [
     "input",
+    "toggle",
     "toggleIcon",
     "strengthBar",
     "strengthText",
@@ -21,6 +22,8 @@ export default class extends Controller {
     requirements: { type: Boolean, default: false },
     confirm: { type: Boolean, default: false },
     confirmDelay: { type: Number, default: 300 },
+    showLabel: { type: String, default: "Show password" },
+    hideLabel: { type: String, default: "Hide password" },
   };
 
   connect() {
@@ -53,6 +56,10 @@ export default class extends Controller {
     } else {
       this.inputTarget.type = "password";
       this.updateIcon(this.toggleIconTarget, false);
+    }
+    // The button names its next action.
+    if (this.hasToggleTarget) {
+      this.toggleTarget.setAttribute("aria-label", this.isVisible ? this.hideLabelValue : this.showLabelValue);
     }
   }
 

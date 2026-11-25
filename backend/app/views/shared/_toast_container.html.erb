@@ -1,7 +1,12 @@
 <div data-controller="toast"
      id="toast_triggers"
      data-toast-position-value="top-center"
-     data-toast-layout-value="default"> <%# Change to "expanded" for expanded mode %>
+     data-toast-layout-value="default" <%# Change to "expanded" for expanded mode %>
+     data-toast-close-label-value="<%= t("close") %>">
+  <%# Persistent live regions: screen readers announce toast text placed here.
+      The visual list below is animated and re-ordered, so it is not itself a live region. %>
+  <div class="sr-only" role="status" aria-live="polite" aria-atomic="true" data-toast-target="politeRegion"></div>
+  <div class="sr-only" role="alert" aria-live="assertive" aria-atomic="true" data-toast-target="assertiveRegion"></div>
   <ul
     data-toast-target="container"
     data-action="mouseenter->toast#handleMouseEnter mouseleave->toast#handleMouseLeave"

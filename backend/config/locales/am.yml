@@ -1,5 +1,6 @@
 am:
   hello: "ሰላም"
+  choose_language: "ቋንቋ ይምረጡ"
   sign_in: "ግባ"
   sign_up: "ተመዝግብ"
   titles:
@@ -164,10 +165,17 @@ am:
   type_title: "አርዕስት ይጻፉ..."
 
   date:
+    abbr_day_names: [እሑድ, ሰኞ, ማክሰ, ረቡዕ, ሐሙስ, ዓርብ, ቅዳሜ]
+    month_names: [~, ጃንዩወሪ, ፌብሩወሪ, ማርች, ኤፕሪል, ሜይ, ጁን, ጁላይ, ኦገስት, ሴፕቴምበር, ኦክቶበር, ኖቬምበር, ዲሴምበር]
+    abbr_month_names: [~, ጃን, ፌብ, ማርች, ኤፕሪ, ሜይ, ጁን, ጁላይ, ኦገስ, ሴፕቴ, ኦክቶ, ኖቬም, ዲሴም]
+    formats:
+      month_year: "%B %Y"
     day_names: [እሑድ, ሰኞ, ማክሰኞ, ረቡዕ, ሐሙስ, ዓርብ, ቅዳሜ]
 
   time:
     formats:
+      club_read: "%a፣ %b %-d፣ %Y · %H:%M"
+      month_short: "%b"
       flyer: "%b %d, %Y - %H:%M"
       long: "%d/%m/%Y %H:%M"
   page_count: "የገጽ ብዛት"
@@ -209,3 +217,190 @@ am:
     one: "%{count} ድምፅ"
     other: "%{count} ድምፅ"
   jump_to_section: "ወደ ክፍል ዝለል"
+
+  books:
+    show:
+      og_title: "%{title} — በ%{author}"
+      by_author_html: "በ %{author}"
+      average_rating: "አማካይ ደረጃ"
+      reviews_count:
+        one: "1 ግምገማ"
+        other: "%{count} ግምገማዎች"
+      not_yet_rated: "ገና ደረጃ አልተሰጠውም"
+      tags: "መለያዎች"
+      publisher: "አሳታሚ"
+      published: "የታተመበት"
+      language: "ቋንቋ"
+      isbn: "ISBN"
+      cover_alt: "የ%{title} ሽፋን"
+      about: "ስለዚህ መጽሐፍ"
+      club_reads: "በክለቦች የተነበበ"
+      upcoming: "መጪ"
+      have_you_read: "ይህን መጽሐፍ አንብበውታል?"
+      rate_prompt: "አስተያየትዎን ለማጋራት ደረጃ ይስጡት"
+      your_rating: "የእርስዎ ደረጃ"
+      rating_saved: "ደረጃዎ ተቀምጧል።"
+      rating_failed: "ደረጃዎን ማስቀመጥ አልተቻለም። እባክዎ እንደገና ይሞክሩ።"
+      write_review: "ግምገማ ይጻፉ"
+      review_placeholder: "ስለዚህ መጽሐፍ ሀሳብዎን ያጋሩ..."
+      post_review: "ግምገማ ይለጥፉ"
+      read_this_book: "ይህን መጽሐፍ አንብበዋል?"
+      sign_in_prompt: "ደረጃ ለመስጠት እና ሀሳብዎን ለማጋራት ይግቡ።"
+      sign_in_cta: "ለደረጃ እና ግምገማ ይግቡ"
+      reviews: "ግምገማዎች"
+      you: "እርስዎ"
+      rated_out_of_5: "ከ5 %{score} ደረጃ"
+      review_by: "የ%{name} ግምገማ"
+      time_ago: "ከ%{time} በፊት"
+      likes:
+        one: "መውደድ"
+        other: "መውደዶች"
+      like_review_by: "የ%{name}ን ግምገማ ይውደዱ"
+      no_reviews: "እስካሁን ምንም ግምገማ የለም። ሀሳብዎን በማጋራት የመጀመሪያው ይሁኑ!"
+  reviews:
+    create:
+      posted: "ግምገማዎ ተለጥፏል።"
+      failed: "ግምገማ መለጠፍ አልተቻለም፦ %{errors}"
+  languages:
+    am: "አማርኛ"
+    en: "እንግሊዝኛ"
+    zh: "ቻይንኛ"
+    zh-CN: "ቻይንኛ (ቀላል)"
+    zh-TW: "ቻይንኛ (ባህላዊ)"
+    de: "ጀርመንኛ"
+    fr: "ፈረንሳይኛ"
+    ja: "ጃፓንኛ"
+  datetime:
+    distance_in_words:
+      half_a_minute: "ግማሽ ደቂቃ"
+      less_than_x_seconds:
+        one: "ከ1 ሰከንድ ያነሰ"
+        other: "ከ%{count} ሰከንድ ያነሰ"
+      x_seconds:
+        one: "1 ሰከንድ"
+        other: "%{count} ሰከንድ"
+      less_than_x_minutes:
+        one: "ከ1 ደቂቃ ያነሰ"
+        other: "ከ%{count} ደቂቃ ያነሰ"
+      x_minutes:
+        one: "1 ደቂቃ"
+        other: "%{count} ደቂቃ"
+      about_x_hours:
+        one: "1 ሰዓት ገደማ"
+        other: "%{count} ሰዓት ገደማ"
+      x_hours:
+        one: "1 ሰዓት"
+        other: "%{count} ሰዓት"
+      x_days:
+        one: "1 ቀን"
+        other: "%{count} ቀናት"
+      about_x_months:
+        one: "1 ወር ገደማ"
+        other: "%{count} ወራት ገደማ"
+      x_months:
+        one: "1 ወር"
+        other: "%{count} ወራት"
+      about_x_years:
+        one: "1 ዓመት ገደማ"
+        other: "%{count} ዓመታት ገደማ"
+      over_x_years:
+        one: "ከ1 ዓመት በላይ"
+        other: "ከ%{count} ዓመታት በላይ"
+      almost_x_years:
+        one: "1 ዓመት ሊሞላ"
+        other: "%{count} ዓመታት ሊሞላ"
+  shared:
+    star_rating:
+      stars:
+        one: "1 ኮከብ"
+        other: "%{count} ኮከቦች"
+  onboarding:
+    show:
+      title: "ወደ LitLoop እንኳን በደህና መጡ"
+      carousel: "ተንሸራታች"
+      slide: "ገጽ"
+      slide_label: "%{current} ከ%{total}"
+      step_status: "ደረጃ %{current} ከ%{total}፦ %{name}"
+      skip: "ዝለል"
+      next: "ቀጣይ"
+      back: "ተመለስ"
+      stations:
+        start: "እንኳን ደህና መጡ"
+        gather: "ተሰባሰቡ"
+        choose: "ምረጡ"
+        meet: "ተገናኙ"
+        reflect: "አስተንትኑ"
+      welcome_title: "የመጽሐፍ ክለብዎ፣ ከጅምር እስከ ፍጻሜ"
+      welcome_body: "LitLoop ሙሉውን ንባብ ያስተዳድራል፦ አንባቢዎችዎን ያግኙ፣ መጽሐፉን ይምረጡ፣ ይገናኙ፣ ይወያዩ፣ ቀጣዩንም ይጀምሩ።"
+      gather_title: "አንባቢዎችዎን ያግኙ"
+      gather_body: "በአንድ ንክኪ የሕዝብ ክለብ ይቀላቀሉ፣ ወይም የግል ክለብ ለመቀላቀል ይጠይቁ። እያንዳንዱ ክለብ አባላቱን፣ ንባቦቹንና ታሪኩን በአንድ ቦታ ይይዛል።"
+      choose_title: "ቀጥሎ የሚያነቡትን ይምረጡ"
+      choose_body: "ሌሎች አንባቢዎች ከፍ ያለ ደረጃ የሰጧቸውን መጽሐፍት በቋንቋዎ ይመልከቱ። ክለቦች ቀጣዩን መጽሐፋቸውን በድምፅ አሰጣጥ በጋራ ይወስናሉ።"
+      picks_language: "የመጽሐፉ ቋንቋ"
+      poll_note: "ክለቦች ቀጣዩን መጽሐፍ በድምፅ ይመርጣሉ"
+      meet_title: "ተገናኝተው ይወያዩ"
+      meet_body: "እያንዳንዱ ንባብ ሰዓት፣ ቦታና የተሳታፊዎች ዝርዝር አለው። ይመዝገቡ፣ ከዚያም የውይይት ጥያቄዎቹን ይዘው ይምጡ።"
+      going:
+        one: "1 ሰው ይገኛል"
+        other: "%{count} ሰዎች ይገኛሉ"
+      question_label: "የውይይት ጥያቄ"
+      reflect_title: "ያስተንትኑ፣ ከዚያም እንደገና ይጀምሩ"
+      reflect_body: "ያነበቡትን ደረጃ ይስጡና ይገምግሙ። ሀሳብዎ ክለብዎ ቀጣዩን መጽሐፍ እንዲመርጥ ይረዳል፣ ዑደቱም እንደገና ይጀምራል።"
+      review_on: "ስለ %{title}"
+      create_account: "መለያ ይፍጠሩ"
+      have_account: "መለያ አለዎት?"
+      sign_in: "ይግቡ"
+  auth:
+    rate_limited: "በጣም ብዙ ሙከራዎች። እባክዎ ጥቂት ደቂቃዎች ጠብቀው እንደገና ይሞክሩ።"
+    home: "የLitLoop መነሻ ገጽ"
+    fields:
+      name: "ስምዎ"
+      email: "ኢሜይል"
+      password: "የይለፍ ቃል"
+      password_confirmation: "የይለፍ ቃሉን ያረጋግጡ"
+      new_password: "አዲስ የይለፍ ቃል"
+      password_hint:
+        one: "ቢያንስ 1 ቁምፊ"
+        other: "ቢያንስ %{count} ቁምፊዎች"
+    sign_in:
+      busy: "በመግባት ላይ…"
+      title: "እንኳን ደህና መጡ"
+      lede: "ክለቦችዎን፣ ንባቦችዎንና ምዝገባዎችዎን ለማየት ይግቡ።"
+      forgot_password: "የይለፍ ቃልዎን ረሱት?"
+      remember_me: "እንደገባሁ አቆየኝ"
+      submit: "ግባ"
+      no_account: "ለLitLoop አዲስ ነዎት?"
+      create_account: "መለያ ይፍጠሩ"
+      resend_confirmation: "የማረጋገጫ ኢሜይሉ አልደረሰዎትም?"
+    sign_up:
+      busy: "መለያ በመፍጠር ላይ…"
+      title: "LitLoopን ይቀላቀሉ"
+      lede: "ክለቦችን ለመቀላቀል፣ ለንባቦች ለመመዝገብና መጽሐፍትን ለመገምገም መለያ ይፍጠሩ።"
+      submit: "መለያ ፍጠር"
+      have_account: "መለያ አለዎት?"
+      sign_in: "ይግቡ"
+      confirm_note: "አድራሻዎን ለማረጋገጥ ሊንክ በኢሜይል እንልክልዎታለን።"
+    forgot:
+      busy: "በመላክ ላይ…"
+      title: "የይለፍ ቃልዎን ይቀይሩ"
+      lede: "የተመዘገቡበትን ኢሜይል ያስገቡ፤ አዲስ የይለፍ ቃል የሚመርጡበት ሊንክ እንልክልዎታለን።"
+      submit: "የመቀየሪያ ሊንክ ላክ"
+      remembered: "አስታወሱት?"
+    reset:
+      busy: "በማስቀመጥ ላይ…"
+      request_new: "አዲስ ሊንክ ይጠይቁ"
+      title: "አዲስ የይለፍ ቃል ይምረጡ"
+      submit: "አዲሱን የይለፍ ቃል አስቀምጥ"
+    confirm:
+      busy: "በመላክ ላይ…"
+      title: "ኢሜይልዎን ያረጋግጡ"
+      lede: "ኢሜይልዎን ያስገቡ፤ አዲስ የማረጋገጫ ሊንክ እንልክልዎታለን።"
+      submit: "የማረጋገጫ ሊንክ ላክ"
+    back_to_sign_in: "ወደ መግቢያ ይመለሱ"
+    see_how_it_works: "LitLoop እንዴት እንደሚሠራ ይመልከቱ"
+    fix_fields: "እባክዎ የተመለከቱትን መስኮች ያስተካክሉ።"
+  components:
+    input:
+      required: "*አስፈላጊ"
+      show_password: "የይለፍ ቃሉን አሳይ"
+      hide_password: "የይለፍ ቃሉን ደብቅ"

@@ -16,6 +16,7 @@ import dev.hotwire.navigation.tabs.navigatorConfigurations
 import dev.hotwire.navigation.util.applyDefaultImeWindowInsets
 import et.netale.litloop.BuildConfig
 import et.netale.litloop.R
+import et.netale.litloop.components.TabBarComponent
 import et.netale.litloop.models.mainTabs
 import android.util.Log
 import com.linecorp.linesdk.Scope
@@ -23,7 +24,7 @@ import com.linecorp.linesdk.auth.LineAuthenticationParams
 import com.linecorp.linesdk.auth.LineLoginApi
 import org.telegram.login.TelegramLogin
 
-const val baseURL = "https://litloop.club/"
+const val baseURL = BuildConfig.BASE_URL
 
 // Telegram Login SDK (https://core.telegram.org/bots/telegram-login#native-sdks).
 // The button on the web login page triggers litloop://telegram-login, which the
@@ -258,5 +259,8 @@ class MainActivity : HotwireActivity() {
         bottomNavigationController =
             HotwireBottomNavigationController(this, bottomNavigationView)
         bottomNavigationController.load(mainTabs, 0)
+
+        // Hidden until the first page asks for it (TabBarComponent).
+        TabBarComponent.hideWhileLoading(findViewById(R.id.bottom_bar))
     }
 }
