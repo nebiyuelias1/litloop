@@ -1,5 +1,6 @@
 <% content_for :title, @club.name %>
 <% can_see_private = @club.private_info_visible_to?(current_user) %>
+<% can_schedule = can_schedule_reads?(@club, current_user) %>
 
 <div class="mx-auto max-w-2xl" data-controller="club-tabs">
   <%= render "book_clubs/hero_banner", club: @club %>
@@ -10,6 +11,17 @@
   <section data-club-tabs-target="panel" data-tab="overview" class="pt-5">
     <% if @current_read %>
       <%= render "book_clubs/current_reading_card", club: @club, book_read: @current_read %>
+      <% if can_schedule %>
+        <%= link_to new_book_club_book_read_path(@club),
+        id: "schedule_another_session",
+        class:
+          "mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-surface px-4 py-3 text-sm font-semibold text-content-subtle transition-colors hover:border-accent hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" do %>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-4 w-4" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          <%= t("schedule_another_session") %>
+        <% end %>
+      <% end %>
     <% else %>
       <div class="mt-4 rounded-3xl border border-dashed border-border bg-surface p-8 text-center">
         <svg class="mx-auto mb-4 h-12 w-12 text-content-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -17,7 +29,7 @@
         </svg>
         <h3 class="mb-1 text-lg font-medium text-content"><%= t("no_active_session", default: "No active reading session") %></h3>
         <p class="mb-4 text-content-subtle"><%= t("no_active_session_hint", default: "The club admin hasn't selected a book to read yet.") %></p>
-        <% if user_signed_in? && @club.owner == current_user %>
+        <% if can_schedule %>
           <%= link_to t("start_new_read", default: "Start a New Read"),
           new_book_club_book_read_path(@club),
           class: "inline-flex items-center justify-center rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-contrast transition-colors hover:opacity-90" %>

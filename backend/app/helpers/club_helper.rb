@@ -12,6 +12,14 @@ module ClubHelper
     membership.admin? ? "Admin" : "Member"
   end
 
+  # Whether the viewer can schedule new sessions. Mirrors the controller's
+  # authorize_club_owner! check (club owner or a club admin).
+  def can_schedule_reads?(club, user)
+    return false unless user
+
+    club.owner_id == user.id || club.book_club_members.exists?(user: user, role: :admin)
+  end
+
   # Whether the viewer can edit a reading session. Mirrors the controller's
   # authorize_club_owner! check, plus the host of the read.
   def can_manage_book_read?(club, book_read, user)

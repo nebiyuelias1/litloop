@@ -210,3 +210,4 @@ zh-CN:
   swap_poll_finalized: "此活动的投票已选出书籍，无法改为换书会。"
   share_flyer_swap_text: "加入 %{club} 的“%{title}”！带一本书，换一本书。"
   swap_no_discussion: "换书会没有讨论问题。"
+  schedule_another_session: "安排新的活动"

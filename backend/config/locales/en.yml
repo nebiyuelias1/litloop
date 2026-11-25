@@ -249,3 +249,4 @@ en:
   swap_poll_finalized: "This session's poll has already picked a book, so it can't become a book swap."
   share_flyer_swap_text: "Join us at %{club} for \"%{title}\". Bring a book, take a book!"
   swap_no_discussion: "Book swaps don't have discussion questions."
+  schedule_another_session: "Schedule another session"

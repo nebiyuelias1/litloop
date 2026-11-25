@@ -220,3 +220,4 @@ am:
   swap_poll_finalized: "የዚህ ክፍለ ጊዜ የድምፅ አሰጣጥ መፅሐፍ መርጧል፣ ስለዚህ ወደ መፅሐፍ ልውውጥ መቀየር አይቻልም።"
   share_flyer_swap_text: "ለ\"%{title}\" %{club} ጋር ይቀላቀሉን። መፅሐፍ አምጡ፣ መፅሐፍ ውሰዱ!"
   swap_no_discussion: "የመፅሐፍ ልውውጥ የውይይት ጥያቄዎች የሉትም።"
+  schedule_another_session: "ሌላ ክፍለ ጊዜ ያቅዱ"
