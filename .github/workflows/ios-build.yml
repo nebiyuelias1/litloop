@@ -40,7 +40,9 @@ jobs:
   release:
     name: Release to TestFlight
     if: github.event_name == 'workflow_dispatch'
-    runs-on: self-hosted
+    # GitHub-hosted (free for public repos) so releases always have a current
+    # Xcode; signing uses the App Store Connect API key, nothing from the Mac mini.
+    runs-on: macos-26
     environment: staging
     env:
       LITLOOP_BUILD_NUMBER: ${{ github.run_number }}
@@ -52,6 +54,16 @@ jobs:
       # App Store Connect rejects uploads built with an SDK older than iOS 26
       # (enforced since April 2026), so fail here instead of after a 10-minute
       # archive. Install Xcode 26+ on the runner to fix.
+      - name: Select Xcode 26
+        run: |
+          xcode_app=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$xcode_app" ]; then
+            echo "::error::No Xcode 26 found on this runner image."
+            ls -d /Applications/Xcode*.app
+            exit 1
+          fi
+          sudo xcode-select -s "$xcode_app"
+
       - name: Check Xcode version
         run: |
           xcode-select -p
