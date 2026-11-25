@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
-# Generate the Google Play listing graphics that are not screenshots:
+# Generate the store listing graphics that are not screenshots:
 #
 #   app-icon-512.png          512x512, 24-bit RGB (no alpha): the Play
 #                             Console high-res app icon
 #   feature-graphic-1024x500.png
 #                             1024x500, 24-bit RGB (no alpha): the listing
 #                             feature graphic
+#   AppIcon-1024.png          1024x1024, 24-bit RGB (no alpha): the iOS app
+#                             icon, written into the Xcode asset catalog
 #
-# Both are composed from the brand mark (the largest raster available, inside
+# All are composed from the brand mark (the largest raster available, inside
 # backend/public/icon.svg) and the design tokens from DESIGN.md, so they stay
 # consistent with the app without a designer round-trip. Outputs are written
-# to assets/play-store/ and committed: CI does not need to regenerate them,
-# edit the script and re-run it when the branding changes.
+# to assets/play-store/ and the iOS asset catalog and committed: CI does not
+# need to regenerate them, edit the script and re-run it when the branding
+# changes.
 #
 # Requires Pillow (python3 -m pip install --user Pillow). Run from anywhere:
-#   bin/play_store_graphics.py
+#   bin/store_graphics.py
 import base64
 import glob
 import io
@@ -28,6 +31,9 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parent.parent
 MARK_SVG = ROOT / "backend/public/icon.svg"
 OUTPUT_DIR = ROOT / "assets/play-store"
+# The iOS App Store also requires a flat (no alpha) 1024x1024 icon, built from
+# the same composition so both stores show the same mark.
+IOS_ICON = ROOT / "ios/App/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png"
 
 # DESIGN.md tokens
 INK = (40, 34, 25)          # #282219 — the mark
@@ -72,7 +78,7 @@ def recolor(image, rgb):
 
 
 def save_flat_rgb(image, path):
-    """Play requires 24-bit RGB PNG without alpha."""
+    """Both stores require 24-bit RGB PNGs without alpha."""
     if image.mode != "RGB":
         image = image.convert("RGB")
     image.save(path, format="PNG")
@@ -125,13 +131,19 @@ def verify():
         color_type = struct.unpack(">B", header[25:26])[0]
         if color_type not in (2, 6):  # RGB, RGBA
             sys.exit(f"error: unexpected PNG color type {color_type} in {path}")
-    print(f"generated {len(expected)} assets in {OUTPUT_DIR}")
+    with Image.open(IOS_ICON) as ios_icon:
+        if ios_icon.size != (1024, 1024) or ios_icon.mode != "RGB":
+            sys.exit(f"error: {IOS_ICON} must be 1024x1024 RGB without alpha")
+    print(f"generated {len(expected)} assets in {OUTPUT_DIR} and the iOS icon at {IOS_ICON}")
 
 
 def main():
     mark = load_mark()
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    # Icons need no fonts, so write them before the feature graphic: a missing
+    # serif font then only blocks the feature graphic, not the app icons.
     save_flat_rgb(app_icon(mark), OUTPUT_DIR / "app-icon-512.png")
+    save_flat_rgb(app_icon(mark, size=1024), IOS_ICON)
     save_flat_rgb(feature_graphic(mark), OUTPUT_DIR / "feature-graphic-1024x500.png")
     verify()
 
