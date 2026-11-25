@@ -170,3 +170,23 @@
   background-color: var(--color-accent);
   color: var(--color-accent-contrast);
 }
+
+/* Error red: silk's coral fails AA as text (2.3:1); this is 5.8:1 on Vellum. */
+:root,
+:root[data-theme] {
+  --color-error: #b3261e;
+  --color-error-content: #ffffff;
+}
+
+/* Input focus per DESIGN.md: Deep Spruce border and 20% ring, not DaisyUI's black outline. */
+.input:focus,
+.input:focus-within {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+.input.input-error:focus,
+.input.input-error:focus-within {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-error) 20%, transparent);
+}

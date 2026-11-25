@@ -1,43 +1,33 @@
-<% content_for :title, t("titles.change_password") %>
-<div class="min-h-screen bg-background flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
-  <div class="max-w-md w-full bg-surface shadow-md rounded-lg p-6 sm:p-8 mx-2">
-    <div class="text-center mb-5">
-      <h2 class="title title-lg text-content font-bold">Change your password</h2>
-      <p class="mt-1 text-xs sm:text-sm text-content-subtle">Enter a new password for your account.</p>
-    </div>
+<% footer = capture do %>
+  <p><%= link_to t("auth.back_to_sign_in"), new_session_path(resource_name), class: "auth-link" %></p>
+<% end %>
+<%= render layout: "devise/shared/auth_page", locals: {
+      title: t("auth.reset.title"),
+      lede: (t("auth.fields.password_hint", count: @minimum_password_length) if @minimum_password_length),
+      footer: footer
+    } do %>
+  <%= render "devise/shared/error_messages", resource: resource, fields: %i[password password_confirmation] %>
+  <% if resource.errors.include?(:reset_password_token) %>
+    <p class="-mt-2 mb-5 text-sm">
+      <%= link_to t("auth.reset.request_new"), new_password_path(resource_name), class: "auth-link" %>
+    </p>
+  <% end %>
 
-    <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put }) do |f| %>
-      <%= render "devise/shared/error_messages", resource: resource %>
-      <%= f.hidden_field :reset_password_token %>
+  <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put, class: "space-y-4", data: { controller: "submit-once", action: "submit->submit-once#lock turbo:submit-end->submit-once#unlock", submit_once_busy_label_value: t("auth.reset.busy") } }) do |f| %>
+    <%= f.hidden_field :reset_password_token %>
 
-      <div class="space-y-3">
-        <div>
-          <div class="flex items-baseline justify-between">
-            <%= f.label :password, "New password", class: "block text-sm sm:text-base font-medium text-content" %>
-            <% if @minimum_password_length %>
-              <span class="text-xs text-content-muted">(<%= @minimum_password_length %> characters minimum)</span>
-            <% end %>
-          </div>
-          <div class="mt-1">
-            <%= f.password_field :password, autofocus: true, autocomplete: "new-password", class: "appearance-none block w-full px-3 py-3 sm:py-2 border border-border rounded-md shadow-sm placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm sm:text-sm text-content bg-surface" %>
-          </div>
-        </div>
+    <%= render "components/input",
+        form: f, field_type: :password, name: :password,
+        label: t("auth.fields.new_password"), autofocus: true, autocomplete: "new-password",
+        required: true, required_marker: false, toggle_password: true,
+        error: resource.errors.full_messages_for(:password).presence %>
 
-        <div>
-          <%= f.label :password_confirmation, "Confirm new password", class: "block text-sm sm:text-base font-medium text-content" %>
-          <div class="mt-1">
-            <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "appearance-none block w-full px-3 py-3 sm:py-2 border border-border rounded-md shadow-sm placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm sm:text-sm text-content bg-surface" %>
-          </div>
-        </div>
+    <%= render "components/input",
+        form: f, field_type: :password, name: :password_confirmation,
+        label: t("auth.fields.password_confirmation"), autocomplete: "new-password",
+        required: true, required_marker: false, toggle_password: true,
+        error: resource.errors.full_messages_for(:password_confirmation).presence %>
 
-        <div>
-          <%= f.submit "Change my password", class: "w-full inline-flex items-center justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-primary-contrast bg-primary hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" %>
-        </div>
-      </div>
-    <% end %>
-
-    <div class="mt-6 text-center text-sm text-content-subtle">
-      <%= render "devise/shared/links" %>
-    </div>
-  </div>
-</div>
+    <%= f.button t("auth.reset.submit"), type: "submit", data: { submit_once_target: "button" }, class: "btn-primary h-12 w-full justify-center text-base cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.98] transition" %>
+  <% end %>
+<% end %>

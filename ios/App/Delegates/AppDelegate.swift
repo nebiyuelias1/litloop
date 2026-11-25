@@ -14,7 +14,9 @@ import UIKit
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Before any web view loads, so the user agent lists them.
+        Hotwire.registerBridgeComponents([TabBarComponent.self, NavigationBarComponent.self])
+
         Hotwire.loadPathConfiguration(from: [
             .server(baseURL.appending(path: "configurations/ios_v1.json"))
         ])

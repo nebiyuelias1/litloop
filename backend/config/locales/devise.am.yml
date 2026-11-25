@@ -1,0 +1,66 @@
+# Devise and account validation messages (am).
+am:
+  devise:
+    confirmations:
+      confirmed: "የኢሜይል አድራሻዎ ተረጋግጧል።"
+      send_instructions: "የኢሜይል አድራሻዎን የሚያረጋግጡበት መመሪያ በጥቂት ደቂቃዎች ውስጥ በኢሜይል ይደርስዎታል።"
+      send_paranoid_instructions: "ኢሜይልዎ በመዝገባችን ካለ፣ አድራሻዎን የሚያረጋግጡበት መመሪያ በጥቂት ደቂቃዎች ውስጥ ይደርስዎታል።"
+    failure:
+      already_authenticated: "አስቀድመው ገብተዋል።"
+      inactive: "መለያዎ ገና አልነቃም።"
+      invalid: "%{authentication_keys} ወይም የይለፍ ቃል ትክክል አይደለም።"
+      locked: "መለያዎ ተቆልፏል።"
+      last_attempt: "መለያዎ ከመቆለፉ በፊት አንድ ሙከራ ቀርቶዎታል።"
+      not_found_in_database: "%{authentication_keys} ወይም የይለፍ ቃል ትክክል አይደለም።"
+      timeout: "ክፍለ ጊዜዎ አብቅቷል። ለመቀጠል እንደገና ይግቡ።"
+      unauthenticated: "ከመቀጠልዎ በፊት ይግቡ ወይም ይመዝገቡ።"
+      unconfirmed: "ከመቀጠልዎ በፊት የኢሜይል አድራሻዎን ማረጋገጥ አለብዎት።"
+    mailer:
+      confirmation_instructions:
+        subject: "የማረጋገጫ መመሪያ"
+      reset_password_instructions:
+        subject: "የይለፍ ቃል መቀየሪያ መመሪያ"
+      email_changed:
+        subject: "ኢሜይል ተቀይሯል"
+      password_change:
+        subject: "የይለፍ ቃል ተቀይሯል"
+    passwords:
+      no_token: "ይህን ገጽ መክፈት የሚችሉት ከየይለፍ ቃል መቀየሪያ ኢሜይል በመጡ ብቻ ነው። ከኢሜይሉ ከመጡ፣ ሙሉውን ሊንክ መጠቀምዎን ያረጋግጡ።"
+      send_instructions: "የይለፍ ቃልዎን የሚቀይሩበት መመሪያ በጥቂት ደቂቃዎች ውስጥ በኢሜይል ይደርስዎታል።"
+      send_paranoid_instructions: "ኢሜይልዎ በመዝገባችን ካለ፣ የይለፍ ቃል መቀየሪያ ሊንክ በጥቂት ደቂቃዎች ውስጥ ይደርስዎታል።"
+      updated: "የይለፍ ቃልዎ ተቀይሯል። አሁን ገብተዋል።"
+      updated_not_active: "የይለፍ ቃልዎ ተቀይሯል።"
+    registrations:
+      destroyed: "መለያዎ ተሰርዟል። በድጋሚ እንደምናይዎ ተስፋ እናደርጋለን።"
+      signed_up: "እንኳን ደህና መጡ! በተሳካ ሁኔታ ተመዝግበዋል።"
+      signed_up_but_inactive: "ተመዝግበዋል፤ ነገር ግን መለያዎ ገና ስላልነቃ ማስገባት አልቻልንም።"
+      signed_up_but_locked: "ተመዝግበዋል፤ ነገር ግን መለያዎ ስለተቆለፈ ማስገባት አልቻልንም።"
+      signed_up_but_unconfirmed: "የማረጋገጫ ሊንክ ወደ ኢሜይልዎ ተልኳል። መለያዎን ለማንቃት ሊንኩን ይከተሉ።"
+      update_needs_confirmation: "መለያዎ ተዘምኗል፤ አዲሱን ኢሜይልዎን ማረጋገጥ ያስፈልጋል። ኢሜይልዎን ይመልከቱና የማረጋገጫ ሊንኩን ይከተሉ።"
+      updated: "መለያዎ ተዘምኗል።"
+      updated_but_not_signed_in: "መለያዎ ተዘምኗል፤ የይለፍ ቃልዎ ስለተቀየረ እንደገና መግባት አለብዎት።"
+    sessions:
+      signed_in: "በተሳካ ሁኔታ ገብተዋል።"
+      signed_out: "በተሳካ ሁኔታ ወጥተዋል።"
+      already_signed_out: "በተሳካ ሁኔታ ወጥተዋል።"
+  errors:
+    messages:
+      already_confirmed: "አስቀድሞ ተረጋግጧል፤ እባክዎ ይግቡ"
+      expired: "ጊዜው አልፎበታል፤ እባክዎ አዲስ ይጠይቁ"
+      not_found: "አልተገኘም"
+      blank: "ባዶ መሆን አይችልም"
+      taken: "አስቀድሞ ተወስዷል"
+      invalid: "ትክክል አይደለም"
+      confirmation: "ከ%{attribute} ጋር አይዛመድም"
+      too_short:
+        one: "በጣም አጭር ነው (ቢያንስ 1 ቁምፊ)"
+        other: "በጣም አጭር ነው (ቢያንስ %{count} ቁምፊዎች)"
+  activerecord:
+    attributes:
+      user:
+        name: "ስም"
+        email: "ኢሜይል"
+        password: "የይለፍ ቃል"
+        password_confirmation: "የይለፍ ቃል ማረጋገጫ"
+        reset_password_token: "የመቀየሪያ ሊንኩ"
+        confirmation_token: "የማረጋገጫ ሊንኩ"

@@ -8,6 +8,7 @@
     - club: BookClub (may be nil; falls back to "B")
     - variant: Symbol, default :badge
         :badge    — 28px circle, oxblood initial. Club headers on reading cards and read pages.
+        :row      — 40px circle, oxblood initial. Club lists (onboarding).
         :identity — 56px tile, spruce initial ground. Club page header.
 %>
 <%
@@ -16,6 +17,10 @@
     badge: {
       frame: "h-7 w-7 rounded-full ring-1 ring-border",
       fallback: "bg-accent/15 text-accent text-xs font-bold"
+    },
+    row: {
+      frame: "h-10 w-10 rounded-full ring-1 ring-border",
+      fallback: "bg-accent/15 text-accent text-sm font-bold"
     },
     identity: {
       frame: "h-14 w-14 rounded-2xl border-2 border-surface shadow-sm ring-1 ring-border",

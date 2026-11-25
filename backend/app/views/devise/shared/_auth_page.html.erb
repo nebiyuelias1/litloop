@@ -1,0 +1,67 @@
+<%#
+  Frame for the account pages, used as a layout:
+    render layout: "devise/shared/auth_page", locals: { title:, lede:, footer: } do ... end
+  Locals: title (heading and page title), lede and footer (HTML), both optional.
+%>
+<% content_for :title, title %>
+<% content_for :bare_layout, true %>
+<%# Apps: no tab bar when pushed (sign in also starts a guest's Library/Profile tab) %>
+<% if hotwire_native_app? %>
+  <div data-controller="bridge--tab-bar" data-bridge--tab-bar-event-value="hide-when-pushed" hidden></div>
+<% end %>
+<style>
+  .auth-link {
+    font-weight: 600;
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+    text-underline-offset: 4px;
+    border-radius: 0.25rem;
+  }
+  .auth-link-quiet {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-content-subtle);
+    text-decoration: underline;
+    text-decoration-color: var(--color-border);
+    text-underline-offset: 4px;
+    border-radius: 0.25rem;
+  }
+  .auth-link:hover, .auth-link-quiet:hover {
+    color: var(--color-accent);
+    text-decoration-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  }
+  .auth-link:focus-visible, .auth-link-quiet:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+</style>
+<div class="flex min-h-dvh flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+<header class="mx-auto flex w-full max-w-5xl items-center justify-between px-4 pt-3 sm:px-6 hotwire-native:hidden">
+  <%= link_to root_path, class: "rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary", aria: { label: t("auth.home") } do %>
+    <%= render "shared/logo", class: "h-7 w-auto text-primary" %>
+  <% end %>
+  <%= render "shared/language_switcher" %>
+</header>
+
+<div class="mx-auto flex w-full max-w-[26rem] flex-1 flex-col px-4 py-6 sm:justify-center sm:px-0 sm:py-12">
+  <header class="mb-6 sm:mb-8">
+    <h1 class="font-serif text-[1.875rem] font-normal leading-[1.15] tracking-[-0.01em] text-content text-balance sm:text-4xl"><%= title %></h1>
+    <% if local_assigns[:lede].present? %>
+      <p class="mt-2 text-base leading-relaxed text-content-subtle"><%= lede %></p>
+    <% end %>
+  </header>
+
+  <%= render "devise/shared/flash" %>
+
+  <div class="sm:rounded-3xl sm:border sm:border-border sm:bg-surface sm:p-8">
+    <%= yield %>
+  </div>
+
+  <% if local_assigns[:footer].present? %>
+    <div class="mt-6 space-y-3 text-center text-sm text-content-subtle">
+      <%= footer %>
+    </div>
+  <% end %>
+</div>
+</div>

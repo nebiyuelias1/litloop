@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:defaultNavHost="false"
-        app:layout_constraintBottom_toTopOf="@id/bottom_nav_divider"
+        app:layout_constraintBottom_toTopOf="@id/bottom_bar"
         app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.fragment.app.FragmentContainerView
@@ -20,7 +20,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:defaultNavHost="false"
-        app:layout_constraintBottom_toTopOf="@id/bottom_nav_divider"
+        app:layout_constraintBottom_toTopOf="@id/bottom_bar"
         app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.fragment.app.FragmentContainerView
@@ -29,7 +29,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:defaultNavHost="false"
-        app:layout_constraintBottom_toTopOf="@id/bottom_nav_divider"
+        app:layout_constraintBottom_toTopOf="@id/bottom_bar"
         app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.fragment.app.FragmentContainerView
@@ -38,30 +38,37 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:defaultNavHost="false"
-        app:layout_constraintBottom_toTopOf="@id/bottom_nav_divider"
+        app:layout_constraintBottom_toTopOf="@id/bottom_bar"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <View
-        android:id="@+id/bottom_nav_divider"
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/border"
-        app:layout_constraintBottom_toTopOf="@id/bottom_nav" />
-
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottom_nav"
+    <!-- Wrapper hidden by TabBarComponent; Hotwire toggles bottom_nav itself. -->
+    <LinearLayout
+        android:id="@+id/bottom_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/background"
-        app:backgroundTint="@color/background"
-        app:elevation="8dp"
-        app:itemActiveIndicatorStyle="@null"
-        app:itemIconTint="@color/bottom_nav_item_color"
-        app:itemRippleColor="@android:color/transparent"
-        app:itemTextColor="@color/bottom_nav_item_color"
-        app:labelVisibilityMode="labeled"
+        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent">
+
+        <View
+            android:id="@+id/bottom_nav_divider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/border" />
+
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottom_nav"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/background"
+            app:backgroundTint="@color/background"
+            app:elevation="8dp"
+            app:itemActiveIndicatorStyle="@null"
+            app:itemIconTint="@color/bottom_nav_item_color"
+            app:itemRippleColor="@android:color/transparent"
+            app:itemTextColor="@color/bottom_nav_item_color"
+            app:labelVisibilityMode="labeled" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

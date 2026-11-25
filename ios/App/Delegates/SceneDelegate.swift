@@ -25,6 +25,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         configureTabBarAppearance()
         window?.rootViewController = tabBarController
         tabBarController.load(HotwireTab.all)
+        // Hidden until the first page asks for it (TabBarComponent).
+        TabBarComponent.hideWhileLoading(tabBarController)
 
         if let userActivity = connectionOptions.userActivities.first,
            userActivity.activityType == NSUserActivityTypeBrowsingWeb,

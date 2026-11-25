@@ -1,19 +1,19 @@
-<% if resource.errors.any? %>
-  <div id="error_explanation" data-turbo-cache="false" class="alert alert-error text-sm mb-4 shadow-xs rounded-xl p-3.5 flex items-start gap-3">
-    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5 mt-0.5" fill="none" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-    <div>
-      <h3 class="font-semibold text-xs sm:text-sm">
-        <%= I18n.t("errors.messages.not_saved",
-                   count: resource.errors.count,
-                   resource: resource.class.model_name.human.downcase) %>
-      </h3>
-      <ul class="mt-1 list-disc list-inside text-xs sm:text-sm space-y-0.5">
-        <% resource.errors.full_messages.each do |message| %>
-          <li><%= message %></li>
-        <% end %>
-      </ul>
-    </div>
+<%#
+  Errors not shown beside a field (e.g. an expired reset token).
+  Locals: resource, fields (attributes the form shows as fields).
+%>
+<% fields = Array(local_assigns[:fields]).map(&:to_sym) %>
+<% messages = resource.errors.reject { |error| fields.include?(error.attribute) }.map(&:full_message).uniq %>
+<% if messages.any? %>
+  <div id="error_explanation" role="alert" data-turbo-cache="false" class="mb-5 flex items-start gap-3 rounded-2xl border border-error/30 bg-error/5 px-4 py-3 text-sm text-content">
+    <svg class="mt-0.5 h-5 w-5 shrink-0 text-error" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" /></svg>
+    <ul class="space-y-1 leading-relaxed">
+      <% messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
   </div>
+<% elsif resource.errors.any? %>
+  <%# Field errors only: keep the id for tests and assistive tech %>
+  <p id="error_explanation" role="alert" class="sr-only"><%= t("auth.fix_fields") %></p>
 <% end %>

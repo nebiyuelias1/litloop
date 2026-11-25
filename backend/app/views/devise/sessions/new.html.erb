@@ -1,86 +1,47 @@
-<% content_for :title, t("titles.sign_in") %>
-<div class="min-h-[80vh] flex items-center justify-center py-4 sm:py-10">
-  <div class="w-full max-w-md bg-transparent sm:bg-surface shadow-none sm:shadow-xl rounded-none sm:rounded-2xl p-0 sm:p-8 border-0 sm:border sm:border-border/60 transition-all">
-    <div class="text-center mb-6">
-      <div class="mx-auto w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-3">
-        <svg xmlns="http://www.w3.org/2000/svg" class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-        </svg>
-      </div>
-      <h2 class="text-2xl sm:text-3xl font-bold text-content tracking-tight">Sign in to your account</h2>
-      <p class="mt-1.5 text-xs sm:text-sm text-content-subtle">Welcome back — enter your details to access your account.</p>
+<% footer = capture do %>
+  <p>
+    <%= t("auth.sign_in.no_account") %>
+    <%= link_to t("auth.sign_in.create_account"), new_registration_path(resource_name), class: "auth-link" %>
+  </p>
+  <p><%= link_to t("auth.see_how_it_works"), onboarding_path, class: "auth-link-quiet" %></p>
+<% end %>
+<%= render layout: "devise/shared/auth_page", locals: {
+      title: t("auth.sign_in.title"),
+      lede: t("auth.sign_in.lede"),
+      footer: footer
+    } do %>
+  <%= render "devise/shared/error_messages", resource: resource, fields: %i[email password] %>
+
+  <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "space-y-4", data: { turbo: false, controller: "submit-once", action: "submit->submit-once#lock turbo:submit-end->submit-once#unlock", submit_once_busy_label_value: t("auth.sign_in.busy") } }) do |f| %>
+    <%= render "components/input",
+        form: f, field_type: :email, name: :email,
+        label: t("auth.fields.email"), autofocus: true, autocomplete: "email",
+        required: true, required_marker: false %>
+
+    <div>
+      <%= render "components/input",
+          form: f, field_type: :password, name: :password,
+          label: t("auth.fields.password"), autocomplete: "current-password",
+          required: true, required_marker: false, toggle_password: true %>
+      <p class="mt-2 text-right">
+        <%= link_to t("auth.sign_in.forgot_password"), new_password_path(resource_name), class: "auth-link-quiet" %>
+      </p>
     </div>
 
-    <% if flash.any? %>
-      <% flash.each do |name, msg| %>
-        <div class="mb-4 p-3.5 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2.5 shadow-xs <%= name.to_s == 'alert' || name.to_s == 'error' ? 'alert alert-error text-error-content' : 'alert alert-info text-info-content' %>">
-          <svg xmlns="http://www.w3.org/2000/svg" class="size-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span><%= msg %></span>
-        </div>
-      <% end %>
+    <% if devise_mapping.rememberable? %>
+      <%= render "components/checkbox", form: f, name: :remember_me, label: t("auth.sign_in.remember_me"), checked: true, classes: "hotwire-native:hidden" %>
     <% end %>
 
-    <%= render "devise/shared/error_messages", resource: resource %>
+    <%= f.button t("auth.sign_in.submit"), type: "submit", data: { submit_once_target: "button" }, class: "btn-primary h-12 w-full justify-center text-base cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.98] transition" %>
+  <% end %>
 
-    <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { data: { turbo: false }, class: "space-y-4" }) do |f| %>
-      <%= render "components/input",
-                 form: f,
-                 field_type: :email,
-                 name: :email,
-                 label: "Email address",
-                 placeholder: "name@example.com",
-                 autofocus: true,
-                 autocomplete: "email",
-                 required: true,
-                 icon: '<svg xmlns="http://www.w3.org/2000/svg" class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>' %>
+  <%# Social sign-in is off until the native flows are verified (NEB-100):
+        render "components/social_button", provider: :line, url: line_login_authorize_path
+        render "components/social_button", provider: :telegram %>
 
-      <%= render "components/input",
-                 form: f,
-                 field_type: :password,
-                 name: :password,
-                 label: "Password",
-                 placeholder: "••••••••",
-                 autocomplete: "current-password",
-                 required: true,
-                 toggle_password: true,
-                 icon: '<svg xmlns="http://www.w3.org/2000/svg" class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>' %>
-
-      <% if devise_mapping.rememberable? %>
-        <div class="flex flex-row items-center justify-between gap-2 pt-1">
-          <%= render "components/checkbox",
-                     form: f,
-                     name: :remember_me,
-                     label: "Remember me",
-                     checked: true,
-                     classes: "hotwire-native:hidden" %>
-
-          <div class="text-sm">
-            <%= link_to "Forgot password?", new_password_path(resource_name), class: "font-semibold text-primary hover:text-accent transition-colors underline-offset-4 hover:underline" %>
-          </div>
-        </div>
-      <% end %>
-
-      <div class="pt-2">
-        <%= render "components/button",
-                   label: "Log in",
-                   type: "submit",
-                   variant: "primary",
-                   size: "lg",
-                   full_width: true %>
-      </div>
-    <% end %>
-
-    <%# Social logins (LINE / Telegram) temporarily disabled while the native
-        flows are being verified — re-enable these three blocks (NEB-100). %1$>
-    <%# <div class="divider text-xs text-content-muted font-medium my-6">OR CONTINUE WITH</div> %1$>
-
-    <%# <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center"> %1$>
-    <%# <%= render "components/social_button", provider: :line, url: line_login_authorize_path %1$>
-    <%# <%= render "components/social_button", provider: :telegram %1$>
-    <%# </div> %1$>
-
-    <%= render "devise/shared/links" %>
-  </div>
-</div>
+  <% if devise_mapping.confirmable? %>
+    <p class="mt-5 text-center text-sm">
+      <%= link_to t("auth.sign_in.resend_confirmation"), new_confirmation_path(resource_name), class: "auth-link-quiet" %>
+    </p>
+  <% end %>
+<% end %>

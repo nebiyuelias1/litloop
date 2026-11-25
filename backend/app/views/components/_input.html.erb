@@ -11,6 +11,8 @@
     - autofocus: Boolean
     - autocomplete: String
     - required: Boolean
+    - required_marker: Boolean (show the "Required" tag when required, default: true;
+      pass false on forms where every field is required)
     - disabled: Boolean
     - hint: String (help text)
     - error: String / Array (error message)
@@ -32,6 +34,7 @@
   autofocus = !!local_assigns[:autofocus]
   autocomplete ||= nil
   required = !!local_assigns[:required]
+  required_marker = local_assigns[:required_marker] != false
   disabled = !!local_assigns[:disabled]
   hint ||= nil
   error ||= nil
@@ -47,7 +50,7 @@
     id.presence || (form ? "#{form.object_name}_#{name}" : "field_#{name}")
 
   input_box_classes = [
-    "input input-bordered flex items-center gap-2 w-full focus-within:outline-none focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all",
+    "input input-bordered flex items-center gap-2 w-full focus-within:outline-none has-[:focus-visible]:outline-none focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all",
     (error.present? ? "input-error" : ""),
     input_classes,
   ].reject(&:empty?).join(" ")
@@ -64,6 +67,10 @@
   input_options[:required] = true if required
   input_options[:disabled] = true if disabled
   input_options[:autofocus] = true if autofocus
+  if error.present?
+    input_options[:"aria-invalid"] = true
+    input_options[:"aria-describedby"] = "#{input_id}_error"
+  end
 
   if toggle_password
     input_options[:data] ||= {}
@@ -103,12 +110,12 @@
           for="<%= input_id %>"
           class="flex items-center justify-between w-full cursor-pointer">
           <span><%= label %></span>
-          <% if required %>
+          <% if required && required_marker %>
             <span
               class="
                 text-xs text-error font-normal
                 group-has-[input:not(:placeholder-shown)]/field:hidden
-              ">*Required</span>
+              "><%= t("components.input.required", default: "*Required") %></span>
           <% end %>
         </label>
       </legend>
@@ -150,7 +157,7 @@
               items-center shrink-0
             "
             data-action="click->password#toggle"
-            aria-label="Toggle password visibility">
+            aria-label="<%= t("components.input.show_password", default: "Show password") %>">
             <span data-password-target="toggleIcon">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -174,7 +181,7 @@
       </label>
     <% else %>
       <% single_input_classes = [
-        "input input-bordered w-full text-base sm:text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all",
+        "input input-bordered w-full text-base sm:text-sm focus:outline-none focus-visible:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all",
         (error.present? ? "input-error" : ""),
         input_classes,
       ].reject(&:empty?).join(" ") %>
@@ -199,7 +206,7 @@
     <% end %>
 
     <% if error.present? %>
-      <p class="fieldset-label text-xs text-error font-medium mt-1">
+      <p id="<%= input_id %>_error" class="fieldset-label text-xs text-error font-medium mt-1">
         <%= error.is_a?(Array) ? error.join(", ") : error %>
       </p>
     <% end %>
