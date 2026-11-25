@@ -64,7 +64,7 @@
         data: {
           controller: "share-flyer",
           share_flyer_club_name_value: book_club.name,
-          share_flyer_title_value: book_read.book&.title || book_read.poll&.text || t("discussion_session"),
+          share_flyer_title_value: book_read.display_title(t("discussion_session")),
           share_flyer_author_value: book_read.book&.author,
           share_flyer_time_value: book_read.meetup_time ? l(book_read.meetup_time, format: :flyer) : t("tbd"),
           share_flyer_location_value: book_read.meetup_location.presence || t("tbd"),
@@ -73,13 +73,14 @@
           share_flyer_rsvp_url_value: book_club_book_read_url(book_club, book_read),
           share_flyer_poll_url_value: book_read.poll.present? ? "#{book_club_book_read_url(book_club, book_read)}#poll_voting" : "",
           share_flyer_book_read_id_value: book_read.id,
+          share_flyer_is_swap_value: book_read.swap?,
           share_flyer_download_success_msg_value: t("flyer_download_success"),
           share_flyer_download_error_msg_value: t("flyer_download_error"),
           share_flyer_link_shared_msg_value: t("link_shared_success"),
           share_flyer_link_copied_msg_value: t("link_copied_success"),
           share_flyer_link_error_msg_value: t("link_share_error"),
           share_flyer_share_title_value: t("share_flyer_title"),
-          share_flyer_share_text_value: t("share_flyer_text", club: book_club.name, title: book_read.book&.title || book_read.poll&.text || t("discussion_session")),
+          share_flyer_share_text_value: t(book_read.swap? ? "share_flyer_swap_text" : "share_flyer_text", club: book_club.name, title: book_read.display_title(t("discussion_session"))),
           # Localized labels for the high-res canvas drawing
           share_flyer_label_book_club_meetup_value: t("book_club_meetup"),
           share_flyer_label_active_poll_value: t("active_poll"),
@@ -89,7 +90,9 @@
           share_flyer_label_time_value: t("time_label"),
           share_flyer_label_location_value: t("location_label"),
           share_flyer_label_hosted_by_value: t("hosted_by"),
-          share_flyer_label_scan_to_rsvp_value: t("scan_to_rsvp")
+          share_flyer_label_scan_to_rsvp_value: t("scan_to_rsvp"),
+          share_flyer_label_book_swap_value: t("book_swap"),
+          share_flyer_swap_summary_value: book_read.swap_summary
         }
       },
       footer: flyer_footer
@@ -112,11 +115,16 @@
       <!-- Main Body: Vertical Stacking for Story Mode -->
       <div class="flex flex-col items-center gap-5 flex-1 min-h-0 overflow-y-auto no-scrollbar">
         <!-- Centered Cover Image (Significantly Enlarged to match canvas scale) -->
-        <div class="w-[62%] shrink-0 aspect-[2/3] relative my-1">
+        <div class="<%= book_read.swap? ? "w-[50%] aspect-square" : "w-[62%] aspect-[2/3]" %> shrink-0 relative my-1">
           <% if book_read.book&.cover_image.present? %>
             <img src="<%= cover_book_path(book_read.book) %>"
                  alt="<%= book_read.book.title %>"
                  class="w-full h-full rounded-2xl shadow-xl border border-white/15 object-cover">
+          <% elsif book_read.swap? %>
+            <div class="w-full h-full rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-center text-center p-4 gap-3 shadow-inner">
+              <%= render "shared/book_swap_icon", classes: "w-20 h-20 text-[#e6dcc3]" %>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-[#e6dcc3]"><%= t("book_swap") %></span>
+            </div>
           <% else %>
             <div class="w-full h-full rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-center text-center p-4 text-[#a3957b] gap-2 shadow-inner">
               <svg class="w-8 h-8 text-[#e6dcc3]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -130,10 +138,12 @@
         <!-- Details (Centered & Enlarged) -->
         <div class="w-full flex flex-col gap-1.5 text-center shrink-0">
           <p class="font-bold text-xl leading-tight text-[#f6f1e7] line-clamp-2 px-2">
-            <%= book_read.book&.title || book_read.poll&.text || t("discussion_session") %>
+            <%= book_read.display_title(t("discussion_session")) %>
           </p>
           <% if book_read.book.present? %>
             <p class="text-sm text-[#d8ccb2] italic font-medium truncate"><%= t("by_author", author: book_read.book.author) %></p>
+          <% elsif book_read.swap? %>
+            <p class="text-sm text-[#d8ccb2] italic font-medium line-clamp-4 px-2"><%= book_read.swap_summary %></p>
           <% end %>
         </div>
       </div>

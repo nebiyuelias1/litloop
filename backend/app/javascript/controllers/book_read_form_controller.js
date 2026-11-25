@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = [ "bookSection", "pollSection", "selectionBtn" ]
+  static targets = [ "bookSection", "pollSection", "swapSection", "selectionBtn" ]
 
   connect() {
     this.toggle()
@@ -23,13 +23,9 @@ export default class extends Controller {
     }
 
     // Update Section Visibility
-    if (selection === "book") {
-      this.bookSectionTarget.classList.remove("hidden")
-      this.pollSectionTarget.classList.add("hidden")
-    } else {
-      this.bookSectionTarget.classList.add("hidden")
-      this.pollSectionTarget.classList.remove("hidden")
-    }
+    this.bookSectionTarget.classList.toggle("hidden", selection !== "book")
+    if (this.hasPollSectionTarget) this.pollSectionTarget.classList.toggle("hidden", selection !== "poll")
+    if (this.hasSwapSectionTarget) this.swapSectionTarget.classList.toggle("hidden", selection !== "swap")
 
     // Update Toggle Button Styling
     this.selectionBtnTargets.forEach(btn => {

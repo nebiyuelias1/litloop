@@ -60,7 +60,7 @@
       data-controller="share"
       data-action="click->share#share:prevent:stop"
       data-share-url-value="<%= share_url %>"
-      data-share-title-value="<%= book_read.book&.title || t("discussion_session", default: "Book Read") %>"
+      data-share-title-value="<%= book_read.display_title(t("discussion_session", default: "Book Read")) %>"
       onclick="event.preventDefault(); event.stopPropagation();"
       class="
         btn btn-square border border-border bg-surface text-content hover:bg-background

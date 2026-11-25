@@ -367,4 +367,143 @@ class BookReadsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "p", text: "What should we read next?"
   end
+
+  test "owner creates a book swap" do
+    sign_in @user
+    assert_difference([ "BookRead.count", "BookSwap.count" ]) do
+      post book_club_book_reads_url(@book_club), params: {
+        selection_type: "swap",
+        book_read: {
+          book_id: @book.id,
+          meetup_time: 1.week.from_now,
+          meetup_location: "Tomoca Coffee",
+          poll_attributes: { text: "Ignored?", end_date: 1.day.from_now },
+          book_swap_attributes: { title: "December Book Swap", guidelines: "Bring 1–3 books" }
+        }
+      }
+    end
+
+    book_read = BookRead.last
+    assert_redirected_to book_club_book_read_url(@book_club, book_read)
+    assert book_read.swap?
+    assert_nil book_read.book_id
+    assert_nil book_read.poll
+    assert_equal "Bring 1–3 books", book_read.book_swap.guidelines
+    assert book_read.book_read_rsvps.going.exists?(user: @user)
+  end
+
+  test "book swap requires a title" do
+    sign_in @user
+    assert_no_difference("BookRead.count") do
+      post book_club_book_reads_url(@book_club), params: {
+        selection_type: "swap",
+        book_read: {
+          meetup_time: 1.week.from_now,
+          meetup_location: "Tomoca Coffee",
+          book_swap_attributes: { title: "", guidelines: "Bring books" }
+        }
+      }
+    end
+    assert_response :unprocessable_entity
+  end
+
+  test "non-owner cannot create a book swap" do
+    sign_in users(:two)
+    assert_no_difference("BookSwap.count") do
+      post book_club_book_reads_url(@book_club), params: {
+        selection_type: "swap",
+        book_read: {
+          meetup_time: 1.week.from_now,
+          meetup_location: "Tomoca Coffee",
+          book_swap_attributes: { title: "Sneaky Swap" }
+        }
+      }
+    end
+  end
+
+  test "switching an open poll session to a book swap removes the poll" do
+    book_read = BookRead.create!(
+      book_club: @book_club, host: @user, meetup_time: 1.week.from_now, meetup_location: "Cafe",
+      poll_attributes: { text: "Which?", end_date: 1.day.from_now,
+        poll_options_attributes: [ { content: "A" }, { content: "B" } ] }
+    )
+    sign_in @user
+
+    patch book_club_book_read_url(@book_club, book_read), params: {
+      selection_type: "swap",
+      book_read: { book_swap_attributes: { title: "Swap instead" } }
+    }
+
+    assert_redirected_to book_club_book_read_url(@book_club, book_read)
+    book_read.reload
+    assert book_read.swap?
+    assert_nil book_read.poll
+  end
+
+  test "switching a book swap to a specific book removes the swap" do
+    book_read = book_reads(:swap)
+    sign_in @user
+
+    patch book_club_book_read_url(@book_club, book_read), params: {
+      selection_type: "book",
+      book_read: { book_id: @book.id }
+    }
+
+    assert_redirected_to book_club_book_read_url(@book_club, book_read)
+    book_read.reload
+    assert_not book_read.swap?
+    assert_equal @book, book_read.book
+  end
+
+  test "a session whose poll is finalized cannot become a book swap" do
+    book_read = book_reads(:one)
+    book_read.poll.update!(finalized_at: Time.current)
+    sign_in @user
+
+    assert_no_difference("BookSwap.count") do
+      patch book_club_book_read_url(@book_club, book_read), params: {
+        selection_type: "swap",
+        book_read: { book_swap_attributes: { title: "Nope" } }
+      }
+    end
+    assert_redirected_to edit_book_club_book_read_url(@book_club, book_read)
+    assert book_read.reload.poll.present?
+  end
+
+  test "book swap show page shows guidelines and hides discussion questions" do
+    sign_in @user
+    get book_club_book_read_url(@book_club, book_reads(:swap))
+    assert_response :success
+    assert_select "h1", text: /December Book Swap/
+    assert_select "#swap_guidelines_section", text: /Leftovers get donated/
+    assert_select "#discussion_section", count: 0
+  end
+
+  test "an empty book swap form reports the missing swap name" do
+    sign_in @user
+    assert_no_difference("BookRead.count") do
+      post book_club_book_reads_url(@book_club), params: {
+        selection_type: "swap",
+        book_read: {
+          meetup_time: 1.week.from_now,
+          meetup_location: "Tomoca Coffee",
+          book_swap_attributes: { title: "", guidelines: "" }
+        }
+      }
+    end
+    assert_response :unprocessable_entity
+    assert_match "Book swap title can&#39;t be blank", response.body
+    assert_no_match "You must select a specific book", response.body
+  end
+
+  test "past book swap RSVP card has no discussion questions link" do
+    swap = book_reads(:swap)
+    swap.update_columns(meetup_time: 1.day.ago)
+    sign_in @user
+
+    get book_club_book_read_url(@book_club, swap)
+
+    assert_response :success
+    assert_select "a[href$='#discussion_section']", count: 0
+  end
 end

@@ -11,6 +11,7 @@ class BookReadDashboard < Administrate::BaseDashboard
     id: Field::Number,
     book: Field::BelongsTo,
     poll: Field::HasOne,
+    book_swap: Field::HasOne,
     book_club: Field::BelongsTo,
     host: Field::BelongsTo,
     discussion_questions: Field::HasMany,
@@ -40,6 +41,7 @@ class BookReadDashboard < Administrate::BaseDashboard
     id
     book
     poll
+    book_swap
     book_club
     host
     discussion_questions

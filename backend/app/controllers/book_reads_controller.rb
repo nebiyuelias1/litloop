@@ -7,9 +7,9 @@ class BookReadsController < ApplicationController
   def index
     @tab = params[:tab] || "upcoming"
     @reads = if @tab == "past"
-      @book_club.book_reads.includes(:book).where("meetup_time < ?", Time.current).order(meetup_time: :desc)
+      @book_club.book_reads.includes(:book, :poll, :book_swap).where("meetup_time < ?", Time.current).order(meetup_time: :desc)
     else
-      @book_club.book_reads.includes(:book).where("meetup_time >= ?", Time.current).order(meetup_time: :asc)
+      @book_club.book_reads.includes(:book, :poll, :book_swap).where("meetup_time >= ?", Time.current).order(meetup_time: :asc)
     end
   end
 
@@ -58,10 +58,17 @@ class BookReadsController < ApplicationController
   def create
     @book_read = @book_club.book_reads.build(book_read_params.merge(host: current_user))
 
-    if params[:selection_type] == "book"
+    case params[:selection_type]
+    when "book"
       @book_read.poll = nil
-    elsif params[:selection_type] == "poll"
+      @book_read.book_swap = nil
+    when "poll"
       @book_read.book_id = nil
+      @book_read.book_swap = nil
+    when "swap"
+      @book_read.book_id = nil
+      @book_read.poll = nil
+      @book_read.build_book_swap if @book_read.book_swap.nil?
     end
 
     if @book_read.save
@@ -76,8 +83,25 @@ class BookReadsController < ApplicationController
     clean_params = book_read_params.dup
     poll_finalized = @book_read.poll&.finalized_at.present?
 
+    if params[:selection_type] == "swap" && poll_finalized
+      return redirect_to edit_book_club_book_read_path(@book_club, @book_read), alert: t("swap_poll_finalized")
+    end
+
     success = BookRead.transaction do
-      if params[:selection_type] == "book"
+      if params[:selection_type].in?(%w[book poll])
+        @book_read.book_swap&.destroy
+        @book_read.book_swap = nil
+        clean_params.delete(:book_swap_attributes)
+      end
+
+      if params[:selection_type] == "swap"
+        @book_read.poll&.destroy
+        @book_read.poll = nil
+        @book_read.book_id = nil
+        clean_params.delete(:poll_attributes)
+        clean_params[:book_id] = nil
+        @book_read.build_book_swap if @book_read.book_swap.nil? && clean_params[:book_swap_attributes].blank?
+      elsif params[:selection_type] == "book"
         unless poll_finalized
           @book_read.poll&.destroy
           @book_read.poll = nil
@@ -150,7 +174,8 @@ class BookReadsController < ApplicationController
       poll_attributes: [
         :id, :text, :end_date,
         poll_options_attributes: [ :id, :book_id, :content, :_destroy ]
-      ]
+      ],
+      book_swap_attributes: [ :id, :title, :guidelines ]
     )
   end
 end

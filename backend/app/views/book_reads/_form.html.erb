@@ -16,14 +16,21 @@
   <%# Selection Toggle (Only shown when creating a new record or for non-finalized poll sessions) %>
   <% poll_finalized = @book_read.poll&.finalized_at.present? %>
   <% can_toggle_selection =
-    @book_read.new_record? || (@book_read.poll.present? && !poll_finalized) %>
+    @book_read.new_record? || (@book_read.poll.present? && !poll_finalized) ||
+      @book_read.swap? %>
 
   <% if can_toggle_selection %>
     <div class="space-y-3">
       <label class="block text-sm font-semibold text-content ml-1">What are we reading?</label>
       <% current_selection =
         params[:selection_type] ||
-          (@book_read.poll.present? && !poll_finalized ? "poll" : "book") %>
+          if @book_read.swap?
+            "swap"
+          elsif @book_read.poll.present? && !poll_finalized
+            "poll"
+          else
+            "book"
+          end %>
       <div class="flex p-1 bg-background rounded-lg border border-border w-fit">
 
         <label
@@ -53,10 +60,24 @@
           current_selection == "poll",
           class: "hidden" %>
         </label>
+
+        <label
+          data-book-read-form-target="selectionBtn"
+          data-action="click->book-read-form#toggle"
+          class="
+            relative flex items-center px-4 py-2 rounded-md cursor-pointer transition-all
+            bg-transparent
+          ">
+          <span class="text-sm font-bold text-content"><%= t("book_swap") %></span>
+          <%= radio_button_tag :selection_type,
+          "swap",
+          current_selection == "swap",
+          class: "hidden" %>
+        </label>
       </div>
     </div>
   <% else %>
-    <%= hidden_field_tag :selection_type, "book" %>
+    <%= hidden_field_tag :selection_type, @book_read.swap? ? "swap" : "book" %>
   <% end %>
 
   <%# Dynamic Sections %>
@@ -179,6 +200,18 @@
           label: "Voting Ends On",
           min: (poll_form.object.new_record? ? Time.current : nil),
           error: poll_form.object.errors[:end_date] %>
+        <% end %>
+      </div>
+
+      <%# Book Swap Section %>
+      <div
+        id="book_swap_fields"
+        data-book-read-form-target="swapSection"
+        class="
+          hidden p-4 rounded-lg border border-border bg-surface shadow-sm space-y-4
+        ">
+        <%= form.fields_for :book_swap, (@book_read.book_swap || BookSwap.new) do |swap_form| %>
+          <%= render "book_swap_fields", form: swap_form %>
         <% end %>
       </div>
     <% end %>

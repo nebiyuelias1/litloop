@@ -27,10 +27,10 @@ class BookClubsController < ApplicationController
 
   def show
     now = Time.current
-    @upcoming_reads = @club.book_reads.includes(:book).where("meetup_time >= ?", now).order(meetup_time: :asc)
+    @upcoming_reads = @club.book_reads.includes(:book, :poll, :book_swap).where("meetup_time >= ?", now).order(meetup_time: :asc)
     @current_read = @upcoming_reads.first
     @past_reads = @club.book_reads
-      .includes(:book, :host, :discussion_questions, book_read_rsvps: :user)
+      .includes(:book, :book_swap, :host, :discussion_questions, book_read_rsvps: :user)
       .where("meetup_time < ?", now)
       .order(meetup_time: :desc)
   end

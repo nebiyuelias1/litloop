@@ -52,7 +52,7 @@ module ClubHelper
   def google_calendar_url(book_read, book_club)
     return nil unless book_read&.meetup_time
 
-    title = book_read.book&.title || book_read.poll&.text || "Book Club Meetup"
+    title = book_read.display_title("Book Club Meetup")
     details = "Book Club Meetup with #{book_club.name}. #{book_club_book_read_url(book_club, book_read)}"
     location = book_read.meetup_location.presence || ""
     start_time = book_read.meetup_time.utc.strftime("%Y%m%dT%H%M%SZ")

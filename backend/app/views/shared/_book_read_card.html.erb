@@ -23,6 +23,11 @@
         </svg>
         <span class="text-[10px] font-bold uppercase tracking-wider"><%= t("poll", default: "Poll") %></span>
       </div>
+    <% elsif book_read.swap? %>
+      <div class="absolute inset-0 flex flex-col items-center justify-center text-accent p-2 text-center">
+        <%= render "shared/book_swap_icon", classes: "w-8 h-8 mb-1" %>
+        <span class="text-[10px] font-bold uppercase tracking-wider"><%= t("book_swap") %></span>
+      </div>
     <% else %>
       <div class="absolute inset-0 flex items-center justify-center text-content-muted">
         <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -59,7 +64,7 @@
 
       <%# Book Title / Session Header %>
       <h2 class="title title-sm font-bold text-content leading-tight line-clamp-2 group-hover:text-accent transition-colors">
-        <%= book&.title || (can_see_details ? book_read.poll&.text : nil) || t("new_reading_session", default: "New Reading Session") %>
+        <%= book&.title || (can_see_details ? book_read.poll&.text : nil) || book_read.book_swap&.title || t("new_reading_session", default: "New Reading Session") %>
       </h2>
 
       <%# Author / Subtext %>
@@ -68,6 +73,8 @@
           <%= t("by_author", author: book.author.presence || t("unknown_author", default: "Unknown Author")) %>
         <% elsif book_read.poll.present? && can_see_details %>
           <%= t("voting_in_progress", default: "Voting in Progress") %>
+        <% elsif book_read.swap? %>
+          <%= can_see_details ? book_read.swap_summary : t("swap_subtitle") %>
         <% end %>
       </p>
 

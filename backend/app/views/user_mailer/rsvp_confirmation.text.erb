@@ -4,7 +4,7 @@ Hi <%= @user.name %>,
 
 You have successfully RSVP'd for the upcoming book read session:
 
-- Book: <%= @book_read.book&.title || "Discussion" %>
+- Book: <%= @book_read.book&.title || @book_read.book_swap&.title || "Discussion" %>
 - Time: <%= @book_read.meetup_time.strftime("%A, %B %d at %I:%M %p %Z") %>
 - Location: <%= @book_read.meetup_location %>
 - Club: <%= @book_read.book_club.name %>

@@ -5,6 +5,7 @@ Rails.application.routes.draw do
     resources :book_club_members
     resources :book_reads
     resources :polls
+    resources :book_swaps
     resources :poll_options
     resources :poll_votes
     resources :book_tags

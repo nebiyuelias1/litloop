@@ -146,4 +146,60 @@ class BookReadTest < ActiveSupport::TestCase
     @book_read.reload
     assert_equal 5, @book_read.calendar_sequence
   end
+
+  test "is valid as a book swap with no book or poll" do
+    @book_read.book = nil
+    @book_read.build_book_swap(title: "December Book Swap")
+    assert @book_read.valid?
+    assert @book_read.swap?
+  end
+
+  test "is invalid as a book swap that also has a book" do
+    @book_read.build_book_swap(title: "December Book Swap")
+    assert_not @book_read.valid?
+    assert_includes @book_read.errors[:base], "A book swap can't also have a book or a poll"
+  end
+
+  test "is invalid as a book swap that also has a poll" do
+    @book_read.book = nil
+    @book_read.build_book_swap(title: "December Book Swap")
+    @book_read.build_poll(text: "Which?", end_date: 1.day.from_now,
+      poll_options_attributes: [ { content: "A" }, { content: "B" } ])
+    assert_not @book_read.valid?
+  end
+
+  test "is invalid with no book, poll or swap" do
+    @book_read.book = nil
+    assert_not @book_read.valid?
+    assert_includes @book_read.errors[:base],
+      "You must select a specific book, create a poll, or set up a book swap for this session"
+  end
+
+  test "display_title prefers book, then poll text, then swap title" do
+    assert_equal @book.title, @book_read.display_title
+
+    swap_read = book_reads(:swap)
+    assert_equal "December Book Swap", swap_read.display_title
+
+    @book_read.book = nil
+    assert_equal "Fallback", @book_read.display_title("Fallback")
+  end
+
+  test "swap_summary uses the host's guidelines, squished" do
+    swap = book_reads(:swap)
+    swap.book_swap.guidelines = "Bring 1–3 books.\n\nLeftovers get donated."
+    assert_equal "Bring 1–3 books. Leftovers get donated.", swap.swap_summary
+  end
+
+  test "swap_summary falls back to the tagline without guidelines" do
+    swap = book_reads(:swap)
+    swap.book_swap.guidelines = ""
+    assert_equal I18n.t("swap_subtitle"), swap.swap_summary
+  end
+
+  test "nobody can post discussion questions on a swap" do
+    swap = book_reads(:swap)
+    BookReadRsvp.rsvp!(book_read: swap, user: users(:one), status: :going)
+    assert_not swap.can_post_discussion_question?(users(:one))
+  end
 end

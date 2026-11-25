@@ -1,7 +1,7 @@
 <% content_for :title,
-"#{@book_read.book&.title || @book_read.poll&.text || t("book_read")} - #{@book_club.name}" %>
+"#{@book_read.display_title(t("book_read"))} - #{@book_club.name}" %>
 <% content_for :og_title,
-"#{@book_read.book&.title || @book_read.poll&.text || t("reading_session")} | #{@book_club.name}" %>
+"#{@book_read.display_title(t("reading_session"))} | #{@book_club.name}" %>
 <% content_for :og_description,
 (
   if @private_info_visible
@@ -52,6 +52,15 @@
           </svg>
           <span class="text-accent text-xs font-semibold uppercase tracking-wider"><%= t("active_poll") %></span>
         </div>
+      <% elsif @book_read.swap? %>
+        <div
+          class="
+            w-full aspect-[2/3] bg-surface rounded-xl flex flex-col items-center
+            justify-center border border-border
+          ">
+          <%= render "shared/book_swap_icon", classes: "w-10 h-10 text-accent mb-3" %>
+          <span class="text-accent text-xs font-semibold uppercase tracking-wider"><%= t("book_swap") %></span>
+        </div>
       <% else %>
         <div
           class="
@@ -100,7 +109,7 @@
             <span class="text-xs font-bold uppercase tracking-wider text-accent truncate"><%= @book_club.name %></span>
           <% end %>
           <h1 class="title title-lg text-content font-bold leading-tight mb-2">
-            <%= @book_read.book&.title || @book_read.poll&.text || t("new_reading_session") %>
+            <%= @book_read.display_title %>
           </h1>
 
           <% if @book_read.book.present? %>
@@ -227,7 +236,7 @@
 
       <% if @private_info_visible && user_signed_in? && current_user == @book_read.host %>
         <%# Host row: the count opens the attendee list; hosts sit outside the registration card %>
-        <div class="flex items-center gap-1.5 pt-4 border-t border-border/80">
+        <div class="flex items-center gap-1.5 py-4 border-t border-border/80">
           <button
             onclick="document.getElementById('rsvp_dialog').showModal()"
             class="
@@ -440,8 +449,19 @@
       <p class="text-content-subtle text-sm mt-4"><%= t("private_club_join_poll") %></p>
     </div>
   <% end %>
-  <!-- Discussion Questions Section -->
-  <% if @private_info_visible %>
+  <% if @book_read.swap? && @book_read.book_swap.guidelines.present? %>
+    <div id="swap_guidelines_section" class="border-t border-border py-10 sm:py-12 scroll-mt-28">
+      <h2 class="title text-title text-content font-bold mb-4"><%= t("swap_guidelines") %></h2>
+      <% if @private_info_visible %>
+        <div class="text-content-subtle leading-relaxed whitespace-pre-line"><%= @book_read.book_swap.guidelines %></div>
+      <% else %>
+        <p class="text-content-subtle text-sm"><%= t("private_club_join_swap") %></p>
+      <% end %>
+    </div>
+  <% end %>
+  <!-- Discussion Questions Section (a swap has no shared book to discuss) -->
+  <% if @book_read.swap? %>
+  <% elsif @private_info_visible %>
     <div id="discussion_section" class="border-t border-border py-10 sm:py-12 scroll-mt-28">
       <div class="flex items-center justify-between gap-4 mb-6">
         <div class="flex items-center gap-3">

@@ -4,7 +4,7 @@ Hi <%= @user.name %>,
 
 This is a friendly reminder that your book read session in <%= @book_read.book_club.name %> is coming up soon.
 
-- Book: <%= @book_read.book&.title || "Discussion" %>
+- Book: <%= @book_read.book&.title || @book_read.book_swap&.title || "Discussion" %>
 - Time: <%= @book_read.meetup_time.in_time_zone(@time_zone).strftime("%A, %B %d at %I:%M %p %Z") %>
 - Location: <%= @book_read.meetup_location %>
 - Host: <%= @book_read.host.name %>

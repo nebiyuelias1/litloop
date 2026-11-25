@@ -15,8 +15,8 @@
         <% end %>
       </td>
       <td valign="top">
-        <h3 class="book-title"><%= @book_read.book&.title || "Reading Session" %></h3>
-        <p class="book-author">by <%= @book_read.book&.author || "Various Authors" %></p>
+        <h3 class="book-title"><%= @book_read.book&.title || @book_read.book_swap&.title || "Reading Session" %></h3>
+        <% if @book_read.book.present? %><p class="book-author">by <%= @book_read.book.author || "Various Authors" %></p><% elsif @book_read.swap? %><p class="book-author">Book swap: bring a book, take a book</p><% else %><p class="book-author">by Various Authors</p><% end %>
         <p style="font-size: 14px; color: #766854; line-height: 1.5; margin: 0;">
           <%= truncate(@book_read.book&.description, length: 140) %>
         </p>

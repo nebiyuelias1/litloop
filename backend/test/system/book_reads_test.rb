@@ -59,7 +59,7 @@ class BookReadsTest < ApplicationSystemTestCase
 
     click_on "Schedule Read"
 
-    assert_text "You must select a specific book or create a poll for this reading session"
+    assert_text "You must select a specific book, create a poll, or set up a book swap for this session"
   end
 
   test "creating a book read via a poll with options" do
@@ -200,5 +200,29 @@ class BookReadsTest < ApplicationSystemTestCase
       fieldset.find("[data-date-picker-target='minuteSelect']").select(minute.to_s.rjust(2, "0"))
       fieldset.find("div[data-action='click->date-picker#togglePopover']").click
     end
+  end
+
+  test "creating a book swap shows it on the session and club pages" do
+    visit new_book_club_book_read_path(@book_club)
+
+    find("[data-book-read-form-target='selectionBtn']", text: "Book Swap").click
+    assert_selector "#book_swap_fields", visible: true
+    assert_no_selector "#book_selection_field", visible: true
+    assert_no_selector "#poll_fields", visible: true
+
+    fill_in "Swap Name", with: "December Book Swap"
+    fill_in "Swap Guidelines", with: "Bring 1–3 books in good condition."
+    pick_datetime "Meetup Time", 1.week.from_now, hour: 15, minute: 30
+    fill_in "Meetup Location", with: "Tomoca Coffee"
+
+    click_on "Schedule Read"
+
+    assert_text "Book read scheduled successfully"
+    assert_selector "h1", text: "December Book Swap"
+    assert_text "Bring 1–3 books in good condition."
+    assert_no_selector "#discussion_section"
+
+    visit book_club_path(@book_club)
+    assert_text "December Book Swap"
   end
 end
