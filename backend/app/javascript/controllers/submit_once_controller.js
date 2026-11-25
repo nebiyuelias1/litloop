@@ -25,6 +25,7 @@ export default class extends Controller {
     this.label = button.textContent
     // Next frame, so the button's value is still submitted.
     requestAnimationFrame(() => {
+      if (!this.locked) return
       button.disabled = true
       button.setAttribute("aria-busy", "true")
       if (this.hasBusyLabelValue) button.textContent = this.busyLabelValue

@@ -233,8 +233,11 @@ export default class extends Controller {
     if (!text) return;
     // Clear first so repeating the same message is announced again.
     region.textContent = "";
-    clearTimeout(this.announceTimer);
-    this.announceTimer = setTimeout(() => {
+    // One timer per region, so a polite toast can't cancel a pending error.
+    this.announceTimers ||= {};
+    const key = urgent ? "assertive" : "polite";
+    clearTimeout(this.announceTimers[key]);
+    this.announceTimers[key] = setTimeout(() => {
       region.textContent = text;
     }, 50);
   }

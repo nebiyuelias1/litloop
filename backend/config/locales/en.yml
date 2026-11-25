@@ -390,3 +390,4 @@ en:
     input:
       required: "*Required"
       show_password: "Show password"
+      hide_password: "Hide password"

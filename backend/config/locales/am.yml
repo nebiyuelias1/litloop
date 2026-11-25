@@ -403,3 +403,4 @@ am:
     input:
       required: "*አስፈላጊ"
       show_password: "የይለፍ ቃሉን አሳይ"
+      hide_password: "የይለፍ ቃሉን ደብቅ"

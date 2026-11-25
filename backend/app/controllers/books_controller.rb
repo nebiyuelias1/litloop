@@ -28,9 +28,8 @@ class BooksController < ApplicationController
     @review_scores = @book.ratings.where(user_id: @reviews.map(&:user_id)).pluck(:user_id, :score).to_h
     @user_score = current_user ? @book.ratings.find_by(user: current_user)&.score.to_i : 0
     @club_reads = @book.book_reads
+      .joins(:book_club).merge(BookClub.visible_to(current_user))
       .includes(:book_club)
-      .order(meetup_time: :desc)
-      .select { |read| read.book_club.private_info_visible_to?(current_user) }
       .sort_by { |read| [ read.meetup_time >= Time.current ? 0 : 1, (read.meetup_time - Time.current).abs ] }
       .first(5)
   end

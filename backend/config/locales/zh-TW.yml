@@ -393,3 +393,4 @@ zh-TW:
     input:
       required: "*必填"
       show_password: "顯示密碼"
+      hide_password: "隱藏密碼"

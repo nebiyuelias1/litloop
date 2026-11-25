@@ -25,6 +25,14 @@ android {
         .orElse("")
         .get()
 
+    // Debug builds may target a dev server, e.g. LITLOOP_BASE_URL=http://10.0.2.2:3000/
+    // in ~/.gradle/gradle.properties for the emulator. Release always uses production.
+    val productionBaseUrl = "https://litloop.club/"
+    val debugBaseUrl = providers.gradleProperty("LITLOOP_BASE_URL")
+        .orElse(providers.environmentVariable("LITLOOP_BASE_URL"))
+        .orElse(productionBaseUrl)
+        .get()
+
     defaultConfig {
         applicationId = "et.netale.litloop"
         minSdk = 28
@@ -35,6 +43,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "TELEGRAM_LOGIN_CLIENT_ID", "\"$telegramLoginClientId\"")
         buildConfigField("String", "LINE_CHANNEL_ID", "\"$lineChannelId\"")
+        buildConfigField("String", "BASE_URL", "\"$productionBaseUrl\"")
     }
 
     val uploadKeystore = System.getenv("LITLOOP_UPLOAD_KEYSTORE")
@@ -53,6 +62,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "BASE_URL", "\"$debugBaseUrl\"")
+        }
         release {
             if (uploadKeystore != null) {
                 signingConfig = signingConfigs.getByName("release")

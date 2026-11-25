@@ -393,3 +393,4 @@ zh-CN:
     input:
       required: "*必填"
       show_password: "显示密码"
+      hide_password: "隐藏密码"

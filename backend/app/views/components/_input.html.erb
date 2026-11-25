@@ -87,6 +87,10 @@
   raw_attrs << "required" if required
   raw_attrs << "disabled" if disabled
   raw_attrs << "autofocus" if autofocus
+  if error.present?
+    raw_attrs << "aria-invalid=\"true\""
+    raw_attrs << "aria-describedby=\"#{ERB::Util.html_escape(input_id)}_error\""
+  end
 
   if input_options[:data].present?
     input_options[:data].each do |dk, dv|
@@ -99,6 +103,8 @@
     class="group/field fieldset w-full <%= classes %>"
     <% if toggle_password %>
     data-controller="password"
+    data-password-show-label-value="<%= t("components.input.show_password", default: "Show password") %>"
+    data-password-hide-label-value="<%= t("components.input.hide_password", default: "Hide password") %>"
     <% end %>>
     <% if label.present? %>
       <legend
@@ -157,6 +163,7 @@
               items-center shrink-0
             "
             data-action="click->password#toggle"
+            data-password-target="toggle"
             aria-label="<%= t("components.input.show_password", default: "Show password") %>">
             <span data-password-target="toggleIcon">
               <svg

@@ -19,25 +19,26 @@ class TabBarComponent(
     private val bridgeDelegate: BridgeDelegate<HotwireDestination>
 ) : BridgeComponent<HotwireDestination>(name, bridgeDelegate) {
 
+    /** Whether this page hid the bar and hasn't restored it. */
+    private var hidTabBar = false
+
     override fun onReceive(message: Message) {
         // Every tab loads at launch; only the visible one counts.
         if (!isInSelectedTab()) return
         pageDecided = true
 
-        if (message.event == "show") {
-            setTabBarVisible(true)
-        } else if (shouldHide()) {
-            setTabBarVisible(false)
-        }
+        // A root account page shows the bar (it may be hidden from launch).
+        setTabBarVisible(message.event == "show" || !shouldHide())
     }
 
     // Back to this page, e.g. from sign up.
     override fun onStart() {
-        if (shouldHide()) setTabBarVisible(false)
+        if (isInSelectedTab() && shouldHide()) setTabBarVisible(false)
     }
 
+    // Not shouldHide(): on Back the stack has already popped this page.
     override fun onStop() {
-        if (shouldHide()) setTabBarVisible(true)
+        if (hidTabBar) setTabBarVisible(true)
     }
 
     private val fragment get() = bridgeDelegate.destination.fragment
@@ -54,7 +55,9 @@ class TabBarComponent(
     private fun setTabBarVisible(visible: Boolean) {
         // The wrapper: Hotwire re-shows bottom_nav on every insets change.
         val activity = fragment.activity ?: return
-        activity.findViewById<View>(R.id.bottom_bar)?.isVisible = visible
+        val bar = activity.findViewById<View>(R.id.bottom_bar) ?: return
+        bar.isVisible = visible
+        hidTabBar = !visible
     }
 
     companion object {

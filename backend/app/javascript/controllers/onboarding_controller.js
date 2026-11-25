@@ -23,7 +23,7 @@ export default class extends Controller {
 
     this.observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
-        if (entry.isIntersecting) this.show(this.slideTargets.indexOf(entry.target))
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.6) this.show(this.slideTargets.indexOf(entry.target))
       })
     }, { root: this.trackTarget, threshold: 0.6 })
     this.slideTargets.forEach((slide) => this.observer.observe(slide))
@@ -80,7 +80,10 @@ export default class extends Controller {
       .replace("%{current}", index + 1)
       .replace("%{name}", name)
 
-    // Off-screen slides stay out of the tab order.
+    // Off-screen slides stay out of the tab order. Focus inside one would be
+    // lost, so move it to the track first.
+    const outgoing = this.slideTargets.find((slide, i) => i !== index && slide.contains(document.activeElement))
+    if (outgoing) this.trackTarget.focus({ preventScroll: true })
     this.slideTargets.forEach((slide, i) => { slide.inert = i !== index })
 
     // Inline style: .btn-secondary overrides `hidden`.

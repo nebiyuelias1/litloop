@@ -14,19 +14,38 @@ export default class extends Controller {
   }
 
   disconnect() {
-    clearTimeout(this.saveTimer)
+    // Don't drop a choice still waiting on the debounce.
+    if (this.pending !== undefined) {
+      clearTimeout(this.saveTimer)
+      this.queue(this.pending)
+    }
   }
 
   // Debounced so arrowing 1 → 5 through the radios sends one request, not four.
   rate(event) {
-    const score = parseInt(event.target.value, 10)
+    this.pending = parseInt(event.target.value, 10)
     clearTimeout(this.saveTimer)
-    this.saveTimer = setTimeout(() => this.save(score), this.delayValue)
+    this.saveTimer = setTimeout(() => this.queue(this.pending), this.delayValue)
+  }
+
+  // One request at a time; only the latest choice is sent next.
+  queue(score) {
+    this.pending = undefined
+    this.wanted = score
+    if (!this.saving) this.flush()
+  }
+
+  async flush() {
+    this.saving = true
+    while (this.wanted !== undefined) {
+      const score = this.wanted
+      this.wanted = undefined
+      if (score !== this.currentValue) await this.save(score)
+    }
+    this.saving = false
   }
 
   async save(score) {
-    if (score === this.currentValue) return
-
     try {
       const response = await fetch(`/books/${this.bookIdValue}/ratings`, {
         method: "POST",
@@ -35,18 +54,24 @@ export default class extends Controller {
           "Accept": "application/json",
           "X-CSRF-Token": document.querySelector('[name="csrf-token"]')?.content
         },
-        body: JSON.stringify({ rating: { score } })
+        body: JSON.stringify({ rating: { score } }),
+        keepalive: true
       })
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
 
       this.currentValue = score
-      window.toast?.(this.savedTextValue, { type: "success" })
+      if (this.isLatest()) window.toast?.(this.savedTextValue, { type: "success" })
     } catch (error) {
       console.error("Error saving rating:", error)
-      this.restore()
+      // A newer choice is on screen and still to be sent; leave it.
+      if (this.isLatest()) this.restore()
       window.toast?.(this.failedTextValue, { type: "error" })
     }
+  }
+
+  isLatest() {
+    return this.wanted === undefined && this.pending === undefined
   }
 
   // Put the radios back on the last saved score (or none).

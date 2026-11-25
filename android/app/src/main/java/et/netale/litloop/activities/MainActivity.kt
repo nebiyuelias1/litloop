@@ -24,7 +24,7 @@ import com.linecorp.linesdk.auth.LineAuthenticationParams
 import com.linecorp.linesdk.auth.LineLoginApi
 import org.telegram.login.TelegramLogin
 
-const val baseURL = "http://10.0.2.2:3000/"
+const val baseURL = BuildConfig.BASE_URL
 
 // Telegram Login SDK (https://core.telegram.org/bots/telegram-login#native-sdks).
 // The button on the web login page triggers litloop://telegram-login, which the

@@ -18,6 +18,9 @@ final class TabBarComponent: BridgeComponent {
     /// Whether a visible page has sent a message yet.
     private static var pageDecided = false
 
+    /// Whether this page hid the bar and hasn't restored it.
+    private var hidTabBar = false
+
     /// Hides the bar at launch; shows it after `fallback` seconds if no page says (e.g. offline).
     static func hideWhileLoading(_ tabBarController: UITabBarController, fallback: TimeInterval = 10) {
         tabBarController.setTabBarHidden(true, animated: false)
@@ -31,11 +34,8 @@ final class TabBarComponent: BridgeComponent {
         guard isInSelectedTab else { return }
         Self.pageDecided = true
 
-        if message.event == "show" {
-            setTabBarHidden(false)
-        } else if shouldHide {
-            setTabBarHidden(true)
-        }
+        // A root account page shows the bar (it may be hidden from launch).
+        setTabBarHidden(message.event != "show" && shouldHide)
     }
 
     // Back to this page, e.g. from sign up.
@@ -43,8 +43,9 @@ final class TabBarComponent: BridgeComponent {
         if shouldHide { setTabBarHidden(true) }
     }
 
+    // Not shouldHide: on Back the stack has already popped this page.
     override func onViewWillDisappear() {
-        if shouldHide { setTabBarHidden(false) }
+        if hidTabBar { setTabBarHidden(false) }
     }
 
     private var shouldHide: Bool {
@@ -64,7 +65,9 @@ final class TabBarComponent: BridgeComponent {
     }
 
     private func setTabBarHidden(_ hidden: Bool) {
-        viewController?.tabBarController?.setTabBarHidden(hidden, animated: true)
+        guard let tabBarController = viewController?.tabBarController else { return }
+        tabBarController.setTabBarHidden(hidden, animated: true)
+        hidTabBar = hidden
     }
 
     private var viewController: UIViewController? {

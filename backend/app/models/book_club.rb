@@ -16,6 +16,14 @@ class BookClub < ApplicationRecord
   has_many :members, through: :book_club_members, source: :user
   has_many :membership_requests, dependent: :destroy
 
+  # SQL form of private_info_visible_to?.
+  scope :visible_to, ->(user) {
+    clubs = where(is_private: false)
+    next clubs unless user
+
+    clubs.or(where(owner: user)).or(where(id: BookClubMember.where(user: user).select(:book_club_id)))
+  }
+
   scope :by_relevance, -> {
     now = connection.quote(Time.current)
     recent_window_start = connection.quote(90.days.ago)
