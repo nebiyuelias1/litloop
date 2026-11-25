@@ -140,9 +140,11 @@ def verify():
 def main():
     mark = load_mark()
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    # Icons need no fonts, so write them before the feature graphic: a missing
+    # serif font then only blocks the feature graphic, not the app icons.
     save_flat_rgb(app_icon(mark), OUTPUT_DIR / "app-icon-512.png")
-    save_flat_rgb(feature_graphic(mark), OUTPUT_DIR / "feature-graphic-1024x500.png")
     save_flat_rgb(app_icon(mark, size=1024), IOS_ICON)
+    save_flat_rgb(feature_graphic(mark), OUTPUT_DIR / "feature-graphic-1024x500.png")
     verify()
 
 
