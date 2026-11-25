@@ -411,4 +411,45 @@ class BookClubsControllerTest < ActionDispatch::IntegrationTest
     assert_select "#book_club_#{book_clubs(:one).id} button", text: /Joined/, count: 0
     assert_select "#book_club_#{book_clubs(:one).id} button", text: /Join/, count: 0
   end
+
+  test "club page shows an upcoming book swap with its guidelines" do
+    swap = book_reads(:swap)
+    swap.update_columns(meetup_time: 1.day.from_now)
+    sign_in @user
+
+    get book_club_url(swap.book_club)
+
+    assert_response :success
+    assert_match "December Book Swap", response.body
+    assert_match "Bring 1–3 books in good condition. Leftovers get donated.", response.body
+  end
+
+  test "owner can schedule another session while one is upcoming" do
+    club = book_clubs(:one)
+    sign_in users(:one)
+
+    get book_club_url(club)
+
+    assert_select "a#schedule_another_session[href=?]", new_book_club_book_read_path(club)
+  end
+
+  test "club admin can schedule another session while one is upcoming" do
+    club = book_clubs(:one)
+    BookClubMember.find_or_create_by!(book_club: club, user: users(:two)).update!(role: :admin)
+    sign_in users(:two)
+
+    get book_club_url(club)
+
+    assert_select "a#schedule_another_session"
+  end
+
+  test "regular members don't see the schedule button" do
+    club = book_clubs(:one)
+    BookClubMember.find_or_create_by!(book_club: club, user: users(:two)).update!(role: :member)
+    sign_in users(:two)
+
+    get book_club_url(club)
+
+    assert_select "a#schedule_another_session", count: 0
+  end
 end

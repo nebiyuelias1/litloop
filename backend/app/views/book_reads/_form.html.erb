@@ -13,27 +13,28 @@
     </div>
   <% end %>
 
-  <%# Selection Toggle (Only shown when creating a new record or for non-finalized poll sessions) %>
+  <%# Selection Toggle: the type is picked when scheduling and can't change afterwards %>
   <% poll_finalized = @book_read.poll&.finalized_at.present? %>
-  <% can_toggle_selection =
-    @book_read.new_record? || (@book_read.poll.present? && !poll_finalized) %>
+  <% can_toggle_selection = @book_read.new_record? %>
+  <% current_selection =
+    can_toggle_selection ? (params[:selection_type].presence || "book") : @book_read.selection_type %>
+  <% show_book_fields = can_toggle_selection || current_selection == "book" %>
+  <% show_poll_fields = can_toggle_selection || (current_selection == "poll" && !poll_finalized) %>
+  <% show_swap_fields = can_toggle_selection || current_selection == "swap" %>
 
   <% if can_toggle_selection %>
     <div class="space-y-3">
       <label class="block text-sm font-semibold text-content ml-1">What are we reading?</label>
-      <% current_selection =
-        params[:selection_type] ||
-          (@book_read.poll.present? && !poll_finalized ? "poll" : "book") %>
       <div class="flex p-1 bg-background rounded-lg border border-border w-fit">
 
         <label
           data-book-read-form-target="selectionBtn"
           data-action="click->book-read-form#toggle"
           class="
-            relative flex items-center px-4 py-2 rounded-md cursor-pointer transition-all
+            relative flex items-center px-3 sm:px-4 py-2 rounded-md cursor-pointer transition-all
             bg-transparent
           ">
-          <span class="text-sm font-bold text-content">Specific Book</span>
+          <span class="text-sm font-bold text-content whitespace-nowrap">Specific Book</span>
           <%= radio_button_tag :selection_type,
           "book",
           current_selection == "book",
@@ -44,23 +45,38 @@
           data-book-read-form-target="selectionBtn"
           data-action="click->book-read-form#toggle"
           class="
-            relative flex items-center px-4 py-2 rounded-md cursor-pointer transition-all
+            relative flex items-center px-3 sm:px-4 py-2 rounded-md cursor-pointer transition-all
             bg-transparent
           ">
-          <span class="text-sm font-bold text-content">Poll</span>
+          <span class="text-sm font-bold text-content whitespace-nowrap">Poll</span>
           <%= radio_button_tag :selection_type,
           "poll",
           current_selection == "poll",
           class: "hidden" %>
         </label>
+
+        <label
+          data-book-read-form-target="selectionBtn"
+          data-action="click->book-read-form#toggle"
+          class="
+            relative flex items-center px-3 sm:px-4 py-2 rounded-md cursor-pointer transition-all
+            bg-transparent
+          ">
+          <span class="text-sm font-bold text-content whitespace-nowrap"><%= t("book_swap") %></span>
+          <%= radio_button_tag :selection_type,
+          "swap",
+          current_selection == "swap",
+          class: "hidden" %>
+        </label>
       </div>
     </div>
   <% else %>
-    <%= hidden_field_tag :selection_type, "book" %>
+    <%= hidden_field_tag :selection_type, current_selection %>
   <% end %>
 
   <%# Dynamic Sections %>
   <div class="relative">
+    <% if show_book_fields %>
     <%# Book Selection Section %>
     <div
       id="book_selection_field"
@@ -105,9 +121,10 @@
         </div>
       </div>
     </div>
+    <% end %>
 
     <%# Poll Selection Section %>
-    <% if can_toggle_selection %>
+    <% if show_poll_fields %>
       <div
         id="poll_fields"
         data-book-read-form-target="pollSection"
@@ -179,6 +196,20 @@
           label: "Voting Ends On",
           min: (poll_form.object.new_record? ? Time.current : nil),
           error: poll_form.object.errors[:end_date] %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Book Swap Section %>
+    <% if show_swap_fields %>
+      <div
+        id="book_swap_fields"
+        data-book-read-form-target="swapSection"
+        class="
+          hidden p-4 rounded-lg border border-border bg-surface shadow-sm space-y-4
+        ">
+        <%= form.fields_for :book_swap, (@book_read.book_swap || BookSwap.new) do |swap_form| %>
+          <%= render "book_swap_fields", form: swap_form %>
         <% end %>
       </div>
     <% end %>

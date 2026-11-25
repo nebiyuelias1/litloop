@@ -3,6 +3,7 @@ class DiscussionQuestionsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_book_club_and_read
   before_action :set_discussion_question, only: [ :update, :destroy ]
+  before_action :reject_book_swap_sessions, only: [ :create ]
   before_action :authorize_discussion_question_permission, only: [ :create ]
   before_action :authorize_discussion_question_modification, only: [ :update, :destroy ]
 
@@ -85,6 +86,13 @@ class DiscussionQuestionsController < ApplicationController
 
     session[:discussion_question_draft] = params.dig(:discussion_question, :content)
     store_location_for(:user, book_club_book_read_path(params[:book_club_id], params[:book_read_id]))
+  end
+
+  # A book swap has no shared book, so it has no discussion section to post into.
+  def reject_book_swap_sessions
+    return unless @book_read.swap?
+
+    redirect_to book_club_book_read_path(@book_club, @book_read), alert: t("swap_no_discussion")
   end
 
   def authorize_discussion_question_permission

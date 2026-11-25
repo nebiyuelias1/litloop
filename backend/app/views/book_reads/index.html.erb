@@ -9,7 +9,7 @@
       <h1 class="title title-lg text-content font-bold"><%= @book_club.name %> Reads</h1>
     </div>
 
-    <% if user_signed_in? && @book_club.owner == current_user %>
+    <% if can_schedule_reads?(@book_club, current_user) %>
       <%= link_to "Start a New Read", new_book_club_book_read_path(@book_club), class: "bg-primary text-primary-contrast hover:bg-primary px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm" %>
     <% end %>
   </div>

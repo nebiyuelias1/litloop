@@ -3,7 +3,7 @@ class HomeController < ApplicationController
   end
 
   def upcoming
-    @upcoming_book_reads = BookRead.includes(:book, :book_club)
+    @upcoming_book_reads = BookRead.includes(:book, :book_club, :poll, :book_swap)
       .where("meetup_time >= ?", Time.current)
       .order(meetup_time: :asc, id: :asc)
 

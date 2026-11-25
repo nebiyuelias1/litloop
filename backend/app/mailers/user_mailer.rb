@@ -6,16 +6,16 @@ class UserMailer < ApplicationMailer
 
   def rsvp_confirmation
     attach_calendar_invite!
-    mail(to: @user.email, subject: "RSVP Confirmation: #{@book_read.book&.title || "Book Read"}")
+    mail(to: @user.email, subject: "RSVP Confirmation: #{(@book_read.book&.title || @book_read.book_swap&.title || "Book Read")}")
   end
 
   def book_read_updated_invite
     attach_calendar_invite!(description_suffix: " (Schedule Updated)")
-    mail(to: @user.email, subject: "[Updated Calendar Invite] Book Read: #{@book_read.book&.title || "Book Read"}")
+    mail(to: @user.email, subject: "[Updated Calendar Invite] Book Read: #{(@book_read.book&.title || @book_read.book_swap&.title || "Book Read")}")
   end
 
   def book_read_reminder_email
-    mail(to: @user.email, subject: "Reminder: Upcoming Book Read for #{@book_read.book&.title || "Discussion"}")
+    mail(to: @user.email, subject: "Reminder: Upcoming Book Read for #{(@book_read.book&.title || @book_read.book_swap&.title || "Discussion")}")
   end
 
   def membership_request_notification
@@ -62,7 +62,7 @@ class UserMailer < ApplicationMailer
       # Explicitly marking as UTC ensures calendars auto-adjust to user's local time
       e.dtstart = Icalendar::Values::DateTime.new(@book_read.meetup_time.utc, tzid: "UTC")
       e.dtend = Icalendar::Values::DateTime.new((@book_read.meetup_time + 2.hours).utc, tzid: "UTC")
-      e.summary = "Book Read: #{@book_read.book&.title || "Discussion"}"
+      e.summary = "Book Read: #{(@book_read.book&.title || @book_read.book_swap&.title || "Discussion")}"
       e.description = "RSVP for #{@book_read.book_club.name}#{description_suffix}"
       e.location = @book_read.meetup_location
       e.ip_class = "PRIVATE"

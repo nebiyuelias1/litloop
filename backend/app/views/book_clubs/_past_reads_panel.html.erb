@@ -21,6 +21,8 @@
                 <% if read.book.present? %>
                   <%# Bookplate monogram sits beneath the image; image-fallback hides a broken img on error %>
                   <%= render "shared/book_cover_fallback", book: read.book, size_class: "text-3xl" %>
+                <% elsif read.swap? %>
+                  <%= render "shared/book_swap_icon", classes: "h-8 w-8 text-accent" %>
                 <% else %>
                   <svg aria-hidden="true" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
@@ -44,7 +46,7 @@
 
             <div class="flex min-w-0 flex-1 flex-col">
               <h3 class="line-clamp-2 text-base font-bold leading-snug text-content">
-                <%= read.book&.title || t("new_reading_session", default: "New Reading Session") %>
+                <%= read.book&.title || read.book_swap&.title || t("new_reading_session", default: "New Reading Session") %>
               </h3>
               <% if read.book.present? %>
                 <p class="mt-0.5 truncate text-xs text-content-subtle">
@@ -71,6 +73,7 @@
 
               <div class="mt-auto pt-3">
                 <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-border pt-3">
+                  <% unless read.swap? %>
                   <div class="flex min-w-0 items-center gap-2">
                     <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
                       <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -82,6 +85,7 @@
                       <%= discussions_count == 1 ? "discussion" : "discussions" %>
                     </span>
                   </div>
+                  <% end %>
 
                   <% if attendees.any? %>
                     <div class="flex items-center gap-2">

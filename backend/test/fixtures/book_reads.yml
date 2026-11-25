@@ -13,3 +13,9 @@ two:
   host: two
   meetup_time: 2026-12-24
   meetup_location: Dreamers cafe
+
+swap:
+  book_club: one
+  host: one
+  meetup_time: 2026-12-30
+  meetup_location: Tomoca Coffee

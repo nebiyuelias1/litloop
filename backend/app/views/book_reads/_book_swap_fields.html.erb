@@ -1,0 +1,22 @@
+<%# Fields for a book swap session. Locals: form (BookSwap fields builder) %>
+<div class="space-y-1">
+  <%= form.label :title,
+  t("swap_title_label"),
+  class: "block text-sm font-medium text-content-subtle" %>
+  <%= form.text_field :title,
+  class:
+    "block w-full rounded-md border-border bg-background py-2 px-3 text-sm text-content placeholder:text-content-muted focus:bg-surface focus:border-primary transition-all outline-none",
+  placeholder: t("swap_title_placeholder") %>
+</div>
+
+<div class="space-y-1">
+  <%= form.label :guidelines,
+  t("swap_guidelines"),
+  class: "block text-sm font-medium text-content-subtle" %>
+  <%= form.text_area :guidelines,
+  rows: 4,
+  class:
+    "block w-full rounded-md border-border bg-background py-2 px-3 text-sm text-content placeholder:text-content-muted focus:bg-surface focus:border-primary transition-all outline-none",
+  placeholder: t("swap_guidelines_placeholder") %>
+  <p class="text-xs text-content-muted"><%= t("swap_guidelines_hint") %></p>
+</div>

@@ -1,5 +1,15 @@
 import { Controller } from "@hotwired/stimulus";
 
+// Same 24x24 line paths as app/views/shared/_book_swap_icon.html.erb (two books trading places).
+const BOOK_SWAP_ICON_PATHS = [
+  "M4.5 9.75h5.25a.75.75 0 0 1 .75.75v9a.75.75 0 0 1-.75.75H4.5a1.5 1.5 0 0 1-1.5-1.5v-7.5a1.5 1.5 0 0 1 1.5-1.5Z",
+  "M3 18.75a1.5 1.5 0 0 1 1.5-1.5h6M6.25 12.75h2.25",
+  "M15.5 3.75h5.25a.75.75 0 0 1 .75.75v9a.75.75 0 0 1-.75.75H15.5a1.5 1.5 0 0 1-1.5-1.5v-7.5a1.5 1.5 0 0 1 1.5-1.5Z",
+  "M14 12.75a1.5 1.5 0 0 1 1.5-1.5h6M17.25 6.75h2.25",
+  "M6.75 7v-.75a2.5 2.5 0 0 1 2.5-2.5h2M9.75 2.25l1.5 1.5-1.5 1.5",
+  "M17.25 17v.75a2.5 2.5 0 0 1-2.5 2.5h-2M14.25 21.75l-1.5-1.5 1.5-1.5",
+];
+
 export default class extends Controller {
   static values = {
     clubName: String,
@@ -12,6 +22,7 @@ export default class extends Controller {
     rsvpUrl: String,
     pollUrl: String,
     bookReadId: String,
+    isSwap: Boolean,
     downloadSuccessMsg: String,
     downloadErrorMsg: String,
     linkSharedMsg: String,
@@ -28,6 +39,8 @@ export default class extends Controller {
     labelLocation: String,
     labelHostedBy: String,
     labelScanToRsvp: String,
+    labelBookSwap: String,
+    swapSummary: String,
   };
 
   async download() {
@@ -292,6 +305,7 @@ export default class extends Controller {
     const coverHeight = 780;
     const coverX = (W - coverWidth) / 2; // Center horizontally
     const coverY = 235;
+    const swapCardHeight = 540;
 
     if (coverImg) {
       ctx.save();
@@ -318,6 +332,35 @@ export default class extends Controller {
       ctx.lineWidth = 2;
       drawRoundedRect(coverX, coverY, coverWidth, coverHeight, 32);
       ctx.stroke();
+    } else if (this.isSwapValue) {
+      // Book swap: two books trading places on a shorter card, leaving room for the guidelines
+      ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
+      drawRoundedRect(coverX, coverY, coverWidth, swapCardHeight, 32);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      const iconSize = 300;
+      const iconTop = coverY + 90;
+      ctx.save();
+      ctx.translate((W - iconSize) / 2, iconTop);
+      ctx.scale(iconSize / 24, iconSize / 24);
+      ctx.strokeStyle = "#e6dcc3";
+      ctx.lineWidth = 1.1;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      BOOK_SWAP_ICON_PATHS.forEach((d) => ctx.stroke(new Path2D(d)));
+      ctx.restore();
+
+      ctx.textAlign = "center";
+      ctx.font = "bold 40px sans-serif";
+      ctx.fillStyle = "#e6dcc3";
+      ctx.fillText(
+        (this.labelBookSwapValue || "Book Swap").toUpperCase(),
+        W / 2,
+        iconTop + iconSize + 60,
+      );
     } else {
       // Placeholder icon: drawn ballot with a check (no emoji, matches the icon system)
       ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
@@ -353,7 +396,7 @@ export default class extends Controller {
     }
 
     // 5. Draw Book Details (Center-aligned, positioned closely below cover y: 1045)
-    let currentY = 1045;
+    let currentY = this.isSwapValue && !coverImg ? coverY + swapCardHeight + 50 : 1045;
     const bodyWidth = W - padding * 2; // 920
 
     // Title (Centered, maximum font size)
@@ -380,6 +423,23 @@ export default class extends Controller {
         : `by ${this.authorValue}`;
       ctx.fillText(byText, W / 2, currentY);
       currentY += 80;
+    } else if (this.isSwapValue) {
+      // The host's guidelines, wrapped into whatever room is left above the meetup box
+      ctx.fillStyle = "#d8ccb2"; // Parchment
+      ctx.font = "italic 38px sans-serif";
+      const lineHeight = 48;
+      const startY = currentY + 24;
+      const maxLines = Math.max(1, Math.floor((1230 - startY) / lineHeight));
+      const lastY = wrapText(
+        this.swapSummaryValue || "Bring a book, take a book",
+        W / 2,
+        startY,
+        bodyWidth,
+        lineHeight,
+        maxLines,
+        "center",
+      );
+      currentY = lastY + lineHeight;
     } else {
       currentY += 20;
     }

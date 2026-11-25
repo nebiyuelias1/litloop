@@ -223,4 +223,17 @@ class DiscussionQuestionsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to book_club_book_read_path(@book_club, @book_read)
     assert_equal "approved", question.reload.status
   end
+
+  test "cannot add a discussion question to a book swap" do
+    swap = book_reads(:swap)
+    BookReadRsvp.rsvp!(book_read: swap, user: @user, status: :going)
+
+    assert_no_difference("DiscussionQuestion.count") do
+      post book_club_book_read_discussion_questions_url(@book_club, swap), params: {
+        discussion_question: { content: "What did you bring?" }
+      }
+    end
+
+    assert_redirected_to book_club_book_read_path(@book_club, swap)
+  end
 end

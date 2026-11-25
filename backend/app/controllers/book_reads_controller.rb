@@ -7,9 +7,9 @@ class BookReadsController < ApplicationController
   def index
     @tab = params[:tab] || "upcoming"
     @reads = if @tab == "past"
-      @book_club.book_reads.includes(:book).where("meetup_time < ?", Time.current).order(meetup_time: :desc)
+      @book_club.book_reads.includes(:book, :poll, :book_swap).where("meetup_time < ?", Time.current).order(meetup_time: :desc)
     else
-      @book_club.book_reads.includes(:book).where("meetup_time >= ?", Time.current).order(meetup_time: :asc)
+      @book_club.book_reads.includes(:book, :poll, :book_swap).where("meetup_time >= ?", Time.current).order(meetup_time: :asc)
     end
   end
 
@@ -58,10 +58,17 @@ class BookReadsController < ApplicationController
   def create
     @book_read = @book_club.book_reads.build(book_read_params.merge(host: current_user))
 
-    if params[:selection_type] == "book"
+    case params[:selection_type]
+    when "book"
       @book_read.poll = nil
-    elsif params[:selection_type] == "poll"
+      @book_read.book_swap = nil
+    when "poll"
       @book_read.book_id = nil
+      @book_read.book_swap = nil
+    when "swap"
+      @book_read.book_id = nil
+      @book_read.poll = nil
+      @book_read.build_book_swap if @book_read.book_swap.nil?
     end
 
     if @book_read.save
@@ -73,37 +80,27 @@ class BookReadsController < ApplicationController
   end
 
   def update
+    # The session type is chosen at creation and can't be changed by editing,
+    # so params[:selection_type] is ignored here.
     clean_params = book_read_params.dup
-    poll_finalized = @book_read.poll&.finalized_at.present?
 
-    success = BookRead.transaction do
-      if params[:selection_type] == "book"
-        unless poll_finalized
-          @book_read.poll&.destroy
-          @book_read.poll = nil
-        end
-        clean_params.delete(:poll_attributes)
-      elsif params[:selection_type] == "poll"
-        unless poll_finalized
-          @book_read.book_id = nil
-          clean_params.delete(:book_id)
-          clean_params[:book_id] = nil
-        else
-          # Poll already finalized with a selected book: preserve the book
-          # and ignore poll edits to keep voting history immutable.
-          clean_params.delete(:poll_attributes)
-        end
-      end
-
-      updated = @book_read.update(clean_params)
-      raise ActiveRecord::Rollback unless updated
-      true
+    case @book_read.selection_type
+    when "book"
+      clean_params.delete(:poll_attributes)
+      clean_params.delete(:book_swap_attributes)
+    when "poll"
+      clean_params.delete(:book_id)
+      clean_params.delete(:book_swap_attributes)
+      # Once a poll has picked a book, keep its options and votes unchanged.
+      clean_params.delete(:poll_attributes) if @book_read.poll.finalized_at.present?
+    when "swap"
+      clean_params.delete(:book_id)
+      clean_params.delete(:poll_attributes)
     end
 
-    if success
+    if @book_read.update(clean_params)
       redirect_to book_club_book_read_path(@book_club, @book_read), notice: t("book_read_updated")
     else
-      @book_read.reload if @book_read.persisted?
       render :edit, status: :unprocessable_content
     end
   end
@@ -150,7 +147,8 @@ class BookReadsController < ApplicationController
       poll_attributes: [
         :id, :text, :end_date,
         poll_options_attributes: [ :id, :book_id, :content, :_destroy ]
-      ]
+      ],
+      book_swap_attributes: [ :id, :title, :guidelines ]
     )
   end
 end
