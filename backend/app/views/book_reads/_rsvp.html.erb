@@ -54,6 +54,7 @@
           <%= t("event_started") %>
         </div>
         <%# Past reads still have somewhere to go: the kept book, the discussion they had, the votes they cast %>
+        <% unless book_read.swap? %>
         <div class="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1">
           <% if book_read.book.present? %>
             <%= link_to t("view_book_details"), book_path(book_read.book), data: { turbo_frame: "_top" }, class: "text-xs font-semibold text-primary hover:text-accent transition-colors" %>
@@ -61,10 +62,9 @@
           <% if book_read.poll.present? %>
             <%= link_to t("vote_breakdown"), "#{book_club_book_read_path(book_club, book_read)}#poll_voting", data: { turbo_frame: "_top" }, class: "text-xs font-semibold text-primary hover:text-accent transition-colors" %>
           <% end %>
-          <% unless book_read.swap? %>
-            <%= link_to t("discussion_questions"), "#{book_club_book_read_path(book_club, book_read)}#discussion_section", data: { turbo_frame: "_top" }, class: "text-xs font-semibold text-primary hover:text-accent transition-colors" %>
-          <% end %>
+          <%= link_to t("discussion_questions"), "#{book_club_book_read_path(book_club, book_read)}#discussion_section", data: { turbo_frame: "_top" }, class: "text-xs font-semibold text-primary hover:text-accent transition-colors" %>
         </div>
+        <% end %>
       </div>
     <% else %>
       <div class="px-4 sm:px-5 py-3.5">

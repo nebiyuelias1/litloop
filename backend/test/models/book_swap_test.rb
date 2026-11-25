@@ -22,4 +22,20 @@ class BookSwapTest < ActiveSupport::TestCase
     assert_not swap.valid?
     assert_includes swap.errors[:book_read_id], "has already been taken"
   end
+
+  test "cannot attach to a session with an unsaved book assigned" do
+    book_read = book_reads(:swap)
+    book_read.book = Book.new(title: "Unsaved")
+    swap = BookSwap.new(book_read: book_read, title: "Swap")
+    assert_not swap.valid?
+    assert_includes swap.errors[:book_read], "already has a book or a poll"
+  end
+
+  test "a bookless session can still take a swap" do
+    book_read = BookRead.new(book_club: book_clubs(:one), host: users(:one),
+      meetup_time: 1.week.from_now, meetup_location: "Cafe")
+    swap = book_read.build_book_swap(title: "Swap")
+    assert swap.valid?
+    assert book_read.valid?
+  end
 end

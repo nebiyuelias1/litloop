@@ -421,55 +421,6 @@ class BookReadsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "switching an open poll session to a book swap removes the poll" do
-    book_read = BookRead.create!(
-      book_club: @book_club, host: @user, meetup_time: 1.week.from_now, meetup_location: "Cafe",
-      poll_attributes: { text: "Which?", end_date: 1.day.from_now,
-        poll_options_attributes: [ { content: "A" }, { content: "B" } ] }
-    )
-    sign_in @user
-
-    patch book_club_book_read_url(@book_club, book_read), params: {
-      selection_type: "swap",
-      book_read: { book_swap_attributes: { title: "Swap instead" } }
-    }
-
-    assert_redirected_to book_club_book_read_url(@book_club, book_read)
-    book_read.reload
-    assert book_read.swap?
-    assert_nil book_read.poll
-  end
-
-  test "switching a book swap to a specific book removes the swap" do
-    book_read = book_reads(:swap)
-    sign_in @user
-
-    patch book_club_book_read_url(@book_club, book_read), params: {
-      selection_type: "book",
-      book_read: { book_id: @book.id }
-    }
-
-    assert_redirected_to book_club_book_read_url(@book_club, book_read)
-    book_read.reload
-    assert_not book_read.swap?
-    assert_equal @book, book_read.book
-  end
-
-  test "a session whose poll is finalized cannot become a book swap" do
-    book_read = book_reads(:one)
-    book_read.poll.update!(finalized_at: Time.current)
-    sign_in @user
-
-    assert_no_difference("BookSwap.count") do
-      patch book_club_book_read_url(@book_club, book_read), params: {
-        selection_type: "swap",
-        book_read: { book_swap_attributes: { title: "Nope" } }
-      }
-    end
-    assert_redirected_to edit_book_club_book_read_url(@book_club, book_read)
-    assert book_read.reload.poll.present?
-  end
-
   test "book swap show page shows guidelines and hides discussion questions" do
     sign_in @user
     get book_club_book_read_url(@book_club, book_reads(:swap))
@@ -505,5 +456,81 @@ class BookReadsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "a[href$='#discussion_section']", count: 0
+  end
+
+  test "an open poll session can't be switched to a book swap or a book" do
+    book_read = BookRead.create!(
+      book_club: @book_club, host: @user, meetup_time: 1.week.from_now, meetup_location: "Cafe",
+      poll_attributes: { text: "Which?", end_date: 1.day.from_now,
+        poll_options_attributes: [ { content: "A" }, { content: "B" } ] }
+    )
+    sign_in @user
+
+    patch book_club_book_read_url(@book_club, book_read), params: {
+      selection_type: "swap",
+      book_read: { meetup_location: "New Cafe", book_id: @book.id, book_swap_attributes: { title: "Swap instead" } }
+    }
+
+    assert_redirected_to book_club_book_read_url(@book_club, book_read)
+    book_read.reload
+    assert_equal "poll", book_read.selection_type
+    assert_nil book_read.book_id
+    assert_nil book_read.book_swap
+    assert_equal "New Cafe", book_read.meetup_location
+  end
+
+  test "a book swap can't be switched to a book or a poll, but its details can be edited" do
+    book_read = book_reads(:swap)
+    sign_in @user
+
+    patch book_club_book_read_url(@book_club, book_read), params: {
+      selection_type: "book",
+      book_read: {
+        book_id: @book.id,
+        poll_attributes: { text: "Which?", end_date: 1.day.from_now },
+        book_swap_attributes: { id: book_read.book_swap.id, title: "Renamed Swap" }
+      }
+    }
+
+    assert_redirected_to book_club_book_read_url(@book_club, book_read)
+    book_read.reload
+    assert book_read.swap?
+    assert_nil book_read.book_id
+    assert_nil book_read.poll
+    assert_equal "Renamed Swap", book_read.book_swap.title
+  end
+
+  test "a specific book session can't be switched to a book swap" do
+    book_read = BookRead.create!(book_club: @book_club, host: @user, book: @book,
+      meetup_time: 1.week.from_now, meetup_location: "Cafe")
+    assert_equal "book", book_read.selection_type
+    sign_in @user
+
+    assert_no_difference("BookSwap.count") do
+      patch book_club_book_read_url(@book_club, book_read), params: {
+        selection_type: "swap",
+        book_read: { book_swap_attributes: { title: "Nope" } }
+      }
+    end
+    assert_equal @book, book_read.reload.book
+    assert_equal "book", book_read.selection_type
+  end
+
+  test "edit form has no type toggle and shows only the session's own fields" do
+    sign_in @user
+
+    get edit_book_club_book_read_url(@book_club, book_reads(:swap))
+    assert_response :success
+    assert_select "input[type=radio][name=selection_type]", count: 0
+    assert_select "input[type=hidden][name=selection_type][value=swap]"
+    assert_select "#book_swap_fields"
+    assert_select "#book_selection_field", count: 0
+    assert_select "#poll_fields", count: 0
+  end
+
+  test "new form still offers all three types" do
+    sign_in @user
+    get new_book_club_book_read_url(@book_club)
+    assert_select "input[type=radio][name=selection_type]", count: 3
   end
 end

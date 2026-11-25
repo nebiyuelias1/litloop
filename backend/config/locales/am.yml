@@ -217,7 +217,6 @@ am:
   swap_guidelines_hint: "ስንት መፅሐፍት እንደሚያመጡ፣ ሁኔታቸውን እና የተረፉት ምን እንደሚሆኑ ይንገሩ።"
   swap_subtitle: "መፅሐፍ አምጡ፣ መፅሐፍ ውሰዱ"
   private_club_join_swap: "የልውውጥ መመሪያዎችን ለማየት ክለቡን ይቀላቀሉ።"
-  swap_poll_finalized: "የዚህ ክፍለ ጊዜ የድምፅ አሰጣጥ መፅሐፍ መርጧል፣ ስለዚህ ወደ መፅሐፍ ልውውጥ መቀየር አይቻልም።"
   share_flyer_swap_text: "ለ\"%{title}\" %{club} ጋር ይቀላቀሉን። መፅሐፍ አምጡ፣ መፅሐፍ ውሰዱ!"
   swap_no_discussion: "የመፅሐፍ ልውውጥ የውይይት ጥያቄዎች የሉትም።"
   schedule_another_session: "ሌላ ክፍለ ጊዜ ያቅዱ"

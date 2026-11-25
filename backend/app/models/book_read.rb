@@ -24,6 +24,17 @@ class BookRead < ApplicationRecord
     book_swap.present? && !book_swap.marked_for_destruction?
   end
 
+  # "book", "poll" or "swap". Chosen when the session is scheduled and fixed after that.
+  def selection_type
+    if swap?
+      "swap"
+    elsif poll.present?
+      "poll"
+    else
+      "book"
+    end
+  end
+
   # Headline for the session: the chosen book, the poll question, or the swap's name.
   def display_title(fallback = I18n.t("new_reading_session"))
     book&.title.presence || poll&.text.presence || book_swap&.title.presence || fallback
@@ -84,10 +95,12 @@ class BookRead < ApplicationRecord
   # A poll keeps its record once it picks a book, so book + poll is allowed.
   def has_exactly_one_selection
     has_poll = poll.present? && !poll.marked_for_destruction?
+    # book covers an assigned but unsaved Book, which has no book_id yet
+    has_book = book_id.present? || book.present?
 
     if swap?
-      errors.add(:base, "A book swap can't also have a book or a poll") if book_id.present? || has_poll
-    elsif book_id.blank? && !has_poll
+      errors.add(:base, "A book swap can't also have a book or a poll") if has_book || has_poll
+    elsif !has_book && !has_poll
       errors.add(:base, "You must select a specific book, create a poll, or set up a book swap for this session")
     end
   end

@@ -80,54 +80,27 @@ class BookReadsController < ApplicationController
   end
 
   def update
+    # The session type is chosen at creation and can't be changed by editing,
+    # so params[:selection_type] is ignored here.
     clean_params = book_read_params.dup
-    poll_finalized = @book_read.poll&.finalized_at.present?
 
-    if params[:selection_type] == "swap" && poll_finalized
-      return redirect_to edit_book_club_book_read_path(@book_club, @book_read), alert: t("swap_poll_finalized")
+    case @book_read.selection_type
+    when "book"
+      clean_params.delete(:poll_attributes)
+      clean_params.delete(:book_swap_attributes)
+    when "poll"
+      clean_params.delete(:book_id)
+      clean_params.delete(:book_swap_attributes)
+      # Once a poll has picked a book, keep its options and votes unchanged.
+      clean_params.delete(:poll_attributes) if @book_read.poll.finalized_at.present?
+    when "swap"
+      clean_params.delete(:book_id)
+      clean_params.delete(:poll_attributes)
     end
 
-    success = BookRead.transaction do
-      if params[:selection_type].in?(%w[book poll])
-        @book_read.book_swap&.destroy
-        @book_read.book_swap = nil
-        clean_params.delete(:book_swap_attributes)
-      end
-
-      if params[:selection_type] == "swap"
-        @book_read.poll&.destroy
-        @book_read.poll = nil
-        @book_read.book_id = nil
-        clean_params.delete(:poll_attributes)
-        clean_params[:book_id] = nil
-        @book_read.build_book_swap if @book_read.book_swap.nil? && clean_params[:book_swap_attributes].blank?
-      elsif params[:selection_type] == "book"
-        unless poll_finalized
-          @book_read.poll&.destroy
-          @book_read.poll = nil
-        end
-        clean_params.delete(:poll_attributes)
-      elsif params[:selection_type] == "poll"
-        unless poll_finalized
-          @book_read.book_id = nil
-          clean_params.delete(:book_id)
-          clean_params[:book_id] = nil
-        else
-          # Poll already finalized with a selected book: preserve the book
-          # and ignore poll edits to keep voting history immutable.
-          clean_params.delete(:poll_attributes)
-        end
-      end
-
-      updated = @book_read.update(clean_params)
-      raise ActiveRecord::Rollback unless updated
-      true
-    end
-
-    if success
+    if @book_read.update(clean_params)
       redirect_to book_club_book_read_path(@book_club, @book_read), notice: t("book_read_updated")
     else
-      @book_read.reload if @book_read.persisted?
       render :edit, status: :unprocessable_content
     end
   end

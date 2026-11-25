@@ -202,4 +202,12 @@ class BookReadTest < ActiveSupport::TestCase
     BookReadRsvp.rsvp!(book_read: swap, user: users(:one), status: :going)
     assert_not swap.can_post_discussion_question?(users(:one))
   end
+
+  test "is invalid as a book swap with an unsaved book assigned" do
+    @book_read.book = Book.new(title: "Unsaved")
+    @book_read.build_book_swap(title: "December Book Swap")
+    assert_nil @book_read.book_id
+    assert_not @book_read.valid?
+    assert_includes @book_read.errors[:base], "A book swap can't also have a book or a poll"
+  end
 end

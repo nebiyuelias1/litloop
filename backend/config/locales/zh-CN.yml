@@ -207,7 +207,6 @@ zh-CN:
   swap_guidelines_hint: "告诉大家带几本书、书况要求，以及剩余书籍如何处理。"
   swap_subtitle: "带一本书，换一本书"
   private_club_join_swap: "加入此读书会即可查看换书须知。"
-  swap_poll_finalized: "此活动的投票已选出书籍，无法改为换书会。"
   share_flyer_swap_text: "加入 %{club} 的“%{title}”！带一本书，换一本书。"
   swap_no_discussion: "换书会没有讨论问题。"
   schedule_another_session: "安排新的活动"

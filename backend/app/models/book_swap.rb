@@ -15,7 +15,8 @@ class BookSwap < ApplicationRecord
     return if book_read.blank?
 
     poll = book_read.poll
-    if book_read.book_id.present? || (poll.present? && !poll.destroyed? && !poll.marked_for_destruction?)
+    has_book = book_read.book_id.present? || book_read.book.present?
+    if has_book || (poll.present? && !poll.destroyed? && !poll.marked_for_destruction?)
       errors.add(:book_read, "already has a book or a poll")
     end
   end

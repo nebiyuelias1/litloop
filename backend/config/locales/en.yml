@@ -246,7 +246,6 @@ en:
   swap_guidelines_hint: "Tell people how many books to bring, what condition, and what happens to leftovers."
   swap_subtitle: "Bring a book, take a book"
   private_club_join_swap: "Join this club to see the swap guidelines."
-  swap_poll_finalized: "This session's poll has already picked a book, so it can't become a book swap."
   share_flyer_swap_text: "Join us at %{club} for \"%{title}\". Bring a book, take a book!"
   swap_no_discussion: "Book swaps don't have discussion questions."
   schedule_another_session: "Schedule another session"
